@@ -1,0 +1,39 @@
+{
+ "sprint_id": "R1-7AN-FREE-NAV-GUARD-EDGES",
+ "round": 1,
+ "judge": "sonnet (Claude Sonnet 5.5), independent of the Opus designer and executor",
+ "score": 94,
+ "pass": true,
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Executor's AC wording for the dark-row check relies on the flow never pinning; pinned_ids.is_empty() in that check is therefore a no-op guard (AC9f confirms: dropping the product pin filter leaves the free-nav run green). The pin edge is covered only by the ssi test, which is the documented design.",
+  "Deferred follow-ups (d), (e), (f) were not independently re-measured; (e) rests on a 0.55 m BVH clearance probe (V16) that I did not rerun. The reasoning (ci-fast would need to load the ship demo for the first time, manifest-only proxy sees only the 0.75 m face rectangle) is consistent with the code (FACE_M, manifest fields) and justifies deferral as a new kind of ci-fast step, not test hygiene.",
+  "Run times are 100-175 s per short copy and 357 s for the full target; within budgets."
+ ],
+ "ac_results": {
+  "AC1": "make free-nav-stop-test: rc 0, 'free-nav-stop: 57 passed, 0 failures (357 s of 1800 s)'",
+  "AC2": "make ship-star-identification-test: 'ship-star-identification: 60 passed, 0 failures'",
+  "AC3": "grep counts 2, 2, 1; FAIL count 0",
+  "AC4": "git diff --name-only b96b2d60..ce34f4f8: two test files, one changelog fragment, design doc, sprint doc, sprint JSON; nothing under product dirs, no Makefile/mk/*.ail",
+  "AC5": "counts 1, 2, 1 as expected",
+  "AC6": "killed: 17 passed, 4 failures with exactly the four expected FAIL lines; tree clean after",
+  "AC7": "killed: 17 passed, 4 failures (two eye-check FAILs, 41 candidates, alpha Cen A inspectable); ac7b moved-without-shift: 23 passed, 0 failures, as documented",
+  "AC8": "killed: 22 passed, 1 failures; 'ok I offers ... (44 candidates)' and the dark-row FAIL with 1 rows, lit [4472832130942575872], 0 pins",
+  "AC9": "ac9s killed: 59 passed, 1 failures, 'ERROR: a pinned destination is offered once, as its pin row (0 candidates)'; ac9f: 23 passed, 0 failures (flow never pins)",
+  "AC10": "killed: 17 passed, 4 failures, 2 eye FAILs",
+  "AC11": "23 passed, 0 failures (rc 0)",
+  "AC12": "git status empty, mine=0, uid-guard ok (422 .uid files)"
+ },
+ "mutations": [
+  {"mutation": "doc AC6: system_view skip_id continue removed", "outcome": "killed (4 FAILs as predicted)", "matters": "covers (a)"},
+  {"mutation": "doc AC7: eye check moved before update_candidates with monitor shifted", "outcome": "killed", "matters": "covers (b)"},
+  {"mutation": "doc AC8: bare Gaia alias not replaced", "outcome": "killed by the dark-row check only (I-offers check survives, 44 candidates)", "matters": "justifies the new check"},
+  {"mutation": "doc AC9: pinned_ids filter dropped in ui/ship_star_identification.gd", "outcome": "killed in ssi test; survives in free-nav as documented", "matters": "no, by design"},
+  {"mutation": "doc AC10: eye moved to lift landing", "outcome": "killed", "matters": "eye_clear still bites"},
+  {"mutation": "own A: sky_hides passes empty skip id instead of b.id", "outcome": "killed (2 FAILs: both 'the sky draws' checks), so the helper's skip id is load-bearing and the checks are not vacuous", "matters": "yes, good"},
+  {"mutation": "own B: drop lit[1].is_empty() from the dark-row check, plus product mutation c1 (alias not replaced)", "outcome": "survived (23 passed) i.e. the weakened check no longer detects c1; so lit.is_empty() is the load-bearing term", "matters": "confirms necessity of the term"},
+  {"mutation": "own S1: remove pin_destination call from the ssi pin check", "outcome": "killed (1 candidates, check fails), so the check is not vacuous", "matters": "yes, good"},
+  {"mutation": "own S2: weaken ssi check to candidates.size()>=1 with the product pin filter dropped", "outcome": "killed (0 candidates), so the >=1 weakening would still catch this product mutation; the exact ==1 and 'pin:b' id terms are only needed for a duplicate-offer defect, which I did not construct", "matters": "minor: exactness of ==1 not independently mutation-tested against a duplicate-offer product mutant"}
+ ],
+ "notes": "All mutations run in the evaluator clone via the doc's mutate/run preamble in the foreground; git status --porcelain empty and mine=0 after every restore. Test-only claim holds. New checks fail for the right reason: the mutated product lines produce exactly the FAIL labels the design predicted, and removing a helper argument or the pin setup makes the corresponding check fail. Nothing in the executor's evidence failed to reproduce."
+}

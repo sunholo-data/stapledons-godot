@@ -199,6 +199,11 @@ func _run() -> void:
 	check(identify.record_id("123")=="Gaia DR3 123" and identify.record_id("pin:b")=="b" and identify.record_id("999")=="","sky rows map to their catalogue record id")
 	demo.sky.starfield.set_custom_stars([{id="123",pos=n*100.,t=5700.,flux=1.}]);identify.update_candidates()
 	check(identify.candidates.size()==1 and identify.candidates[0].id=="Gaia DR3 123","a bare Gaia row is offered as its catalogue id")
+	# 7an: the RT4 pin fallback hides the tier row and adds "pin:b"; I offers the star once, as the pin row
+	# (vmag -14 is about 1 lux, as bright as the fixture rows' flux 1).
+	var g := SkyFrame.to_galactic(n*90.)
+	demo.sky.starfield.set_custom_stars([{id="b",pos=n*100.,t=5700.,flux=1.}]);demo.sky.starfield.pin_destination({id="b",x=g.x,y=g.y,z=g.z,vmag=-14.,teff=5700.});identify.update_candidates()
+	check("b" in demo.sky.starfield.pinned_ids and identify.candidates.size()==1 and demo.sky.starfield.ids[identify.candidates[0].index]=="pin:b","a pinned destination is offered once, as its pin row (%d candidates)" % identify.candidates.size())
 	demo.sky.starfield.set_custom_stars([{id="b",pos=n*100.,t=5700.,flux=1.}]);identify.update_candidates()
 	identify.info.records.erase("b");identify.reindex();identify.update_candidates();check(identify.candidates.is_empty(),"absent metadata fails closed")
 	demo.queue_free();await process_frame

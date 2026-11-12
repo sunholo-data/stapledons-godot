@@ -1,0 +1,321 @@
+{
+ "sprint_id": "R1-7AN-FREE-NAV-GUARD-EDGES",
+ "round": 1,
+ "judge": "MiniMax M3 (pi openrouter)",
+ "timestamp": "2026-11-12",
+ "design_doc": "design_docs/planned/r1/m4-7an-free-nav-stop-guard-edges.md",
+ "sprint_plan": "design_docs/planned/r1/m4-7an-free-nav-stop-guard-edges-sprint.md",
+ "reviewed_commit": "ce34f4f8",
+ "base_commit": "b96b2d60",
+ "generator": "executor agent (a different agent/model from the judge)",
+ "result": "pass",
+ "score": 97,
+ "pass": true,
+ "score_breakdown": {
+  "tests_pass": {
+   "points": 20,
+   "of": 20,
+   "note": "Both touched targets are green and were read from the raw Godot logs: free-nav-stop 57 passed/0 failures and ship-star-identification 60 passed/0 failures. The whole-repo `make test` and `make ci-fast` were NOT re-run by the judge (a test-only row; CLAUDE.md's merge rule puts the fast tier on the PR and the nightly rig/full on main). Nothing outside the two test files changed, so the regression surface is the two targets plus the guards, all re-checked here."
+  },
+  "lint_clean": {
+   "points": 10,
+   "of": 10,
+   "note": "Re-ran by the judge: `make uid-guard` -> 'uid-guard: ok (422 .uid files)' rc 0; `make python-guard` -> 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)' rc 0. No product, shader, Makefile or *.ail change, so the AILANG lint/strict/parity gates are untouched."
+  },
+  "acceptance_criteria": {
+   "points": 30,
+   "of": 30,
+   "note": "AC1-AC12 all met (12/12). Each was checked against an on-disk log or a command the judge ran, not against the sprint JSON's own claims; the JSON's recorded values agree with the logs line for line. AC6, AC8 and AC9s were additionally re-run end to end by this judge (106 s / 137 s / 12 s) and reproduced the executor's results exactly, including every FAIL / ok / ERROR line."
+  },
+  "code_quality": {
+   "points": 12,
+   "of": 15,
+   "note": "Test-only, applied byte-exactly from Appendix A (fence 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558, body identical to `git diff b96b2d60..ce34f4f8 -- tests/`). Deducted 3: the shipped suite does not kill three of the judge's mutants (JM1 drop-the-refresh, JM2 drop-the-pins-clause, JM3 weaken-'at least one row'), and the SSI pin check's three clauses are individually redundant (JM-A3/A4/A6 survive; JM-A6b shows a count-only check is blind to the no-pin case)."
+  },
+  "documentation": {
+   "points": 15,
+   "of": 15,
+   "note": "Design doc (372 lines, pillar table, quorum log, V-numbered verification log, Appendix A), sprint plan (413 lines, binding byte-for-byte rule, milestones, pause points, local gates), sprint JSON (status 'completed', 3/3 milestones with passes/completed/notes/measured, velocity populated, controller_checks recorded), and changelog fragment changelogs/unreleased/2026-11-12-free-nav-stop-guard-edges.md naming row 7an and the sprint id."
+  },
+  "design_fidelity": {
+   "points": 10,
+   "of": 10,
+   "note": "Goals (a), (b) and (c) implemented exactly as designed (T1 sky_hides, T2 eye_clear, T3 one check per hiding layer); the non-goals hold (no product file changed); the deferred follow-ups (d), (e), (f) are justified (see non_blocking_findings)."
+  },
+  "conditional_categories": "Neither triggered: the diff touches no internal/parser, lexer, ast, types, elaborate, iface, codegen, eval, vm or effects path, and this is not a perf sprint."
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  {
+   "id": "NB1",
+   "severity": "minor",
+   "title": "The shipped suite does not kill 'drop the refresh' (JM1); goal (b) rests on the AC7 mutation, not on a shipped check",
+   "detail": "Removing `ident.occlusion.refresh(demo.camera)` from eye_clear leaves the shipped suite green (.godot/tmp/7an.oBWzTEMU/jm1.log: 23 passed, 0 failures), because update_candidates() refreshes the BVH immediately before the check in the shipped order. The refresh is load-bearing only under a reordering: JM1 + the AC7 permutation (.godot/tmp/7an.EycsmDm8/jm1ac7.log: 52 passed, 3 failures) fails 'the fixed eye looks ahead past the ship' at the first stop while the second stop's passes vacuously - the two stops disagree. So the AC7 acceptance criterion (the executor's own mutation) is the only guard on the property; CI would not notice a later removal of the refresh.",
+   "recommendation": "Accept as is. If the row's owner wants CI-grade protection for goal (b), the cheap form is a second assertion that asks the BVH before and after a refresh and requires them to agree, inside tests/test_free_nav_stop.gd. Not a blocker: the shipped code carries the refresh and AC7 measures it."
+  },
+  {
+   "id": "NB2",
+   "severity": "minor",
+   "title": "Two clauses of the new free-nav checks have no shipped coverage (JM2, JM3)",
+   "detail": "'and demo.sky.starfield.pinned_ids.is_empty()' (JM2) and 'lit[0] >= 1' (JM3) are each removable with the suite staying green, because in this flow no pin ever happens and the helper always finds the destination's rows. The controls show both clauses are live: JM2c (a pin injected, clause intact) fails 'its catalogue row is dark ... (1 rows, lit [], 1 pins)' and JM3c (the helper finds no row) fails '... (0 rows, lit [], 0 pins)'. JM3b - the double mutant, re-run by this judge because the previous session's wall clock cut it off - stays green ('free-nav-stop: 23 passed, 0 failures', 114 s of 900 s), which is the point: with '>= 0' the check would go blind to a helper that stops finding the rows.",
+   "recommendation": "Accept. Keep '>= 1' (the shipped code does); the weakness only matters if the helper is later broken."
+  },
+  {
+   "id": "NB3",
+   "severity": "minor",
+   "title": "The SSI pin check's three clauses are individually redundant; a count-only check would be blind to the no-pin case",
+   "detail": "Dropping the '\"b\" in pinned_ids' clause (JM-A3), the '== \"pin:b\"' row-id clause (JM-A4) or both (JM-A6) each leave the suite green (60 passed, 0 failures). Each alone still catches the no-pin mutant (JM-A3b and JM-A4b both fail with 'a pinned destination is offered once, as its pin row (1 candidates)'), but with both dropped the vmag-99 mutant survives (JM-A6b: 60 passed, 0 failures). The check as shipped has real teeth - the two 'the pin really happened' assertions are jointly necessary - and the two mutants that make the pin fail (JM-A1 vmag 99, JM-A2 pin at the tier row's own position) are both caught ('59 passed, 1 failures').",
+   "recommendation": "Accept as is. The redundancy is a property of a three-clause check, and the shipped form is the strongest of the three variants measured."
+  },
+  {
+   "id": "NB4",
+   "severity": "minor",
+   "title": "sky_hides duplicates product logic; the drift mitigation is verified (JM-A8), not merely asserted",
+   "detail": "The helper mirrors _add_body_candidates rather than calling it, so the two can drift. The design's mitigation is 'a drift shows up as one failing without the other'. The judge measured it: mutating the product (ui/ship_star_identification.gd:130, `sv.occludes_direction(dir, b.id, dist)` -> `sv.occludes_direction(dir, \"\", dist)`, so I stops skipping the body itself) gives 'free-nav-stop: 19 passed, 2 failures' with 'ok the sky draws the destination with no nearer body over it' and 'ok the sky draws alpha Cen A with no nearer body over it' still passing while the pre-existing 'I offers the destination ... (43 candidates)' and 'alpha Cen A is inspectable at its stop' fail (.godot/tmp/7an.LYkxaXL6/jma8.log). The asymmetry the design predicts is exactly what appears, and the new sky check is demonstrably not a duplicate of the I check.",
+   "recommendation": "Accept. The comment naming the mirrored function is the right mitigation and it now has mutation evidence behind it."
+  },
+  {
+   "id": "NB5",
+   "severity": "minor",
+   "title": "Follow-up (d)/F3 - 'other tests on (8, 82, -4.8): no action' is justified",
+   "detail": "Verified in the tree: only tests/test_free_nav_stop.gd calls ident.occlusion.blocked (grep over git ls-files tests/*), so no other test asks the ship BVH for a sightline. Fifteen tracked test files mention the lift's landing (8, 82, -4.8) - test_bridge_floor, test_camera_director, test_camera_forward, test_commons_civic_playtest, test_dressing, test_free_nav_stop, test_level_runtime, test_physics, test_ship_consoles, test_ship_demo_input, test_ship_demo_lift, test_ship_movement, test_ship_star_identification, test_ship_star_light, test_ship_ui - and the row's claim that they use it as a position, not as a sightline, holds. tests/test_ship_star_identification.gd turns ship occlusion off for the fixture (demo.sky_only=true at :64) and re-enables it at :147. The row's change moves only the free-nav eye to the captain's eye (11, 82, -4.8); it moves no furniture.",
+   "recommendation": "Accept the deferral; no action needed."
+  },
+  {
+   "id": "NB6",
+   "severity": "minor",
+   "title": "Follow-up (e)/F1 - the ci-fast sightline proxy is correctly deferred",
+   "detail": "Verified: the ci-fast target (Makefile:55 and :115) runs deps, python-guard, audio-silent-guard, uid-guard, lint-precision, strict, parity-v2, parity, parity-gr, replay, crew-sync-check, crew-parity, lore-import-check, lore-check, lore-test and the similar-* guards - no Godot script anywhere in it, so the row's measurement holds. The doc's own reason for refusing a manifest-only proxy (the 4.0 x 2.25 m face rectangle first blocks at 0.75 m against the real frame's 0.55 m) is a design-depth argument the judge did not re-measure; the deferral does not depend on it.",
+   "recommendation": "Accept the deferral. The first measurement for the follow-on row is stated in the doc (a headless ship-demo setup without the sky/starmap assets, under ci-fast's missing `make import`)."
+  },
+  {
+   "id": "NB7",
+   "severity": "minor",
+   "title": "Follow-up (f)/F2 - the 2 s step_timeout is product code with a tested bound; correctly deferred",
+   "detail": "Verified: the 2000 ms literal is at bridge/sim_bridge.gd:296, :357 and :387, and its bound is asserted in tests/test_sim_bootstrap.gd:28 ('request deadline remains2s', elapsed>=1900 and elapsed<3500) and tests/test_sim_bridge.gd:314 ('step_timeout code and bound'). A test-side retry would mask real step stalls, and the row's own figures (38/16 and 27/23) were measured inside MiniMax's sandbox at load 30-60 and are not reproduced here; nothing in 7an relies on them.",
+   "recommendation": "Accept the deferral; product-code timeout policy is out of scope for a test-only row."
+  },
+  {
+   "id": "NB8",
+   "severity": "info",
+   "title": "Evaluation scope: the whole-repo suite and the fast tier were not re-run by this judge",
+   "detail": "The judge re-verified everything the row touches (the two targets from their raw logs, AC3/AC5 greps, the guards, and 17 judge-side mutants) and re-ran one full mutation AC end to end (JM3b) plus one new product mutant (JM-A8), but did not re-run `make test` (70+ min, nightly-owned) or `make ci-fast` (CI-owned on the PR). CLAUDE.md's merge rule puts the fast tier on the PR and the full suite on the nightly rig/full, so this is the division of labour, not a gap in the row.",
+   "recommendation": "No action for the row; the PR fast tier remains the merge gate."
+  }
+ ],
+ "ac_results": {
+  "AC1": {
+   "observed": "PASS - '.godot/tmp/free-nav-stop.log': 'free-nav-stop: 57 passed, 0 failures' (57 'ok' lines, 0 'FAIL'). Expected 57/0 (base 54/0).",
+   "evidence": ".godot/tmp/free-nav-stop.log"
+  },
+  "AC2": {
+   "observed": "PASS - '.godot/tmp/ship-star-identification.log': 'ship-star-identification: 60 passed, 0 failures'. Expected 60/0 (base 59/0).",
+   "evidence": ".godot/tmp/ship-star-identification.log"
+  },
+  "AC3": {
+   "observed": "PASS - on '.godot/tmp/free-nav-stop.log': '^ok the fixed eye looks ahead' = 2, '^ok the sky draws' = 2, '^ok its catalogue row is dark' = 1, '^FAIL' = 0. Expected 2/2/1/0.",
+   "evidence": ".godot/tmp/free-nav-stop.log"
+  },
+  "AC4": {
+   "observed": "PASS - test-only. `git diff --name-only b96b2d60..ce34f4f8` = tests/test_free_nav_stop.gd, tests/test_ship_star_identification.gd, the design doc, the sprint plan, the changelog fragment and .ailang/state/sprints/sprint_R1-7AN-FREE-NAV-GUARD-EDGES.json. Nothing under ui/ demos/ sky/ planets/ interior/ bridge/ sim/ audio/ data/ assets/, no Makefile, no mk/, no *.ail.",
+   "evidence": "git diff --name-only b96b2d60..ce34f4f8 (judge-run)",
+   "judge_rerun": "RE-RUN by this judge: git diff --name-only b96b2d60..ce34f4f8 and the Appendix A fence extraction (81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558; body identical to the real diff after normalising git's metadata)."
+  },
+  "AC5": {
+   "observed": "PASS - in tests/test_free_nav_stop.gd: grep -c 'ident.occlusion.blocked' = 1, grep -c 'check(eye_clear(demo, ident)' = 2, grep -c 'ident.occlusion.refresh(demo.camera)' = 1. Expected 1/2/1.",
+   "evidence": "tests/test_free_nav_stop.gd (judge-run greps)",
+   "judge_rerun": "RE-RUN by this judge: the three greps on tests/test_free_nav_stop.gd returned 1 / 2 / 1."
+  },
+  "AC6": {
+   "observed": "PASS - '.godot/tmp/7an.0Mdn3K69/ac6.log': 'free-nav-stop: 17 passed, 4 failures' with exactly the four expected failures: 'FAIL the sky draws the destination with no nearer body over it', 'FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)', 'FAIL the sky draws alpha Cen A with no nearer body over it', 'FAIL alpha Cen A is inspectable at its stop'. The two new sky checks fail with their own message and the old I check fails for the same cause.",
+   "evidence": ".godot/tmp/7an.0Mdn3K69/ac6.log",
+   "judge_rerun": "RE-RUN by this judge through the doc's Preamble (mutate/run on tools/script_gate.sh): 'script-gate: jyac6 ok: free-nav-stop: 17 passed, 4 failures (rc 1, no SCRIPT ERROR, 106 s of 900 s)' with the same four FAILs; the tree was restored and `git status --porcelain` was empty afterwards. Log: .godot/tmp/7an.VM0nqHOK/jyac6.log (copy .godot/tmp/jyac6.log)."
+  },
+  "AC7": {
+   "observed": "PASS - '.godot/tmp/7an.8cKVeIvF/ac7.log': 'free-nav-stop: 17 passed, 4 failures' with 'FAIL the fixed eye looks ahead past the ship' twice, 'FAIL I offers the destination ... (41 candidates)' and 'FAIL alpha Cen A is inspectable at its stop'. The unshifted control '.godot/tmp/7an.8cKVeIvF/ac7b.log' is 'free-nav-stop: 23 passed, 0 failures'. Both expected shapes met.",
+   "evidence": ".godot/tmp/7an.8cKVeIvF/ac7.log, .godot/tmp/7an.8cKVeIvF/ac7b.log"
+  },
+  "AC8": {
+   "observed": "PASS - '.godot/tmp/7an.3al53QgK/ac8.log': 'free-nav-stop: 22 passed, 1 failures' with 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)' and 'FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [\"4472832130942575872\"], 0 pins)'. Exactly the design's point: the layer the I check cannot see is now caught, with its own message.",
+   "evidence": ".godot/tmp/7an.3al53QgK/ac8.log",
+   "judge_rerun": "RE-RUN by this judge through the doc's Preamble: 'script-gate: jyac8 ok: free-nav-stop: 22 passed, 1 failures (rc 1, no SCRIPT ERROR, 137 s of 900 s)' with 'ok I offers the destination as its finite body, not the hidden catalogue point (44 candidates)' and the expected 'FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [\"4472832130942575872\"], 0 pins)'; the tree was restored. Log: .godot/tmp/7an.VM0nqHOK/jyac8.log (copy .godot/tmp/jyac8.log)."
+  },
+  "AC9": {
+   "observed": "PASS - '.godot/tmp/7an.AEGz1Ojf/ac9s.log': 'ship-star-identification: 59 passed, 1 failures' with 'ERROR: a pinned destination is offered once, as its pin row (0 candidates)' (the right reason: both rows map to record 'b', the duplicate count excludes both, I offers nothing). '.godot/tmp/7an.AEGz1Ojf/ac9f.log': 'free-nav-stop: 23 passed, 0 failures' - the free-nav flow really never pins, so the premise is a checked premise.",
+   "evidence": ".godot/tmp/7an.AEGz1Ojf/ac9s.log, .godot/tmp/7an.AEGz1Ojf/ac9f.log",
+   "judge_rerun": "RE-RUN by this judge through the doc's Preamble (the ssi half): 'script-gate: jyac9s ok: ship-star-identification: 59 passed, 1 failures (rc 1, no SCRIPT ERROR, 12 s of 300 s)' with 'ERROR: a pinned destination is offered once, as its pin row (0 candidates)'; the tree was restored. Log: .godot/tmp/7an.VM0nqHOK/jyac9s.log (copy .godot/tmp/jyac9s.log). The ac9f half (the free-nav flow never pins, 23/0) was read from the executor's log .godot/tmp/7an.AEGz1Ojf/ac9f.log and was not re-run."
+  },
+  "AC10": {
+   "observed": "PASS - '.godot/tmp/7an.gRpwUjl5/ac10.log': 'free-nav-stop: 17 passed, 4 failures' and grep -c '^FAIL the fixed eye' = 2. 7ak's R1 still kills eye_clear.",
+   "evidence": ".godot/tmp/7an.gRpwUjl5/ac10.log"
+  },
+  "AC11": {
+   "observed": "PASS - '.godot/tmp/7an.MojxwTLB/ac11.log': 'free-nav-stop: 23 passed, 0 failures' (the short copy, unmutated).",
+   "evidence": ".godot/tmp/7an.MojxwTLB/ac11.log"
+  },
+  "AC12": {
+   "observed": "PASS - `git status --porcelain` empty (judge-run, and after every judge-side mutant including the last); no godot or sim process of this clone is running (ps shows none); `make uid-guard` -> 'uid-guard: ok (422 .uid files)' rc 0; `make python-guard` -> ok rc 0. No new script, so no new .uid.",
+   "evidence": "judge-run: git status --porcelain, ps, make uid-guard, make python-guard",
+   "judge_rerun": "RE-RUN by this judge after every judge-side mutation: git status --porcelain empty (only this report is untracked); make uid-guard and make python-guard rc 0; ps shows no godot or sim process of this clone."
+  }
+ },
+ "mutations": [
+  {
+   "mutation": "JM1: eye_clear without the refresh (`ident.occlusion.refresh(demo.camera)` -> `pass`) in tests/test_free_nav_stop.gd, shipped order",
+   "log": ".godot/tmp/7an.oBWzTEMU/jm1.log",
+   "outcome": "SURVIVED - 'free-nav-stop: 23 passed, 0 failures'",
+   "matters": "Yes, mildly (NB1): the shipped suite does not protect goal (b); only the AC7 permutation does."
+  },
+  {
+   "mutation": "JM1 + the AC7 permutation (no refresh; the eye check moved before update_candidates(); the course monitor shifted +2.418 m onto the eye's line), full test file",
+   "log": ".godot/tmp/7an.EycsmDm8/jm1ac7.log",
+   "outcome": "KILLED - 'free-nav-stop: 52 passed, 3 failures' (55 checks run): 'FAIL the fixed eye looks ahead past the ship', 'FAIL I offers the destination ... (41 candidates)', 'FAIL alpha Cen A is inspectable at its stop'",
+   "matters": "Yes: this is the evidence that the refresh is load-bearing under a reordering (the two stops disagree without it). It is the pair that proves goal (b)."
+  },
+  {
+   "mutation": "JM2: drop the 'and demo.sky.starfield.pinned_ids.is_empty()' clause from the dark-row check",
+   "log": ".godot/tmp/7an.V0SEUko0/jm2.log",
+   "outcome": "SURVIVED - 'free-nav-stop: 23 passed, 0 failures'",
+   "matters": "Mildly (NB2): an assertion-removal mutant; the clause is only reachable when this flow pins."
+  },
+  {
+   "mutation": "JM2b: drop the pins clause AND inject a pin (pinned_ids.append(\"sim-pinned\"))",
+   "log": ".godot/tmp/7an.V0SEUko0/jm2b.log",
+   "outcome": "SURVIVED - 'free-nav-stop: 23 passed, 0 failures'",
+   "matters": "Yes, as the pair with JM2c: without the clause the free-nav check cannot detect 'this flow pinned'. The clause is the whole guard for that premise."
+  },
+  {
+   "mutation": "JM2c (control): inject a pin, clause intact",
+   "log": ".godot/tmp/7an.V0SEUko0/jm2c.log",
+   "outcome": "KILLED - 'free-nav-stop: 22 passed, 1 failures', 'FAIL its catalogue row is dark, replaced by the body, not pinned (1 rows, lit [], 1 pins)'",
+   "matters": "Yes: proves the clause is live and the check fails for the right reason ('0 pins' violated), not incidentally."
+  },
+  {
+   "mutation": "JM3: weaken the dark-row check's 'at least one row' clause (lit[0] >= 1 -> >= 0)",
+   "log": ".godot/tmp/7an.GiYMXztg/jm3.log",
+   "outcome": "SURVIVED - 'free-nav-stop: 23 passed, 0 failures'",
+   "matters": "Mildly (NB2): the clause has no shipped coverage; it is defensive."
+  },
+  {
+   "mutation": "JM3c (control): the helper finds NO catalogue row (Starfield.aliases_of(id) -> []), clause intact",
+   "log": ".godot/tmp/7an.GiYMXztg/jm3c.log",
+   "outcome": "KILLED - 'free-nav-stop: 22 passed, 1 failures', 'FAIL its catalogue row is dark, replaced by the body, not pinned (0 rows, lit [], 0 pins)'",
+   "matters": "Yes: proves the 'at least one row' clause is live."
+  },
+  {
+   "mutation": "JM3b: weakened clause AND the helper finds NO row (double mutant)",
+   "log": ".godot/tmp/7an.SraVOpDt/jm3b.log (this judge's re-run; the previous session's copy .godot/tmp/7an.GiYMXztg/jm3b.log was cut off mid-run with no summary line)",
+   "outcome": "SURVIVED - 'script-gate: jm3b ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, 114 s of 900 s)'",
+   "matters": "Yes (NB2): the only run this session had to finish. It shows JM3's weakness is real - with '>= 0' the check stays green even when the helper stops finding the destination's rows - and it justifies keeping '>= 1', which the shipped code does. It does not affect the row's claim: the replacement layer's check is proven by AC8."
+  },
+  {
+   "mutation": "JM-A1: the pin's photometry out of range (vmag -14 -> 99), so pin_destination silently does not pin",
+   "log": ".godot/tmp/7an.Kl6mz8Ua/jma1.log",
+   "outcome": "KILLED - 'ship-star-identification: 59 passed, 1 failures', 'ERROR: a pinned destination is offered once, as its pin row (1 candidates)'",
+   "matters": "Yes: the fixture's pin must really happen; the check catches the silent no-pin."
+  },
+  {
+   "mutation": "JM-A2: the pin asked at the tier row's own position (n*90 -> n*100), so pin_destination no-ops",
+   "log": ".godot/tmp/7an.XLacwKBU/jma2.log",
+   "outcome": "KILLED - 'ship-star-identification: 59 passed, 1 failures', 'ERROR: a pinned destination is offered once, as its pin row (1 candidates)'",
+   "matters": "Yes: the second way the pin can silently not happen is caught too."
+  },
+  {
+   "mutation": "JM-A3: drop the '\"b\" in pinned_ids' clause from the SSI pin check",
+   "log": ".godot/tmp/7an.XLacwKBU/jma3.log",
+   "outcome": "SURVIVED - 'ship-star-identification: 60 passed, 0 failures'",
+   "matters": "Mildly (NB3): the clause is redundant given a working pin."
+  },
+  {
+   "mutation": "JM-A4: drop the '== \"pin:b\"' row-id clause from the SSI pin check",
+   "log": ".godot/tmp/7an.XLacwKBU/jma4.log",
+   "outcome": "SURVIVED - 'ship-star-identification: 60 passed, 0 failures'",
+   "matters": "Mildly (NB3): same redundancy."
+  },
+  {
+   "mutation": "JM-A6: drop both clauses of the SSI pin check",
+   "log": ".godot/tmp/7an.XLacwKBU/jma6.log",
+   "outcome": "SURVIVED - 'ship-star-identification: 60 passed, 0 failures'",
+   "matters": "Yes (NB3): with only 'exactly one candidate' left, the check can no longer tell 'the pin replaced the tier row' from 'the tier row is still there'."
+  },
+  {
+   "mutation": "JM-A3b: drop the '\"b\" in pinned_ids' clause AND vmag 99",
+   "log": ".godot/tmp/7an.l1062e1f/jma3b.log",
+   "outcome": "KILLED - 'ship-star-identification: 59 passed, 1 failures', 'ERROR: a pinned destination is offered once, as its pin row (1 candidates)'",
+   "matters": "Yes: either assertion alone catches the no-pin case, so the two are jointly necessary, not individually sufficient."
+  },
+  {
+   "mutation": "JM-A4b: drop the '== \"pin:b\"' row-id clause AND vmag 99",
+   "log": ".godot/tmp/7an.l1062e1f/jma4b.log",
+   "outcome": "KILLED - 'ship-star-identification: 59 passed, 1 failures', 'ERROR: a pinned destination is offered once, as its pin row (1 candidates)'",
+   "matters": "Yes: the mirror of JM-A3b."
+  },
+  {
+   "mutation": "JM-A6b: drop both clauses AND vmag 99",
+   "log": ".godot/tmp/7an.l1062e1f/jma6b.log",
+   "outcome": "SURVIVED - 'ship-star-identification: 60 passed, 0 failures'",
+   "matters": "Yes (NB3): the decisive pair with JM-A6 - a count-only check is blind to the no-pin case, so the shipped check's two extra assertions carry real weight."
+  },
+  {
+   "mutation": "JM-A8 (this judge's new mutant): product drift in the skip id - ui/ship_star_identification.gd:130 'if sv.occludes_direction(dir, b.id, dist):continue' -> 'if sv.occludes_direction(dir, \"\", dist):continue', so I stops skipping the body itself",
+   "log": ".godot/tmp/7an.LYkxaXL6/jma8.log (copy at .godot/tmp/jma8_rerun.log)",
+   "outcome": "KILLED, but by the pre-existing checks, not by the new sky checks - 'free-nav-stop: 19 passed, 2 failures': 'ok the sky draws the destination with no nearer body over it', 'FAIL I offers the destination as its finite body, not the hidden catalogue point (43 candidates)', 'ok the sky draws alpha Cen A with no nearer body over it', 'FAIL alpha Cen A is inspectable at its stop'",
+   "matters": "Yes (NB4): it verifies the design's drift mitigation ('a drift shows up as one failing without the other') instead of merely asserting it, and it shows the new sky check is not a duplicate of the I check."
+  }
+ ],
+ "judgement": {
+  "test_only_claim": "Confirmed. The diff touches only the two test files plus docs, the changelog fragment and the sprint JSON; the byte-for-byte rule was honoured (Appendix A extracted from the fence, 81 lines, sha256 12880f78a2757838e4c3ac836bc7a40730c49ccb3a63e774d0dcb1fa3d6d5558; the patch body is identical to `git diff b96b2d60..ce34f4f8 -- tests/` once git's own metadata and hunk-header context are normalised). No product, shader, asset, Makefile or *.ail change; no new script, so no new .uid.",
+  "do_the_new_checks_fail_for_the_right_reason": "Yes, and each fails with its own message. The two sky checks fail together with the I check under AC6 and with the right candidate counts (43); the dark-row check fails under AC8 while the I check still passes with 44 candidates - the layer the I check cannot see is exactly the layer it catches; the pin check fails under AC9 with '(0 candidates)', the duplicate-count reason, not an incidental error; the eye check fails twice under AC7 and under AC10 with the blocked-sightline reason. JM-A8 confirms the sky check asks the sky with the body's own id, so it does not simply re-run the product's filter.",
+  "deferred_followups": "(d)/F3, (e)/F1 and (f)/F2 are all justified as deferrals - see NB5, NB6 and NB7, each verified in the tree. None of them is a defect in this row; (e) is a new kind of ci-fast step and (f) is product-code timeout policy, both outside a test-only row.",
+  "surviving_mutants": "Four of the seventeen judge-side mutants survive, all in the same family: they weaken or remove an assertion inside a shipped check rather than break a product behaviour. JM1 (drop the refresh), JM2 (drop the pins clause), JM3 (weaken 'at least one row'), JM3b (their double), JM-A3/A4/A6 (weaken the SSI pin check) and JM-A6b. Each of the four new/changed checks is killed by a product mutant (AC6, AC7, AC8, AC9s, AC10) and by a judge-side control (JM-A1, JM-A2, JM2c, JM3c, JM-A3b, JM-A4b, JM1+AC7). So the checks are real guards; what the survivors show is that the shipped suite does not defend the checks' own defensive clauses. That is a hardening note (NB1-NB3), not a blocker: the row's three goals are met and each is backed by a measured killer."
+ },
+ "notes": "This report was recovered from a previous session's on-disk logs. The previous judge session (the same model, MiniMax M3, in this same evaluator clone) had already run the whole evaluation - the two full targets, the per-AC mutation runs and sixteen of the seventeen judge-side mutants - and its 3600 s wall clock expired before the report was written; its logs, scratch workspaces (.godot/tmp/7an.*/) and mutant copies are its own work, and were read here rather than re-run. This session re-ran exactly one cut-off run (JM3b, the double mutant, 114 s of a 900 s budget through the doc's Preamble on tools/script_gate.sh), added one new judge-side mutant (JM-A8, the product skip-id drift), and - after writing this report - independently re-ran the three load-bearing mutation ACs end to end through the doc's Preamble (AC6 17/4, AC8 22/1, AC9s 59/1, all with the exact expected FAIL/ok/ERROR lines); the tree guards and every log were re-read. The previous session's file mutation left in the tree was restored by the controller; the clone is clean and this report is the only untracked file.\nEnvironment: the evaluator clone at ce34f4f8, AILANG v0.56.1 from runtime/bin, Godot 4.7.2.stable, the doc's bounded runner (tools/script_gate.sh: Godot in its own process group, TERM at the budget, KILL 2 s later, rc 142 on timeout) and the doc's Preamble (mine/reap/run/mutate/short), with one sandbox adaptation: HOME is redirected to .godot/tmp/fakehome because user:// is read-only under the real HOME here (environment only; no tracked file changed, and ~/.ailang and ~/.cache are symlinked back so the sim still finds the registry). ps is permitted in this sandbox, so reap() works and AC12's 'nothing left running' is verified.\nScope limits (NB8): the whole-repo `make test` and the PR fast tier were not re-run by the judge; CLAUDE.md puts the fast tier on the PR and the full suite on the nightly rig/full, and this row changes only two test files.\nVerdict: PASS, 97/100 (threshold 70), no blocking findings, 8 non-blocking findings. Recommended next step: land (move the design doc and its sprint plan from design_docs/planned/r1/ to design_docs/implemented/r1/, update the design-repo roadmap and the charter row 7an), keeping the hardening notes NB1-NB3 as optional follow-ups.",
+ "evaluation_artifacts": {
+  "evaluator_clone": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter89-eval-mm",
+  "logs_read": [
+   ".godot/tmp/free-nav-stop.log",
+   ".godot/tmp/ship-star-identification.log",
+   ".godot/tmp/7an.0Mdn3K69/ac6.log",
+   ".godot/tmp/7an.8cKVeIvF/ac7.log",
+   ".godot/tmp/7an.8cKVeIvF/ac7b.log",
+   ".godot/tmp/7an.3al53QgK/ac8.log",
+   ".godot/tmp/7an.AEGz1Ojf/ac9s.log",
+   ".godot/tmp/7an.AEGz1Ojf/ac9f.log",
+   ".godot/tmp/7an.gRpwUjl5/ac10.log",
+   ".godot/tmp/7an.MojxwTLB/ac11.log",
+   ".godot/tmp/7an.oBWzTEMU/jm1.log",
+   ".godot/tmp/7an.EycsmDm8/jm1ac7.log",
+   ".godot/tmp/7an.V0SEUko0/jm2.log",
+   ".godot/tmp/7an.V0SEUko0/jm2b.log",
+   ".godot/tmp/7an.V0SEUko0/jm2c.log",
+   ".godot/tmp/7an.GiYMXztg/jm3.log",
+   ".godot/tmp/7an.GiYMXztg/jm3c.log",
+   ".godot/tmp/7an.SraVOpDt/jm3b.log",
+   ".godot/tmp/jm3b_rerun.log",
+   ".godot/tmp/7an.Kl6mz8Ua/jma1.log",
+   ".godot/tmp/7an.XLacwKBU/jma2.log",
+   ".godot/tmp/7an.XLacwKBU/jma3.log",
+   ".godot/tmp/7an.XLacwKBU/jma4.log",
+   ".godot/tmp/7an.XLacwKBU/jma6.log",
+   ".godot/tmp/7an.l1062e1f/jma3b.log",
+   ".godot/tmp/7an.l1062e1f/jma4b.log",
+   ".godot/tmp/7an.l1062e1f/jma6b.log",
+   ".godot/tmp/7an.LYkxaXL6/jma8.log",
+   ".godot/tmp/jma8_rerun.log",
+   ".godot/tmp/7an.VM0nqHOK/jyac6.log",
+   ".godot/tmp/7an.VM0nqHOK/jyac8.log",
+   ".godot/tmp/7an.VM0nqHOK/jyac9s.log"
+  ],
+  "judge_run_here": [
+   "JM3b re-run (weak_rows_no_rows) through the doc's Preamble: 'script-gate: jm3b ok: free-nav-stop: 23 passed, 0 failures (rc 0, no SCRIPT ERROR, 114 s of 900 s)'",
+   "JM-A8 (product skip-id drift) through the doc's Preamble: 'script-gate: jma8 ok: free-nav-stop: 19 passed, 2 failures (rc 1, no SCRIPT ERROR, 109 s of 900 s)'",
+   "make uid-guard -> 'uid-guard: ok (422 .uid files)'; make python-guard -> 'python-guard: ok (21 allowlisted, 0 awaiting AILANG port)'",
+   "git diff --name-only b96b2d60..ce34f4f8; AC3 greps on .godot/tmp/free-nav-stop.log; AC5 greps on tests/test_free_nav_stop.gd",
+   "Appendix A fence extraction and sha256; normalisation against `git diff b96b2d60..ce34f4f8 -- tests/`",
+   "follow-up verification greps (occlusion.blocked users of the lift landing, bridge/sim_bridge.gd step_timeout, ci-fast's target list)",
+   "AC6 re-run end to end through the doc's Preamble: 'script-gate: jyac6 ok: free-nav-stop: 17 passed, 4 failures (rc 1, no SCRIPT ERROR, 106 s of 900 s)'",
+   "AC8 re-run end to end through the doc's Preamble: 'script-gate: jyac8 ok: free-nav-stop: 22 passed, 1 failures (rc 1, no SCRIPT ERROR, 137 s of 900 s)'",
+   "AC9s re-run end to end through the doc's Preamble: 'script-gate: jyac9s ok: ship-star-identification: 59 passed, 1 failures (rc 1, no SCRIPT ERROR, 12 s of 300 s)'"
+  ]
+ }
+}

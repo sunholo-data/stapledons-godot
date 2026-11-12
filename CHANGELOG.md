@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### m4-7an-free-nav-stop-guard-edges (2026-11-12)
+
+#### Added
+
+- **The I-key guard's edges fail for the right reason** (7an, sprint R1-7AN-FREE-NAV-GUARD-EDGES). In `make free-nav-stop-test`, a sky-renderer occlusion of the destination now fails with its own message at both stops (`sky_hides` asks `occludes_direction` as `_add_body_candidates` does). The clear-eye check refreshes the ship BVH itself (`eye_clear`), so it means the same wherever it stands in the test. The stop's catalogue point is checked layer by layer: the row is dark under the body's replacement with `0 pins` asserted, and the `pinned_ids` filter is checked in a fixture where a pin really happens (`test_ship_star_identification.gd`). Each new check has a measured killing mutation (AC6-AC10). Test-only: two files, +40/-2; nothing a player sees or hears changes.
+- Evaluations: Sonnet 5.5 94/100, MiniMax M3 97/100 (cross-vendor). Known gaps (non-blocking): with `update_candidates()` just before it, dropping `eye_clear`'s refresh stays green (only the AC7 reordering kills it); the free-nav row check's `0 pins` and `at least one row` clauses and the identification pin check's two identity clauses are each redundant in the shipped flow. Follow-ups in the charter row after 7an.
+
 ### m4-7am-alpha-index-literals (2026-11-12)
 
 #### Added
