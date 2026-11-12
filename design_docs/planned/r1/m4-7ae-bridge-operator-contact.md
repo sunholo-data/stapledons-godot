@@ -1,7 +1,7 @@
 # Row 7ae: main's nightly `make test` is red at `bridge-operator-test` (D-132 contact on the R3-COMMS-V2 desks)
 
-**Status:** Planned, **revision 2** (mission iteration 90, designer, 2026-11-12). Ready for re-quorum, then the sprint planner. **OQ-1 is answered A** by Mark's attended ruling [D-148](../../stapledon-mission.md) of 2026-11-12: "move the Voyage and Crew working spots 0.275 m back (1.50 m from the desk), using the iteration-76 candidate (measured 56/0); no expected-failure (D not taken). The look is reviewed by Mark in the next dev build; visual acceptance stays separate from the merge." **OQ-2 stays at its default (a):** no lean or heading change in this row. This doc is the buildable design for **S1 + S2 under A** (the seven-file set) plus the **AC2 enforcing drill runner** that quorum round 2 required.
-**History (short):** written in iteration 76 (revision 0, then revision 1 after quorum r1) and blocked on OQ-1; quorum r2 BLOCKED 2/3 and closed by the controller's carve-out; parked by the iteration-77 recovery review (MiniMax M3 89/100, publication only). Revision 2 re-measures the whole candidate on `b6c93c11` and replaces Appendix C with an enforcing runner. The review responses are in [Review history](#review-history).
+**Status:** Planned, **revision 3** (mission iteration 90, designer, 2026-11-12). Revision 3 applies quorum r3's two fixes under the narrow-refinement carve-out, with no further quorum round; next is the sprint planner. **OQ-1 is answered A** by Mark's attended ruling [D-148](../../stapledon-mission.md) of 2026-11-12: "move the Voyage and Crew working spots 0.275 m back (1.50 m from the desk), using the iteration-76 candidate (measured 56/0); no expected-failure (D not taken). The look is reviewed by Mark in the next dev build; visual acceptance stays separate from the merge." **OQ-2 stays at its default (a):** no lean or heading change in this row. This doc is the buildable design for **S1 + S2 under A** (the seven-file set) plus the **AC2 enforcing drill runner** that quorum round 2 required.
+**History (short):** written in iteration 76 (revision 0, then revision 1 after quorum r1) and blocked on OQ-1; quorum r2 BLOCKED 2/3 and closed by the controller's carve-out; parked by the iteration-77 recovery review (MiniMax M3 89/100, publication only). Revision 2 re-measures the whole candidate on `b6c93c11` and replaces Appendix C with an enforcing runner. Quorum r3 on revision 2 (`830641ac`) was BLOCKED at 2 seats; revision 3 makes restoring fail closed and inlines k1a's schema-1 record ([Quorum r3 response](#quorum-r3-response-revision-3)). The review responses are in [Review history](#review-history).
 **Release:** r1. **Milestone:** charter queue row **7ae** (suite hygiene: main's nightly `rig/full` is red).
 **Priority:** P1, and first in Mark's order of 2026-11-12 (charter: "7ae (D-148 A, the desk working points) → L11 → …"). While main's nightly `make test` is red at its 19th prerequisite, none of the 129 targets listed after it runs (V1, V35).
 **Implements:**
@@ -22,7 +22,7 @@
 | `art/deck-layout-v2/bow_a.json` | +4/−4 (`console_decision_{0,1}.use_m`) | S2 |
 | `art/deck-layout-v2/budgets.json` | +1/−1 (the manifest's sha256 re-pinned) | S2 |
 | `art/deck-layout-v2/asset-pins.json` | +1/−1 (top-level `layout_sha256` re-pinned; provenance) | S2 |
-| `tools/bridge_operator_drills.sh` | new, 141 lines (Appendix C, POSIX sh; no `.uid`, it is not a Godot file) | AC2 |
+| `tools/bridge_operator_drills.sh` | new, 178 lines (Appendix C, POSIX sh; no `.uid`, it is not a Godot file) | AC2 |
 | `changelogs/unreleased/<date>-7ae-bridge-operator-contact.md` | about 8 lines | landing |
 
 The first seven rows are D-148's "seven tracked files". No new `.gd`, so no new `.uid`.
@@ -30,8 +30,9 @@ The first seven rows are D-148's "seven tracked files". No new `.gd`, so no new 
 **Evidence:**
 - V1–V31: iteration 76/77, 2026-11-07, on `Voights-Mac-Studio.local`, Godot `4.7.2.stable.official.ed1daf0bf`, `runtime/bin/ailang` v0.56.1, at `e292a860` / `c57e906d` / `dc51e3cb` (each row names its base).
 - **V32–V48 (revision 2): 2026-11-12, same host and toolchain, clone `stapledons-godot-iter90`, branch `mission/stapledon-iter90-7ae`, base `b6c93c11`** (main). Host load averages ran 13–86 during these runs.
+- **V49–V54 (revision 3): 2026-11-12, same clone, base and toolchain**, with the revision-3 runner (Appendix C) and the full candidate applied, then reverted.
 
-The full candidate (the seven files, then the runner and its make target) was applied to the working tree, measured and then reverted. `git status --porcelain` was empty afterwards, with HEAD `b6c93c11` (V46). The runner was rehearsed from `/tmp` and from an untracked `tools/` copy; both were deleted.
+The full candidate (the seven files, then the runner and its make target) was applied to the working tree, measured and then reverted. `git status --porcelain` was empty afterwards, with HEAD `b6c93c11` (V46); after the revision-3 re-measure it was empty again, with HEAD `830641ac` (V53). The runner was rehearsed from `/tmp` and from an untracked `tools/` copy; both were deleted.
 
 ## Review history
 
@@ -40,6 +41,15 @@ The full candidate (the seven files, then the runner and its make target) was ap
 | Quorum r1 (kimi, gpt6-1-sol, gemini) | BLOCKED 2/3 | Measure option A on the full file set, not the manifest alone; enumerate who reads `bow_a.json`'s `use_m`; add a manifest/layout drift check (k6); reconcile V14's 54 vs the pin | Revision 1: V23–V30, §D7a, the layout-agreement check |
 | Quorum r2 | BLOCKED 2/3, closed by the controller's carve-out | kimi: V25's five gates ran on a 5-file tree (answered by V31). gpt6-1-sol: Appendix C prints rows and never fails (**a build requirement on AC2**). gemini: re-pin `asset-pins.json` `layout_sha256` under A | Revision 2: §D10 and Appendix C (the enforcing runner, measured V41–V44); the re-pin is in the file set (V33) |
 | Iteration-77 recovery review (MiniMax M3, 89/100, parked publication only) | Non-blocking findings | (1) A moves the captain away from the desk; headless green says nothing about the look. (2) Reconcile the file lists to seven files. (3) Recorded provenance values are not assertions. (4) The "under 5 mm" risk sentence misdescribes the margin. (5) The bezel-surface and collision-box figures measure different surfaces. (6) The runner is still owed | (1) D-148: Mark reviews the look in the next dev build, separate from the merge (AC11). (2) Header table, AC6. (3) §D2 "Provenance, not assertion". (4) Risks, rewritten. (5) Kept as stated in the measurements table; no render substitutes for it. (6) §D10 |
+
+## Quorum r3 response (revision 3)
+
+Quorum r3 on revision 2 (`830641ac`) was **BLOCKED at 2 seats**. Revision 3 is the one bounded revision allowed under the controller's narrow-refinement carve-out. It applies the two fixes below as the reviewers worded them, with no other change in scope, and **no further quorum round** follows it.
+
+| # | Reviewer | Fix (the reviewer's words) | Applied | V |
+|---|---|---|---|---|
+| 1 | gpt6-1-sol (blocking, reject) | "Make restoration an enforced harness operation: check git checkout's exit status and then require git diff --quiet -- $FILES to succeed. On either failure, stop immediately with exit 3, retain the scratch logs, and print the affected paths and recovery command. Make EXIT/INT/TERM cleanup preserve or escalate to that harness failure rather than silently continuing. Add a selftest that injects a checkout failure after a successful mutation and asserts exit 3, no successful overall summary, and retained diagnostic logs; record its command and result in the verification log. Remove AC2a's verbatim requirement until the corrected runner has been remeasured." The gap it found: V43 showed restoring after TERM only when `git checkout` succeeds, and never exercised a checkout failure, restoring after each drill, or a restore failure overriding an otherwise good result | `restore` in Appendix C checks checkout's status and then `git diff --quiet`; on failure it disarms the traps, prints the paths, git's error and the recovery command, keeps the logs and exits 3 at once (§D10). The EXIT/INT/TERM traps call the same `restore`, so a failure there exits 3. The selftest injects `BOD_FAULT=checkout` (a real `git checkout` exit 1) and `BOD_FAULT=noop` (the file stays changed) after k5a's mutation and asserts exit 3, no `<n> rows:` summary, kept `k5a.*.log`, and the record still changed. Every drill's restore is now checked. AC2a's verbatim `cmp` was dropped while the runner changed and **reinstated after the re-measure** (V49–V53) | V49, V50, V51, V52 |
+| 2 | gemini-4-argon (pass, non-blocking; adopted) | "replace `k1a) git show e292a860:"$J" > "$J" ;;` in Appendix C with `k1a) printf '{"schema":"stapledons.bridge-operator-contact/1"}\n' > "$J" ;;` (and update V41/AC2a accordingly), since the schema guard in Appendix A returns immediately after checking `doc.get("schema","")`." | Replaced in Appendix C. k1a is still red with the same result, rc 1, 0 passed, 1 failure, label `contact record is schema 2 (R3-COMMS-V2 desks)` (V51). V41 stays the revision-2 record; V51 is the revision-3 one. AC2a is checked against the new text (V54) | V51, V54 |
 
 ## Game vision alignment
 
@@ -301,15 +311,16 @@ Order: edit the manifest and `bow_a.json`, then compute both hashes, then re-pin
 
 ### D10. The AC2 enforcing drill runner (`tools/bridge_operator_drills.sh`, Appendix C)
 
-Quorum r2 (gpt6-1-sol) made this a build requirement: the runner carries the expected table, exits nonzero on any mismatch, and treats an unapplied mutation, an unknown drill, a timeout, a `SCRIPT ERROR` or a missing summary as a harness failure, never as a kill. Appendix C is the measured runner (V41–V44). **The executor commits it verbatim** (AC2a checks this with `cmp`).
+Quorum r2 (gpt6-1-sol) made this a build requirement: the runner carries the expected table, exits nonzero on any mismatch, and treats an unapplied mutation, an unknown drill, a timeout, a `SCRIPT ERROR` or a missing summary as a harness failure, never as a kill. Quorum r3 added two fixes (see [Quorum r3 response](#quorum-r3-response-revision-3)): restoring fails closed, and k1a writes an inline schema-1 record. Appendix C is the revision-3 runner as measured (V49–V53). **The executor commits it verbatim** (AC2a checks this with `cmp`; reinstated after the V49–V53 re-measure).
 
-- **File.** `tools/bridge_operator_drills.sh`, POSIX `sh` (like `tools/script_gate.sh`), run as `sh tools/bridge_operator_drills.sh`. It is not a Godot file, so it has no `.uid`. `make python-guard` is unaffected (no Python).
-- **Expected table as data.** A heredoc, `table_default`, one row per drill: `id|mutation|rc|passed|failed|pin|label`. `pin` is `green` or `red`: whether the summary passes the count pin that the runner reads from `mk/captain-anim.mk` (so loosening the pin back to `[1-9][0-9]*` turns k4b into a MISMATCH). `label` is one `FAIL` line that must appear verbatim, or `-` for none (then there must be no `FAIL` line). `--table FILE` replaces the table. The mutations are a `case` keyed by id (the k-drills of iteration 76, unchanged).
-- **One run per drill.** Precondition: the four drill files (test, record, manifest, `bow_a.json`) equal the index (`git diff --quiet --`), or it stops with exit 3. On an uncommitted candidate, stage it first. Then for each id: apply the mutation; check that it changed a drill file (d0 must change none); run `sh tools/script_gate.sh bod-<id> <scratch>/<id>.<n>.log $BOD_TIMEOUT '^bridge-operator-contact: <passed> passed, <failed> failures$' <rc> -- $GODOT --headless --path . --script tests/test_bridge_operator_contact.gd -- --installed`; restore with `git checkout -q -- <the four files>`; classify.
-- **Classes, in this order.** HARNESS: no table row or no mutation (`unknown drill`), mutation command failed, `mutation not applied`, `timeout after N s` (script_gate's rc 142), any `SCRIPT ERROR` in the log, `missing summary line`. Otherwise MATCH only if script_gate passed (rc and exact summary), the `FAIL` line count equals `failed`, the pin verdict equals `pin`, and the label is present; anything else is MISMATCH, printed with the wanted and observed rows and every `FAIL` line.
-- **Bounds and hygiene.** Per-drill timeout `BOD_TIMEOUT`, default 300 s, enforced by `tools/script_gate.sh` (process-group kill). A per-invocation scratch dir from `mktemp -d "${TMPDIR:-/tmp}/bod.XXXXXX"`: removed on exit 0, kept on failure for the logs. `trap restore EXIT`, and INT and TERM restore and exit 130 and 143 (V43).
-- **Exit codes.** 0: every row MATCH. 1: at least one MISMATCH and no HARNESS. 3: at least one HARNESS. 2: usage. Summary line: `bridge-operator-drills: <rows> rows: <m> match, <x> mismatch, <h> harness (pin …; logs …)`.
-- **Its own negative control: `--selftest`.** In its own scratch dir (also used as the inner runs' `TMPDIR`, so nothing is left behind, V44) it runs the runner five times and requires: a table whose d0 row expects one pass fewer → exit 1 with `MISMATCH d0`; an id with a row but no mutation (`zz`) → exit 3, `unknown drill`; a no-op mutation (`zznoop`) → exit 3, `mutation not applied`; a mutation that breaks the test's parse (`zzparse`) → exit 3, `SCRIPT ERROR`; d0 with `BOD_TIMEOUT=1` → exit 3, `timeout`. It prints `bridge-operator-drills selftest: ok (…)` and exits 0, or prints what failed and exits 1. The "missing summary" class has code but no selftest case (no single-file mutation produced it without also producing a SCRIPT ERROR or timeout).
+- **File.** `tools/bridge_operator_drills.sh`, POSIX `sh` (like `tools/script_gate.sh`), 178 lines, run as `sh tools/bridge_operator_drills.sh`. It is not a Godot file, so it has no `.uid`. `make python-guard` is unaffected (no Python).
+- **Expected table as data.** A heredoc, `table_default`, one row per drill: `id|mutation|rc|passed|failed|pin|label`. `pin` is `green` or `red`: whether the summary passes the count pin that the runner reads from `mk/captain-anim.mk` (so loosening the pin back to `[1-9][0-9]*` turns k4b into a MISMATCH). `label` is one `FAIL` line that must appear verbatim, or `-` for none (then there must be no `FAIL` line). `--table FILE` replaces the table. The mutations are a `case` keyed by id: the k-drills of iteration 76, except k1a, which now writes `{"schema":"stapledons.bridge-operator-contact/1"}` instead of reading `e292a860`'s record (the schema guard returns as soon as it reads `doc.get("schema","")`; same result, 0/1, V51).
+- **One run per drill.** Precondition: the four drill files (test, record, manifest, `bow_a.json`) equal the index (`git diff --quiet --`), or it stops with exit 3. On an uncommitted candidate, stage it first. Then for each id: apply the mutation; check that it changed a drill file (d0 must change none); run `sh tools/script_gate.sh bod-<id> <scratch>/<id>.<n>.log $BOD_TIMEOUT '^bridge-operator-contact: <passed> passed, <failed> failures$' <rc> -- $GODOT --headless --path . --script tests/test_bridge_operator_contact.gd -- --installed`; restore; classify.
+- **Restoring fails closed (revision 3).** `restore` runs `git checkout -q -- <the four files>` and then requires both its exit status 0 **and** `git diff --quiet -- <the four files>`. On either failure it disarms the traps, prints `HARNESS restore | git checkout rc <n>; still differing from the index: <paths>`, git's error text, `HARNESS restore | recover with: git checkout -- <the four files>` and `bridge-operator-drills: stopped on a restore failure (exit 3; logs kept in <scratch>)`, and **exits 3 at once**, keeping the scratch logs. No later drill runs and no overall summary is printed, so a restore failure overrides any result so far. It runs after every drill (16 checked restores in a full run), once more before the summary, and from the EXIT, INT and TERM traps; a failing restore inside a trap also exits 3 instead of 0, 130 or 143. `BOD_FAULT=checkout` (the checkout gets an extra pathspec that matches nothing, so git exits 1 and restores nothing) and `BOD_FAULT=noop` (no checkout, so the file stays changed) are the selftest's seams; nothing else sets them.
+- **Classes, in this order.** HARNESS: a restore failure (stops the run, above); no table row or no mutation (`unknown drill`), mutation command failed, `mutation not applied`, `timeout after N s` (script_gate's rc 142), any `SCRIPT ERROR` in the log, `missing summary line`. Otherwise MATCH only if script_gate passed (rc and exact summary), the `FAIL` line count equals `failed`, the pin verdict equals `pin`, and the label is present; anything else is MISMATCH, printed with the wanted and observed rows and every `FAIL` line.
+- **Bounds and hygiene.** Per-drill timeout `BOD_TIMEOUT`, default 300 s, enforced by `tools/script_gate.sh` (process-group kill). A per-invocation scratch dir from `mktemp -d "${TMPDIR:-/tmp}/bod.XXXXXX"`: removed on exit 0, kept on any other exit for the logs (including an interrupted run). `trap restore EXIT`; INT and TERM restore and exit 130 and 143 (V52).
+- **Exit codes.** 0: every row MATCH. 1: at least one MISMATCH and no HARNESS. 3: at least one HARNESS, or a restore failure. 2: usage. Summary line: `bridge-operator-drills: <rows> rows: <m> match, <x> mismatch, <h> harness (pin …)`, with `; logs kept in <scratch>` added when the exit is not 0.
+- **Its own negative control: `--selftest`.** In its own scratch dir (also used as the inner runs' `TMPDIR`, so nothing is left behind, V44) it runs the runner seven times and requires: a table whose d0 row expects one pass fewer → exit 1 with `MISMATCH d0`; an id with a row but no mutation (`zz`) → exit 3, `unknown drill`; a no-op mutation (`zznoop`) → exit 3, `mutation not applied`; a mutation that breaks the test's parse (`zzparse`) → exit 3, `SCRIPT ERROR`; d0 with `BOD_TIMEOUT=1` → exit 3, `timeout`; and, after k5a's successful mutation of the record, `BOD_FAULT=checkout` and `BOD_FAULT=noop` → each exit 3 with `HARNESS restore | git checkout rc …` naming the record, no `bridge-operator-drills: <n> rows:` summary line, the kept scratch dir holding `k5a.*.log`, and the record still changed (proof the fault was real). After each fault case the selftest restores the four files itself and checks `git diff --quiet`; if that fails it exits 3 with the recovery command. It prints `bridge-operator-drills selftest: ok (…)` and exits 0, or prints what failed and exits 1. The "missing summary" class has code but no selftest case (no single-file mutation produced it without also producing a SCRIPT ERROR or timeout).
 
 **The make target.** In `mk/captain-anim.mk`, right after `test: bridge-operator-test`:
 
@@ -324,7 +335,7 @@ bridge-operator-drills: import ## 7ae AC2: the contact test's kill drills, enfor
 
 **Not in `make test`.** The executor and the evaluator run it; the nightly does not:
 - It rewrites tracked files in the working tree. The nightly runs on main's checkout, where a crash between mutation and trap, or a parallel `make -j` gate reading the same four files, would corrupt the run or the tree.
-- It costs 16 Godot runs plus 5 selftest runs, about 100 s at load 30 (V41, V42), for a property that changes only when the contact test, its record or the bridge data change. Those are exactly the paths §D8's 7ae-g map will route to it.
+- It costs 16 Godot runs plus 7 selftest runs, 99 s (revision-2 runner, load about 30, V42) to 233 s (revision 3, load about 38, V51), for a property that changes only when the contact test, its record or the bridge data change. Those are exactly the paths §D8's 7ae-g map will route to it.
 - `make test` already carries what matters every night: `bridge-operator-test` with the count pin, which is d0.
 
 ## Open questions for Mark
@@ -352,13 +363,13 @@ These hold on the fix head: S1 plus S2 under D-148 = A, plus the runner. Run eve
 | AC | Command | Expected |
 |---|---|---|
 | AC1 | `make bridge-operator-test`, run twice | `script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, …)` both times (measured V34) |
-| AC2 | `make bridge-operator-drills; echo rc=$?` on a clean tree, then `git status --porcelain` | `bridge-operator-drills selftest: ok (…)`; 16 `MATCH` rows (d0 ×2, k1a, k1b, k2, k3a, k3b, k3c, k4a, k4b, k5a–k5e, k6) with the counts of the drill table below; `bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (…)`; `rc=0`; then empty porcelain (measured V42) |
-| AC2a | the AC2a command in the block below this table | `same`: the committed runner is Appendix C verbatim (the extraction was run on this doc against the measured runner: `same`, V48) |
-| AC2b | `sh tools/bridge_operator_drills.sh --selftest; echo rc=$?` | the `selftest: ok` line and `rc=0` (the runner's own negative controls, measured V41, V44) |
+| AC2 | `make bridge-operator-drills; echo rc=$?` on a clean tree, then `git status --porcelain` | `bridge-operator-drills selftest: ok (…)`; 16 `MATCH` rows (d0 ×2, k1a, k1b, k2, k3a, k3b, k3c, k4a, k4b, k5a–k5e, k6) with the counts of the drill table below; `bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (…)`; `rc=0`; then empty porcelain (measured V51 with the revision-3 runner: rc 0, 233 s; revision 2: V42) |
+| AC2a | the AC2a command in the block below this table | `same`: the committed runner is Appendix C verbatim. Reinstated in revision 3 only after the corrected runner was re-measured (V49–V53); the extraction from this doc matches the measured revision-3 runner byte for byte (V54) |
+| AC2b | `sh tools/bridge_operator_drills.sh --selftest; echo rc=$?` | `bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)` and `rc=0` (the runner's own negative controls, including the two restore faults; measured V49) |
 | AC3 | `make script-gate-lint` | `script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; …)` and `script-gate-prereqs: ok (5 pairs …)` (measured V36, V42; the counts move only if main adds gates first) |
 | AC4 | `git diff --check origin/main`; `make uid-guard` | silent; `uid-guard: ok (… .uid files)` (no new `.gd`; measured V42) |
 | AC5 | `git diff --name-only origin/main -- interior demos ui audio sim` | empty |
-| AC6 | `git diff --name-only origin/main -- assets art mk tests tools` and `git diff --numstat origin/main` | exactly `art/deck-layout-v2/asset-pins.json` (+1/−1, line 9 only), `art/deck-layout-v2/bow_a.json` (+4/−4), `art/deck-layout-v2/budgets.json` (+1/−1, the manifest's `sha256` only), `art/view-finish-v1/bridge-operator-contact.json` (+37/−20), `assets/ship_demo/manifest.json` (+4/−4), `mk/captain-anim.mk` (+6/−1), `tests/test_bridge_operator_contact.gd` (+38/−8), `tools/bridge_operator_drills.sh` (+141/−0); `git diff -U0 origin/main -- assets art/deck-layout-v2` shows only the number lines and hashes of §D9 (measured V33, V42) |
+| AC6 | `git diff --name-only origin/main -- assets art mk tests tools` and `git diff --numstat origin/main` | exactly `art/deck-layout-v2/asset-pins.json` (+1/−1, line 9 only), `art/deck-layout-v2/bow_a.json` (+4/−4), `art/deck-layout-v2/budgets.json` (+1/−1, the manifest's `sha256` only), `art/view-finish-v1/bridge-operator-contact.json` (+37/−20), `assets/ship_demo/manifest.json` (+4/−4), `mk/captain-anim.mk` (+6/−1), `tests/test_bridge_operator_contact.gd` (+38/−8), `tools/bridge_operator_drills.sh` (+178/−0); `git diff -U0 origin/main -- assets art/deck-layout-v2` shows only the number lines and hashes of §D9 (measured V33, V42) |
 | AC6a | `shasum -a 256 assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json` vs `jq -r '.pins["assets/ship_demo/manifest.json"].sha256' art/deck-layout-v2/budgets.json` and `jq -r .layout_sha256 art/deck-layout-v2/asset-pins.json` | each pair equal (measured `ff14f59f…` and `0b433ca7…`, V33) |
 | AC7 | `godot --headless --path . --check-only --script tools/bridge_operator_review.gd; echo rc=$?` | `rc=0` (measured V39) |
 | AC8 | `make deck-assets-check deck-layout-eval-test deck-layout-eval comms-walk-test levels-regress captain-chair-test` | `deck-assets-check: ok (12 pins, …)` plus `negative controls (wrong pin, emissive prop) fail as they must`; `deck-layout-eval-test: 26 passed, 0 failures`; `deck-layout: bridge ok`; `comms-walk: 11 passed, 0 failures`; `levels-regress: ok (1 levels: bridge)` plus both negative controls; `captain-chair: 15 passed, 0 failures` (all measured V36) |
@@ -373,13 +384,13 @@ AC2a, as a command (the table cell cannot hold its pipes):
 sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same
 ```
 
-### Drill table (AC2; measured on `b6c93c11`, V41 and V42, identical to iteration 76's V27)
+### Drill table (AC2; measured on `b6c93c11`: revision-2 runner V41, V42; revision-3 runner V51; every count identical to iteration 76's V27)
 
 | Drill | Mutation | rc | Passed / failed | Pin | Required FAIL label |
 |---|---|---|---|---|---|
 | d0 | none | 0 | 56 / 0 | green | none |
 | d0 | none (second run) | 0 | 56 / 0 | green | none |
-| k1a | the whole pre-fix record (`e292a860`, schema 1) | 1 | 0 / 1 | red | contact record is schema 2 (R3-COMMS-V2 desks) |
+| k1a | a schema-1 record, written inline: `{"schema":"stapledons.bridge-operator-contact/1"}` (revision 3; revision 2 used `e292a860`'s whole record, same result) | 1 | 0 / 1 | red | contact record is schema 2 (R3-COMMS-V2 desks) |
 | k1b | pre-#379 values (old original, corrected and screen points, advance 0.775) in schema 2 | 1 | 32 / 24 | red | voyage installed working point matches physical target |
 | k2 | Voyage `use_m` x moved 2 cm in the manifest | 1 | 53 / 3 | red | voyage installed working point matches physical target |
 | k3a | facing source = `Vector3.FORWARD` (the old one) | 1 | 44 / 12 | red | voyage original point stands the D-132 two metres from the desk, on its facing |
@@ -402,7 +413,7 @@ Under k2 and k5d, `deck-assets-check` would also go red, since any byte change t
 |---|---|---|---|
 | S1 | Test (Appendix A), count pin (D3) | test +38/−8, mk +1/−1 | none |
 | S2 | D-148 A: the record (Appendix B), the two `use_m` pairs, the two re-pins (§D9) | record +37/−20, manifest +4/−4, `bow_a.json` +4/−4, `budgets.json` +1/−1, `asset-pins.json` +1/−1 | D-148 (answered) |
-| R | The enforcing runner (Appendix C) and its make target (§D10) | +141 sh, mk +5 | S1 + S2 (its table is their numbers) |
+| R | The enforcing runner (Appendix C) and its make target (§D10) | +178 sh, mk +5 | S1 + S2 (its table is their numbers) |
 | L | Changelog fragment; `make publish-dev` for Mark (AC11) | ~8 | S1, S2, R |
 | 7ae-c | Comms contact (D6) | runtime | OQ-2; attended (deferred) |
 | 7ae-l | Lean and heading follow the desk (OQ-2 b) | runtime | OQ-2; attended (deferred) |
@@ -421,8 +432,7 @@ S1, S2 and R land as one branch and one PR: S1 alone leaves its own gate red (AC
 | `bow_a.json` and the manifest drift apart | The contact test's layout-agreement check covers every station both files carry (k6, V27, V41) |
 | An edit to manifest `use_m` without a re-pin | `deck-assets-check` turns red (V24); AC6a and AC8 name the re-pin |
 | Someone re-runs the Blender props generator after A | It places each bezel from the direction of `use_m − position_m` only, and A keeps that direction to within 0.005° (§D7a). Read from the script; running Blender is UNMEASURED |
-| The runner corrupts the tree (crash between mutation and restore) | It refuses to start unless the four files equal the index, restores after every drill and in EXIT/INT/TERM traps (TERM measured, V43), and is not in `make test` (§D10). Recovery by hand: `git checkout -- tests/test_bridge_operator_contact.gd art/view-finish-v1/bridge-operator-contact.json assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json` |
-| The runner's k1a reads `e292a860` | That commit is on main's first-parent history (V45), so every clone of main has it |
+| The runner corrupts the tree (crash between mutation and restore) | It refuses to start unless the four files equal the index, restores after every drill and in EXIT/INT/TERM traps (TERM measured, V43, V52), and is not in `make test` (§D10). Since revision 3 a failed restore stops the run with exit 3, keeps the logs and prints the paths and the recovery command (V50). Recovery by hand: `git checkout -- tests/test_bridge_operator_contact.gd art/view-finish-v1/bridge-operator-contact.json assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json` |
 | Host load stretches a drill past `BOD_TIMEOUT` | That is a HARNESS failure (exit 3), never a kill; rerun on a quieter host or raise `BOD_TIMEOUT`. At load 30 the slowest drill took about 28 s against 300 s |
 | `camera-test` is red in this clone with and without the candidate (V37, V38) | Not this row's cause; AC8a's pristine comparison keeps it from blocking the row or hiding a real regression |
 | `make -k test` shows other reds (issue #392's `sound-test`) | Out of scope. Compare target by target (AC9) |
@@ -479,14 +489,20 @@ S1, S2 and R land as one branch and one PR: S1 alone leaves its own gate red (AC
 | V38 | Control: pristine `b6c93c11` (after V46's revert), `make camera-test` (load 86) | rc 2 in 439 s, `13 SCRIPT ERROR line(s) … no summary line`; `FAIL the guided voyage starts`, `Invalid access to property or key 'pacing' on a base object of type 'Nil'` (`demos/ship_geometry_demo.gd:1707`). The same sim-driven class as V37, without the candidate. So camera-test is red in this clone on this host whether or not A is applied; its result under A on `b6c93c11` is **UNMEASURED** | 11-12 |
 | V39 | Candidate, `godot --headless --path . --check-only --script tools/bridge_operator_review.gd` (120 s alarm) | rc 0; 0 `SCRIPT ERROR` lines | 11-12 |
 | V40 | `jq .` of Appendix B's text, `cmp` with the record measured in V33–V36 | identical; both sha256 `43f2f7e215e5141e…a222fe` | 11-12 |
-| V41 | The runner (Appendix C text, from `/tmp`) on the staged candidate (`git add` of the seven files): `--selftest`, then the full table; then `git diff --quiet`, and `cmp` of `git diff --cached` with the candidate patch saved before the run | selftest `ok` (16 s); the 16 `MATCH` rows of the drill table, `bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness`, rc 0 (102 s, load about 30). Every count equals iteration 76's V27. Afterwards the tree equals the index, and the index equals the candidate | 11-12 |
-| V42 | The runner copied to `tools/bridge_operator_drills.sh` (untracked) and §D10's target added to `mk/captain-anim.mk`; `make bridge-operator-drills`, `make script-gate-lint`, `make uid-guard`, `git apply --numstat` of the full patch | `make bridge-operator-drills` rc 0 in 99 s: `selftest: ok`, 16 `MATCH`, `16 rows: 16 match, 0 mismatch, 0 harness`. `script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; …)`, unchanged from V36. `uid-guard: ok (438 .uid files)`. mk +6/−1 (pin and target) | 11-12 |
+| V41 | The revision-2 runner (that revision's Appendix C text, from `/tmp`) on the staged candidate (`git add` of the seven files): `--selftest`, then the full table; then `git diff --quiet`, and `cmp` of `git diff --cached` with the candidate patch saved before the run | selftest `ok` (16 s); the 16 `MATCH` rows of the drill table, `bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness`, rc 0 (102 s, load about 30). Every count equals iteration 76's V27. Afterwards the tree equals the index, and the index equals the candidate | 11-12 |
+| V42 | The revision-2 runner copied to `tools/bridge_operator_drills.sh` (untracked) and §D10's target added to `mk/captain-anim.mk`; `make bridge-operator-drills`, `make script-gate-lint`, `make uid-guard`, `git apply --numstat` of the full patch | `make bridge-operator-drills` rc 0 in 99 s: `selftest: ok`, 16 `MATCH`, `16 rows: 16 match, 0 mismatch, 0 harness`. `script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; …)`, unchanged from V36. `uid-guard: ok (438 .uid files)`. mk +6/−1 (pin and target) | 11-12 |
 | V43 | `sh tools/bridge_operator_drills.sh k3a &`, after 4 s `git diff --name-only -- tests/test_bridge_operator_contact.gd`, then `kill -TERM`, `wait`, `git diff --quiet -- …` | mid-drill the test file is listed (mutated); runner rc 143; the file is restored | 11-12 |
 | V44 | Selftest scratch: `ls -d $TMPDIR/bod.*` before and after `--selftest` | The first version left 5 `bod.*` dirs (the inner runs that fail on purpose keep their logs); with the inner runs' `TMPDIR` set to the selftest's own dir (Appendix C as printed): 0 before, 0 after. The 5 leftovers (and one from V43's killed run) were inspected (only `table` and drill logs) and deleted | 11-12 |
 | V45 | `git diff --numstat e292a860 b6c93c11 -- demos/ship_consoles.gd demos/ship_geometry_demo.gd mk/captain-anim.mk`; `git log --oneline e292a860..b6c93c11 --` the manifest, `art/deck-layout-v2`, the record, the test, `interior/captain_avatar.gd`, the three GLBs and `tools/bridge_operator_review.gd`; positive control `git log -1 e292a860 -- demos/ship_consoles.gd`. `grep -n '\["voyage", *"crew"\]' demos/ship_consoles.gd`, `grep -n face_dir demos/ship_geometry_demo.gd`, `sed -n 225p interior/captain_avatar.gd`. `git rev-list --first-parent b6c93c11 \| grep -c '^e292a860'` | ship_consoles +104/−11, ship_geometry_demo +49/−17, mk +1/−1; the log is empty (control prints `cc6dc7c8 fix(comms-v2): …`). Approach list at `:297`, `:302`. `face_dir` at `:1856`, `chair_facing() if seated() else Vector3(0, 0, -1)`. Line 225: `_fx.set_shader_parameter("work_direction", Vector3.FORWARD)`. First-parent count 1 | 11-12 |
 | V46 | Revert: `git reset -q && git checkout -- . && rm -f tools/bridge_operator_drills.sh`; `git status --porcelain`; `git rev-parse HEAD`. After writing this doc: `git status --porcelain` again | empty; `b6c93c118b67ccb2c8750d05a790121d82289df8`. After the doc edit only ` M design_docs/planned/r1/m4-7ae-bridge-operator-contact.md`. Ignored files that Godot's import wrote during V37 remain (`data/starmap/truth/positions.csv.import` and a stray `positions. 1%) is resolved in the audit.translation`; `git status --ignored` lists them as `!!`) | 11-12 |
 | V47 | In a scratch dir under `/tmp` (not the clone): a copy of this doc at its repo path and `git show b6c93c11:tests/test_bridge_operator_contact.gd`; the Appendix A recipe extracted from the doc (`sed` of the `sh` block) and run with `sh` | rc 0; prints `d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf  tests/test_bridge_operator_contact.gd`, the measured file of V33 (a `diff` against it is empty) | 11-12 |
-| V48 | AC2a's block, run on this doc with the runner path pointed at the measured runner (`/tmp/iter90-7ae/bridge_operator_drills.sh`, the file V41–V44 ran) | `same` | 11-12 |
+| V48 | AC2a's block, run on the revision-2 doc with the runner path pointed at the measured runner (`/tmp/iter90-7ae/bridge_operator_drills.sh`, the file V41–V44 ran) | `same` | 11-12 |
+| V49 | Revision-3 runner at `tools/bridge_operator_drills.sh` (untracked) with the full candidate and §D10's target applied and staged (`git apply` of the saved patch, `git add -u`): `sh tools/bridge_operator_drills.sh --selftest` | rc 0 in 22 s: `bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)` | 11-12 |
+| V50 | Same tree, the two restore faults run on their own: `TMPDIR=<dir> BOD_FAULT=checkout sh tools/bridge_operator_drills.sh k5a`, then `TMPDIR=<dir> BOD_FAULT=noop sh tools/bridge_operator_drills.sh k5a`; after each, `grep -cE '^bridge-operator-drills: [0-9]+ rows:'` of the output, `git diff --name-only -- <the four files>`, `ls` of the kept dir, then a manual `git checkout --` and `git diff --quiet` | **checkout:** rc 3; `HARNESS restore \| git checkout rc 1; still differing from the index: art/view-finish-v1/bridge-operator-contact.json`, git's `error: pathspec 'does/not/exist/bod-fault' did not match any file(s) known to git`, `HARNESS restore \| recover with: git checkout -- tests/test_bridge_operator_contact.gd art/view-finish-v1/bridge-operator-contact.json assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json`, `bridge-operator-drills: stopped on a restore failure (exit 3; logs kept in …/bod.ewRCo1)`; 0 summary lines; the record still differs; kept dir holds `k5a.1.log restore.err table`; restored by hand. **noop:** rc 3; `HARNESS restore \| git checkout rc 0; still differing from the index: art/view-finish-v1/bridge-operator-contact.json`, the recovery line and the stop line; 0 summary lines; record still differs; kept `k5a.1.log table`; restored by hand. (A first attempt of this record from zsh, with the file list unsplit, failed in the harness's own manual restore; the runner then refused the dirty tree with `HARNESS - drill files differ from the index`, exit 3. The file was restored by path and the record repeated with `${=F}`.) | 11-12 |
+| V51 | Same tree, `make bridge-operator-drills` | rc 0 in 233 s (load about 38): `selftest: ok (…)`; the 16 `MATCH` rows of the drill table, k1a (inline schema-1) `rc 1 \| 0 passed, 1 failures \| pin red \| 1 FAIL lines \| label yes`, as before; `bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$)` | 11-12 |
+| V52 | Same tree, `sh tools/bridge_operator_drills.sh k3a &`, after 4 s `git diff --name-only` of the test, `kill -TERM`, `wait`; `wc -l` of the runner; `make script-gate-lint` | test mutated mid-drill; rc 143; test restored; the interrupted run kept its scratch dir (`k3a.1.log restore.err table`, then deleted). 178 lines. `script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; …)` | 11-12 |
+| V53 | Revert: `git reset -q && git checkout -- . && rm -f tools/bridge_operator_drills.sh`; `git status --porcelain`; `git rev-parse --short HEAD`; `ls -d $TMPDIR/bod.*` | empty porcelain; `830641ac`; no `bod.*` dirs left | 11-12 |
+| V54 | AC2a's block on this revision-3 doc, with the runner path pointed at the measured revision-3 runner (`/tmp/iter90-7ae/v3/bridge_operator_drills.sh`, the file V49–V52 ran) | `same` | 11-12 |
 
 **UNMEASURED** (after revision 2):
 - renders of the captain at today's points and under A (GPU); Mark's look (AC11);
@@ -624,18 +640,21 @@ Save this text to a scratch file and write the record with `jq . <scratch> > art
 }
 ```
 
-## Appendix C: the enforcing drill runner (`tools/bridge_operator_drills.sh`; AC2, §D10; measured V41–V44)
+## Appendix C: the enforcing drill runner (`tools/bridge_operator_drills.sh`; AC2, §D10; revision 3, measured V49–V54)
 
-Commit this text verbatim (AC2a). It replaces revision 1's printed drill script, which reported rows but never failed; that script is the measurement record of V27 and stays in this doc's git history. On a committed fix head run it as `make bridge-operator-drills`; on an uncommitted candidate, `git add` the drill files first, because the runner restores from the index.
+Commit this text verbatim (AC2a, reinstated after the V49–V53 re-measure). Against revision 2 it changes only `restore` (fails closed, with the `BOD_FAULT` seam), the selftest's two restore-fault cases, k1a's mutation and its table description, the final restore and trap disarm before the summary, and the kept-logs wording. Revision 1's printed drill script, which reported rows but never failed, is the measurement record of V27 and stays in this doc's git history, as does revision 2's runner (V41–V44). On a committed fix head run it as `make bridge-operator-drills`; on an uncommitted candidate, `git add` the drill files first, because the runner restores from the index.
 
 ```sh
 #!/bin/sh
-# 7ae AC2: enforced kill drills for tests/test_bridge_operator_contact.gd (design m4-7ae, revision 2).
+# 7ae AC2: enforced kill drills for tests/test_bridge_operator_contact.gd (design m4-7ae, revision 3).
 # Each drill mutates one tracked file, runs the contact test through tools/script_gate.sh (bounded,
 # rc + SCRIPT ERROR + summary), compares the result with its expected row, and restores the file with
-# git checkout -- (from the index). Exit 0: every row matches. Exit 1: a row mismatches (a drill that
-# did not kill as recorded). Exit 3: a harness failure (unknown drill, mutation not applied, timeout,
-# SCRIPT ERROR, missing summary, dirty drill files, pin not found). Exit 2: usage.
+# git checkout -- (from the index). Restoring fails closed: a failed checkout, or a drill file still
+# differing from the index afterwards, stops the run at once with exit 3 and keeps the logs.
+# Exit 0: every row matches. Exit 1: a row mismatches (a drill that did not kill as recorded).
+# Exit 3: a harness failure (unknown drill, mutation not applied, timeout, SCRIPT ERROR, missing
+# summary, dirty drill files, pin not found, restore failed). Exit 2: usage.
+# BOD_FAULT=checkout|noop is a selftest seam: the restore runs a failing checkout, or none at all.
 # usage: sh tools/bridge_operator_drills.sh [--table FILE] [drill ...]   |   --selftest
 set -u
 cd "$(git rev-parse --show-toplevel)" || exit 2
@@ -652,7 +671,7 @@ SUMMARY_ERE='^bridge-operator-contact: [0-9]+ passed, [0-9]+ failures$'
 table_default() { cat <<'EOF'
 d0|none|0|56|0|green|-
 d0|none, second run|0|56|0|green|-
-k1a|the whole pre-fix record (e292a860, schema 1)|1|0|1|red|contact record is schema 2 (R3-COMMS-V2 desks)
+k1a|a schema-1 record ({"schema": ".../1"} only)|1|0|1|red|contact record is schema 2 (R3-COMMS-V2 desks)
 k1b|pre-#379 points and advance 0.775 in schema 2|1|32|24|red|voyage installed working point matches physical target
 k2|manifest voyage use_m x -2 cm|1|53|3|red|voyage installed working point matches physical target
 k3a|facing = Vector3.FORWARD|1|44|12|red|voyage original point stands the D-132 two metres from the desk, on its facing
@@ -672,7 +691,7 @@ jedit() { perl -MJSON::PP -0777 -i -pe '$d=decode_json($_); '"$1"'; $_=JSON::PP-
 mutate() {
   case $1 in
     d0) ;;
-    k1a) git show e292a860:"$J" > "$J" ;;
+    k1a) printf '{"schema":"stapledons.bridge-operator-contact/1"}\n' > "$J" ;;
     k1b) jedit '$s=$d->{stations}; @{$s->{voyage}}{qw(original_use_ship_m corrected_use_ship_m screen_ship_m)}=([-7.829,10.207],[-7.829,10.982],[-7.829,11.3395,82.8539]); @{$s->{crew}}{qw(original_use_ship_m corrected_use_ship_m screen_ship_m)}=([8.479,12.169],[8.479,12.944],[8.479,13.3015,82.8539]); $d->{advance_m}=0.775' ;;
     k2) perl -0pi -e 's/("voyage": \{\s*"screen_ship_m": \[[^\]]*\],\s*"use_m": \[\s*)(-?[0-9.]+)/$1.sprintf("%.3f",$2-0.02)/e' "$M" ;;
     k3a) perl -pi -e 's/facing=-desk\.global_transform\.basis\.x;/facing=Vector3.FORWARD;/' "$TEST" ;;
@@ -691,7 +710,22 @@ mutate() {
     *) return 2 ;;
   esac
 }
-restore() { git checkout -q -- $FILES; }
+# Fails closed: on a failed checkout, or any drill file still differing from the index, stop now (exit 3).
+restore() {
+  case ${BOD_FAULT:-} in
+    checkout) git checkout -q -- $FILES does/not/exist/bod-fault 2> "$scratch/restore.err" ;;
+    noop) : ;;
+    *) git checkout -q -- $FILES 2> "$scratch/restore.err" ;;
+  esac
+  crc=$?
+  if [ "$crc" = 0 ] && git diff --quiet -- $FILES; then return 0; fi
+  trap - EXIT INT TERM
+  echo "HARNESS restore | git checkout rc $crc; still differing from the index: $(git diff --name-only -- $FILES | tr '\n' ' ')"
+  [ -s "$scratch/restore.err" ] && sed 's/^/  /' "$scratch/restore.err"
+  echo "HARNESS restore | recover with: git checkout -- $FILES"
+  echo "bridge-operator-drills: stopped on a restore failure (exit 3; logs kept in $scratch)"
+  exit 3
+}
 selftest() {
   st=$(mktemp -d "${TMPDIR:-/tmp}/bod-selftest.XXXXXX") || exit 3
   bad=0
@@ -706,9 +740,23 @@ selftest() {
   printf 'd0|none|0|56|0|green|-\n' > "$st/timeout.tsv"
   out=$(TMPDIR="$st" BOD_TIMEOUT=1 sh "$0" --table "$st/timeout.tsv" d0 2>&1); rc=$?
   { [ "$rc" = 3 ] && printf '%s\n' "$out" | grep -q '^HARNESS d0 .*timeout'; } || { echo "selftest: 1 s timeout gave rc $rc, want 3 with HARNESS d0 ... timeout"; bad=1; }
+  # Restore faults after a successful mutation (k5a edits the record): a failing checkout, and a checkout
+  # that leaves the file changed. Each must exit 3, print no overall summary, keep its logs, and leave
+  # the record mutated (proof the fault was real); the selftest then restores it itself.
+  for fault in checkout noop; do
+    out=$(TMPDIR="$st" BOD_FAULT=$fault sh "$0" k5a 2>&1); rc=$?
+    kept=$(printf '%s\n' "$out" | sed -n 's/.*logs kept in \(.*\))$/\1/p')
+    if [ "$rc" = 3 ] && printf '%s\n' "$out" | grep -q '^HARNESS restore | git checkout rc .*bridge-operator-contact.json' \
+       && ! printf '%s\n' "$out" | grep -qE '^bridge-operator-drills: [0-9]+ rows:' \
+       && [ -n "$kept" ] && ls "$kept"/k5a.*.log > /dev/null 2>&1 && ! git diff --quiet -- "$J"; then :; else
+      echo "selftest: restore fault '$fault' gave rc $rc, want 3, HARNESS restore, no summary, kept logs, record still mutated"
+      printf '%s\n' "$out" | tail -n 5; bad=1
+    fi
+    git checkout -q -- $FILES && git diff --quiet -- $FILES || { echo "selftest: could not restore after fault '$fault'; recover with: git checkout -- $FILES"; exit 3; }
+  done
   rm -rf "$st"
   [ "$bad" = 0 ] || { echo "bridge-operator-drills selftest: FAIL"; exit 1; }
-  echo "bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout -> rc 3 HARNESS)"
+  echo "bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)"
   exit 0
 }
 tablefile=""
@@ -765,9 +813,14 @@ for id in "$@"; do
     mism=$((mism + 1))
   fi
 done
-echo "bridge-operator-drills: $rows rows: $match match, $mism mismatch, $harn harness (pin $PIN; logs $scratch)"
-[ "$harn" = 0 ] || exit 3
-[ "$mism" = 0 ] || exit 1
+restore
+trap - EXIT INT TERM
+if [ "$harn" != 0 ] || [ "$mism" != 0 ]; then
+  echo "bridge-operator-drills: $rows rows: $match match, $mism mismatch, $harn harness (pin $PIN; logs kept in $scratch)"
+  [ "$harn" = 0 ] || exit 3
+  exit 1
+fi
 rm -rf "$scratch"
+echo "bridge-operator-drills: $rows rows: $match match, $mism mismatch, $harn harness (pin $PIN)"
 exit 0
 ```
