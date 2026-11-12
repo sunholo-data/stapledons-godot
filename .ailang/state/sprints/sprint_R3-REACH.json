@@ -349,7 +349,7 @@
    ],
    "routing": "attended",
    "acceptance_criteria": [
-    "make ui, make map-lod-test, make map-registry-test and make display-audit-worlds pass",
+    "make ui, make map-lod-test, make map-registry-test and make display-audit pass",
     "make reach-capture stills opened",
     "a golden case is added only if a shader changed, and is left to the nightly"
    ],
