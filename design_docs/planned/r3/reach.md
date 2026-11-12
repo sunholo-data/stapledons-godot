@@ -1,6 +1,6 @@
 # R3-REACH: worlds and destinations out to the mission sphere
 
-**Status:** Planned, not approved (drafted 2026-11-12). No sprint plan yet.
+**Status:** Approved 2026-11-12 (Mark, attended: "ok good yes this looks great"), after he was shown the three tiers, the cell scheme, the first milestone and all six open questions with their recommendations; OQ1–OQ6 are answered as recommended. Drafted the same day. Sprint plan for RE0 and RE1: [reach-sprint.md](reach-sprint.md), awaiting approval.
 **Release:** R3 (Signals and Contact). It finishes R1's open L3 (destinations to 100 pc) and builds the cell generator that R3-WORLDS named as "a later milestone that W2's keying is built to accept".
 **Priority:** P0 for play once R3-REASONS lands: the finder can only mark worlds that exist, and today they stop at 81.5 ly.
 **Origin:** Mark, 2026-11-12: "we need to expand the playable suns/planets? that is on roadmap as well - I expected we would have to travel further."
@@ -51,6 +51,7 @@ Scored with the `game-vision-designer` skill (feature-validation mode, against `
 1. **Worlds stop at 25 pc.** `data/starmap/stars.json` holds 5,685 systems to 25 pc (81.5 ly). `sim/worlds_model.ail` populates a star only when it is handed that star's row, and the only rows the running game hands it are the 241 measured hosts in `sim/data/world_hosts.ail`, the planned target and the stars the ship has visited (`sim/protocol.ail`, `worldsSection`). The galaxy map draws and offers exactly the `stars.json` set (`ui/galaxy_map.gd`, `load_catalogue`).
 2. **The calibrated universe is mostly outside that sphere.** The photon-budget calibration of the default preset (reported 2026-11-12, preset ruling pending) puts about 4 technological civilisations within 81.5 ly, about 790 within 500 ly and about 5,400 within 1,000 ly. Voyages that meet the targets range hundreds of light-years over 700 to 800 Earth years. Those figures and the disc model give about 8 × 10⁻⁴ technological worlds per star, so about 34 within the dish's 168 ly and about 240 within 100 pc.
 3. **The instruments already out-reach the map.** OB-51: 168 ly for radar-class leakage. OB-24: 59 ly for oxygen. Measured from `data/raw/table1c.dat`: 43,887 catalogued stars lie within 168 ly; the map knows 5,685 of them.
+   **Caution (2026-11-12).** An independent audit of the preset calibration found that its 10⁵ luck figure is dominated by three model choices: a one-second radio listen, a one-in-ten radar share that partly double counts detectability, and a 10⁵-year baseline lifetime. The density of technological worlds is therefore expected to change with the next calibration. Every count in this document that follows from 8 × 10⁻⁴ per star (34 within 168 ly, 240 within 100 pc, and the same figures in the query table and the phasing note) is an illustration, not an input. **No RE1 budget may depend on that density, and RE0 must show the queries stay inside budget at ten times it** (8 × 10⁻³ per star: about 340 technological worlds in the radio sphere).
 4. **The approved play area is far larger.** galaxy-beyond-measurement: "the mission-relevant play area is about a 500–3,000 ly sphere around Sol". The calibration's own reference strategies range to 1,000 and 3,000 ly (`sim/calibrate.ail`, `cautious()` and `wanderer()`).
 5. **Eager population cannot scale.** `make census-large` populates the 331,311-row 100 pc registry in 862 s as an offline tool (worlds-execution-report). The mission sphere holds 10⁸ stars.
 6. **The map cannot hold the next tier as built.** `stars.json` is 164 bytes a row as JSON dictionaries. Picking projects every star on each click (`pick`), and the name pass walks the whole catalogue. The camera stops at 400 ly (`DIST_MAX`) and the range rings at 50 ly (`RINGS_LY`).
@@ -114,7 +115,7 @@ Why these boundaries:
 - **1,000 ly** is the cautious strategy's range and holds 5,400 of the default universe's civilisations: enough for any voyage that meets the targets.
 - **3,000 ly** is the wanderer's range and the outer edge of the approved mission sphere. One round trip to it costs 6,000 of Earth's 16,000 years.
 
-**Hosts and destinations in tier A.** All 302,239 measured stars are *hosts*: they have worlds and the instruments can hear them. *Destinations* are the stars the map lets the player commit to. L3's approved cut gives 246,150. Whether the 48,860 stars that fail only RUWE (mostly unresolved binaries, with good distances) are destinations too is OQ3. Whatever the answer, **a star with an evidence record is always selectable**, so the finder never marks a place the ship cannot go.
+**Hosts and destinations in tier A.** All 302,239 measured stars are *hosts*: they have worlds and the instruments can hear them. *Destinations* are the stars the map lets the player commit to. L3's approved cut gives 246,150. Whether the 48,860 stars that fail only RUWE (mostly unresolved binaries, with good distances) are destinations too was OQ3; Mark ruled that they are (295,010 destinations, the added ones labelled "probable binary"). In every case, **a star with an evidence record is always selectable**, so the finder never marks a place the ship cannot go.
 
 ### Cells
 
@@ -172,7 +173,7 @@ The result has the same law as drawing every star's uniforms independently. But 
 | Instrument | Shape | Stars inside (model) | Work | Budget |
 |---|---|---|---|---|
 | Imaging, 59 ly (OB-24) | **full**: every system in a 59 ly ball, all planets, because imaging also reports sterile habitable-zone planets | 1.9 × 10³ | `systemFrom` per star, as the 25 pc census does for 5,685 | ≤ 2 s per stop |
-| Radio, 168 ly (OB-51) | **rare**: measured stars by the one-draw gate; synthesised stars by candidate layer over about 500 leaves | 4.2 × 10⁴, of which about 34 technological at the default | 4.4 × 10⁴ gates, or 500 count draws plus about 400 candidates | ≤ 1 s per stop |
+| Radio, 168 ly (OB-51) | **rare**: measured stars by the one-draw gate; synthesised stars by candidate layer over about 500 leaves | 4.2 × 10⁴, of which about 34 technological at the default (see the caution in Problem; budgeted at 340) | 4.4 × 10⁴ gates, or 500 count draws plus about 400 candidates | ≤ 1 s per stop |
 | Beacons, later | **rare over a shell**, run once per stop in slices, results kept in the evidence ledger | 6.7 × 10⁶ to 1,000 ly; 1.04 × 10⁸ to 3,000 ly | 1,000 ly: 6.5 × 10⁴ leaves and candidates, a few seconds. 3,000 ly: 1.8 × 10⁶ leaves and 10⁶ candidates, about a minute at 4 µs a draw, before measured stars | sliced so no tick exceeds 50 ms; RE0 measures the real figure and RE3 decides whether candidates need a coarser level |
 
 The measured sample beyond 100 pc is the costly part of a shell query, because its stars are gated one by one. RE0 measures the gate rate over a packed array of precomputed id hashes; if 3 × 10⁷ rows cannot be scanned inside the budget, RE3 scans them in slices behind the travelling ship. That cost is not hidden by changing how real stars are keyed.
@@ -247,7 +248,7 @@ What a 500 to 3,000 ly leg does to each system, from the code:
 | AC4 | Every stream below 2.20 equals today's goldens; `stars.json` is byte-identical | `make replay`; `make parity`; `git diff --exit-code main -- data/starmap/stars.json` |
 | AC5 | A plan by id reaches the same position as the truth table to 1e-9 ly; an unknown id is refused; legs of 326, 1,000 and 3,000 ly match the package's closed form | `make reach-test` |
 | AC6 | The radio query over tier A returns exactly the rare worlds of full generation, for four presets, VM = interpreter | `make reach-agree` |
-| AC7 | Query budgets hold: imaging ≤ 2 s, radio ≤ 1 s, one star from its id ≤ 20 ms, on the pinned runtime | `make reach-budget` |
+| AC7 | Query budgets hold: imaging ≤ 2 s, radio ≤ 1 s, one star from its id ≤ 20 ms, on the pinned runtime, at the calibrated density of technological worlds and at ten times it | `make reach-budget` |
 | AC8 | The map with the full registry and 200 marks: frame p99 ≤ 16.7 ms, pick ≤ 2 ms, load ≤ 1 s | `make bench-map` |
 | AC9 | Level-of-detail rules are pure functions of view width; a finder mark is never culled; picking returns the same star as the exhaustive search on 10⁴ random clicks | `make map-lod-test` (headless) |
 | AC10 | Same seed and data version give byte-identical leaves on the VM and the interpreter, in any request order | `make cells-test`; `make parity` |
@@ -302,6 +303,16 @@ RE1d can start beside RE1b against the registry file alone. RE2a can start besid
 | RE1 lands before the evidence ledger and looks like "more dots" | RE1's query is what RT2 calls; the two are sequenced in the sprint plan so the first dev build with 326 ly also shows marks |
 
 ## Open questions for the user
+
+**All answered by Mark, attended 2026-11-12: every recommendation stands.**
+- **OQ1:** the first release is RE1 alone (to 326 ly), to a dev build.
+- **OQ2:** the full Gaia sample to 1,000 ly if RE0's count fits 200 MB; otherwise the brightness-limited sample.
+- **OQ3:** the 48,860 RUWE-only failures are destinations, labelled "probable binary" (295,010 destinations).
+- **OQ4:** the single exponential disc stays inside 3,000 ly (`cells-1`); Besançon comes with the model galaxy.
+- **OQ5:** synthesised stars get a designation only; crew naming is a later feature.
+- **OQ6:** legs beyond the modelled ISM are allowed, with the label.
+
+The table below is kept as the record of what was asked.
 
 | # | Question | Options | Recommendation | Default if unanswered |
 |---|---|---|---|---|

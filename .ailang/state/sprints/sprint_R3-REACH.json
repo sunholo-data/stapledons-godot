@@ -1,0 +1,403 @@
+{
+  "sprint_id": "R3-REACH",
+  "status": "proposed",
+  "approved": null,
+  "created": "2026-11-12",
+  "design_doc": "design_docs/planned/r3/reach.md",
+  "sprint_plan": "design_docs/planned/r3/reach-sprint.md",
+  "scope": "RE0 and RE1 only; RE2 and RE3 are planned after RE1's dev build",
+  "branch": "design/r3-reach (draft PR #437); execution in a fresh full clone ../stapledons-godot-reach-exec",
+  "origin": "Mark, 2026-11-12: 'we need to expand the playable suns/planets? that is on roadmap as well - I expected we would have to travel further'; design approved the same day ('ok good yes this looks great'), OQ1-OQ6 as recommended",
+  "github_issues": [],
+  "ailang": {
+    "pin": "v0.56.1",
+    "binary": "runtime/bin/ailang",
+    "prompt_version_loaded": "v0.16.11"
+  },
+  "registry_reuse": [
+    {
+      "milestone": "RE0a,RE1b2,RE1b3",
+      "package": "sunholo/worlds",
+      "action": "depend",
+      "reason": "0.2.0 already has histories and the one-draw gate; RE1 adds no science (cell density and selection function are RE2's 0.3.0)"
+    },
+    {
+      "milestone": "RE1b1",
+      "package": "sunholo/relativity",
+      "action": "depend",
+      "reason": "planBurnCoastBurn for the long-leg check rows"
+    },
+    {
+      "milestone": "RE1a1,RE1a2",
+      "package": "none",
+      "action": "none",
+      "reason": "game data pipeline over this repo's truth table; no catalogue, starmap or binary package in the registry (searched 2026-11-12)"
+    },
+    {
+      "milestone": "RE0b,RE1b1,RE1c1,RE1c2,RE1d0,RE1d1,RE1d2,RE1d3,RE1d4",
+      "package": "none",
+      "action": "none",
+      "reason": "game sim, protocol and Godot code; no spatial-index or octree package in the registry"
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 470,
+    "estimated_total_loc": 2340,
+    "estimated_days": 5
+  },
+  "critical_path": [
+    "RE0a",
+    "PAUSE1",
+    "RE1a1",
+    "RE1a2",
+    "RE1b1",
+    "RE1c1",
+    "RE1c2",
+    "RE1d4",
+    "LAND",
+    "PAUSE3"
+  ],
+  "pause_points": [
+    "PAUSE1 after RE0: measurements, the ten-times-density result, Gaia sizes, leaf size",
+    "RE1a2: attended publish of the registry to the public bucket",
+    "PAUSE2 after RE1d3: the map's level-of-detail mock-up, before copy or polish",
+    "PAUSE3 after LAND: the dev build"
+  ],
+  "rulings": {
+    "OQ1": "RE1 alone (to 326 ly) to a dev build",
+    "OQ2": "full Gaia sample to 1,000 ly if RE0's count fits 200 MB, else brightness-limited",
+    "OQ3": "RUWE-only failures are destinations, labelled probable binary",
+    "OQ4": "single exponential disc inside 3,000 ly",
+    "OQ5": "designation only for synthesised stars; crew naming later",
+    "OQ6": "legs beyond the modelled ISM allowed with a label",
+    "calibration_caution": "technological-world density will change with the next calibration; every budget runs at 8e-4 per star and at ten times it"
+  },
+  "gates_policy": "targeted headless gates per milestone; never make test, make golden, a rig run or a GPU run as a merge gate; new Godot --script targets go through $(SCRIPT_GATE); each .gd committed with its .uid",
+  "features": [
+    {
+      "id": "RE0a",
+      "description": "VM probes on the pinned runtime (sim/tools/reach_probe.ail, make reach-probe): keyed-draw rate, the one-draw gate over 43,887 and 302,239 rows, full systemFrom over 1,900 rows, returning 34 and 340 rare worlds from the radio sphere",
+      "estimated_loc": 80,
+      "dependencies": [],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-probe writes data/reach/probe.json with three runs each and the host load",
+        "counts identical across runs; VM equals interpreter on a 5,000-row subset",
+        "the ten-times-density case is measured, not extrapolated"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE0b",
+      "description": "I/O probe (13 MB float64 binary read and decode, and the per-leaf read) and the Gaia DR3 count beyond 100 pc by one archive COUNT per band; leaf size confirmed or changed",
+      "estimated_loc": 70,
+      "dependencies": [],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-probe-io reports time and peak RSS for both read paths",
+        "tools/gaia_count.sh output pinned in data/reach/gaia_counts.json with query text and date, at parallax_over_error >= 5 and at G < 14, to 1,000 and 3,000 ly",
+        "the leaf size is stated with the numbers behind it"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "PAUSE1",
+      "description": "Stop for Mark: RE0's measurements (budgets that become gates, the ten-times result, Gaia sizes settling OQ2's branch, the frozen leaf size)",
+      "estimated_loc": 0,
+      "dependencies": [
+        "RE0a",
+        "RE0b"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "Mark has seen the measurements",
+        "the budget ceilings for RE1b3 are recorded in this file"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1a1",
+      "description": "Registry builder, pure part (sim/tools/reach_registry.ail + test): rows with parallax >= 10 mas from the truth table minus stars.json ids, quality flags from table1c.dat, leaf sort, 44-byte row encoding",
+      "estimated_loc": 200,
+      "dependencies": [
+        "PAUSE1"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-registry-test passes its named checks (counts by flag, duplicate, 25 pc exclusion, byte layout)",
+        "strict VM equals interpreter",
+        "ailang check --package sim clean"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1a2",
+      "description": "FS entry and targets: make reach-registry, reach-registry-parity, the SHA256SUMS pin, the starmap-assets fetch, starmap-consistency TIER=reach; attended publish to the public bucket",
+      "estimated_loc": 150,
+      "dependencies": [
+        "RE1a1"
+      ],
+      "routing": "loop, then attended publish",
+      "acceptance_criteria": [
+        "make reach-registry reports 302,239 rows minus the stars.json overlap, and 295,010 destination flags counting stars.json's",
+        "make reach-registry-parity: VM bytes equal interpreter bytes",
+        "make starmap-consistency TIER=reach passes and fails on an identity seen twice",
+        "after the publish: rm data/starmap/reach_100pc.*; make starmap-assets fetches and verifies by sha256"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1b1",
+      "description": "sim/reach.ail: leaf index over registry rows, star by id, plan by id with refusals, the beyond_surveyed_medium plan field; the registry read in sim/ship.ail",
+      "estimated_loc": 250,
+      "dependencies": [
+        "RE1a2"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-test: a plan by id reaches the truth-table position to 1e-9 ly",
+        "legs of 326, 1,000 and 3,000 ly equal the package's closed form",
+        "unknown_star and not_a_destination are refused; a missing or mismatched registry refuses the session",
+        "make strict passes"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1b2",
+      "description": "Imaging (full, 59 ly) and radio (rare, 168 ly) queries over tier A for any observer position; make reach-agree",
+      "estimated_loc": 220,
+      "dependencies": [
+        "RE1b1"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-agree: the rare list equals the filter of full generation byte for byte, four presets",
+        "VM equals interpreter on a 2,000-row subset",
+        "make strict passes"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1b3",
+      "description": "make reach-budget with PAUSE1's ceilings at the calibrated density and at ten times it; the unchanged-universe check",
+      "estimated_loc": 130,
+      "dependencies": [
+        "RE1b2"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make reach-budget passes at both densities, reporting CPU time and host load",
+        "make census prints digest 39482d0def4b3cb7108eeefff40c4c3882d0106294db2fa069ebd44bc6517851",
+        "git diff --exit-code origin/main -- data/starmap/stars.json"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1c1",
+      "description": "Protocol 2.20 in the sim: reach.meta, worlds.hosts for every measured host inside 100 pc (derived at session start), the plan-by-id intent and echo",
+      "estimated_loc": 200,
+      "dependencies": [
+        "RE1b1"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "the new protocol_test and protocol_worlds_test cases pass under make sim",
+        "make strict and make parity-v2 pass",
+        "no preset value, history or state appears in any 2.20 field"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1c2",
+      "description": "Bridge SESSION_MINOR 20, new replay cases for both architectures, worlds-leak extended to 2.20",
+      "estimated_loc": 100,
+      "dependencies": [
+        "RE1c1"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make replay: every stream below 2.20 equals today's golden",
+        "make worlds-leak: a 2.20 session is byte-identical under the four presets",
+        "make session-minor-guard and make replay-map-index pass"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1d0",
+      "description": "make bench-map (pan and zoom script, pick timer, load timer) and its headless half map-bench-headless; baseline of today's map with the registry forced in",
+      "estimated_loc": 120,
+      "dependencies": [
+        "RE1a2"
+      ],
+      "routing": "loop; the frame-time half runs once only if the GPU is free, never a gate",
+      "acceptance_criteria": [
+        "make map-bench-headless runs through $(SCRIPT_GATE)",
+        "baseline load and pick times recorded in this file",
+        "new .gd files committed with their .uid"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1d1",
+      "description": "ui/reach_registry.gd: binary loader with float64 positions kept, id index, points grouped by leaf, sha checked against the sidecar",
+      "estimated_loc": 220,
+      "dependencies": [
+        "RE1d0"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make map-registry-test (headless, $(SCRIPT_GATE)): row count, three known stars at truth positions, a corrupt file refused",
+        "load <= 1 s CPU",
+        ".gd and .uid committed together"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1d2",
+      "description": "ui/map_lod.gd: level-of-detail rules as pure functions of view width, cell picking, search by name or id, marks never culled",
+      "estimated_loc": 220,
+      "dependencies": [
+        "RE1d1"
+      ],
+      "routing": "loop",
+      "acceptance_criteria": [
+        "make map-lod-test: the rules table holds at every listed width",
+        "picking equals the exhaustive search on 10,000 random clicks and takes <= 2 ms",
+        "a finder mark survives every width"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1d3",
+      "description": "Level-of-detail mock-up on the real registry with fixture marks: stills at 30, 100 and 326 ly and a plain-language review page; no copy, no polish",
+      "estimated_loc": 100,
+      "dependencies": [
+        "RE1d2"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "make reach-capture runs through $(SCRIPT_GATE) and writes the three stills",
+        "the stills have been opened and described on the review page"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "PAUSE2",
+      "description": "Stop for Mark: the level-of-detail mock-up, before copy or polish",
+      "estimated_loc": 0,
+      "dependencies": [
+        "RE1d3"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "Mark's OK or changes on what each width shows and how 'probable binary' reads"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "RE1d4",
+      "description": "Wire into ui/galaxy_map.gd: leaf-grouped points, zoom and rings to 326 ly, labels and flags as agreed, plan by id, the unsurveyed-medium label from its sim field",
+      "estimated_loc": 280,
+      "dependencies": [
+        "PAUSE2",
+        "RE1c2"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "make ui, make map-lod-test, make map-registry-test and make display-audit-worlds pass",
+        "make reach-capture stills opened",
+        "a golden case is added only if a shader changed, and is left to the nightly"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "LAND",
+      "description": "Combined dev build with current main, cross-family evaluation, changelog fragment, report, starmap-large-tier L3 marked landed",
+      "estimated_loc": 0,
+      "dependencies": [
+        "RE1b3",
+        "RE1c2",
+        "RE1d4"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "make ci-fast green",
+        "evaluation >= 70 by a different model family",
+        "make publish-dev from the PR clone after merging main; the export smoke checks the registry ships"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "PAUSE3",
+      "description": "Stop for Mark: the dev build; his OK on the map at 326 ly closes RE1 and opens RE2's plan",
+      "estimated_loc": 0,
+      "dependencies": [
+        "LAND"
+      ],
+      "routing": "attended",
+      "acceptance_criteria": [
+        "Mark's OK on the dev build"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "external_dependencies": [
+    "protocol minor 2.19 is reserved by R3-REASONS RT2b; this sprint takes 2.20, re-read at RE1c1",
+    "RE1's queries are used in play only once R3-REASONS RT2 (the evidence ledger) lands, which waits on sunholo/observe 0.2.0 (unpublished; ailang#2277)",
+    "the preset calibration ruling is pending; nothing in RE1 reads a preset's values"
+  ]
+}
