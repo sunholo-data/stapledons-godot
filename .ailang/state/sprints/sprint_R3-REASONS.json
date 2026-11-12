@@ -86,10 +86,10 @@
     "a mutant value fails make lore-check",
     "every row cited to a primary source"
    ],
-   "passes": null,
+   "passes": true,
    "started": "2026-11-12",
-   "completed": null,
-   "notes": "Draft: stapledons-design PR #57, physics/observation.md, OB-1..OB-40, Python oracle 40/40 with a mutant control. Mark's rulings 2026-11-12: include zodiacal light; SNR 5 = hint and SNR 10 = strong; 100 m dish is the starting receiver; own registry file. Revision in progress (zodi rows, both thresholds, two feature-doc cells corrected)."
+   "completed": "2026-11-12",
+   "notes": "Landed: stapledons-design PR #57, merge d03ed058. physics/observation.md, OB-1..OB-52 (zodiacal light included; SNR 5 hint and SNR 10 strong; 100 m dish the starting receiver). Python oracle 52/52 with a mutant control, rerun by the controller. Recorded mismatch: Sheikh et al. 2025 cases 2 and 3 do not reproduce (no OB row uses them). lore-values does not read the file yet (RT1)."
   },
   {
    "id": "RT1a",
@@ -105,9 +105,9 @@
     "ailang pkg quality clean"
    ],
    "passes": null,
-   "started": null,
+   "started": "2026-11-12",
    "completed": null,
-   "notes": null
+   "notes": "Taken attended (Mark: 'lets build it'); fresh ailang-packages clone."
   },
   {
    "id": "RT1b",
@@ -123,9 +123,9 @@
     "dry-run publish passes; publish by attended session"
    ],
    "passes": null,
-   "started": null,
+   "started": "2026-11-12",
    "completed": null,
-   "notes": null
+   "notes": "Taken attended (Mark: 'lets build it'); fresh ailang-packages clone."
   },
   {
    "id": "RT2a",
