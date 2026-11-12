@@ -191,6 +191,7 @@ func _ready() -> void:
 	var args := _user_args()
 	if args.has("telescope-app-probe"):
 		set_process(false)
+		await get_tree().process_frame # The root must finish adding the main scene before the probe adds the real ship.
 		var probe = load("res://ui/telescope_app_probe.gd").new()
 		get_tree().quit(await probe.run(get_tree(), OS.get_cmdline_user_args()))
 		return
