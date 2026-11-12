@@ -7,9 +7,17 @@
 # a gate. Values that differ between runs, or between the strict VM and the interpreter, fail
 # it; a missed budget is printed and recorded, and is a stop for the owner (sprint plan,
 # pause 1), not a failure of this command.
-.PHONY: lab-probe lab-probe-parity
+.PHONY: lab-probe lab-probe-parity lab-probe-check
 lab-probe: ## R3-UNIVERSE-LAB UL0a: draw loop, quadrature, order-statistic intervals, a 500,000-row filter and 1/4/8/12 processes, three runs each with the host load -> data/lab/probe.json
 	@AILANG="$(AILANG)" python3 -I tools/lab_probe.py --out data/lab/probe.json
+
+# The committed measurements say what their own runs say: each file's budgets are re-derived
+# from its recorded runs under the harness's rules (every budget on its worst run, never the
+# mean) and must equal what is stored, and each records the host's core layout. Measures
+# nothing; in make test.
+lab-probe-check: ## R3-UNIVERSE-LAB UL0a: data/lab/probe*.json carry the budgets their recorded runs give, each judged on its worst run
+	@AILANG="$(AILANG)" python3 -I tools/lab_probe.py --verify $(sort $(wildcard data/lab/probe*.json))
+test: lab-probe-check
 
 # Every probe entry on the strict VM and on the interpreter, byte for byte, at small sizes.
 # In make strict and make parity (so ci-fast): the probes stay strict-VM clean.

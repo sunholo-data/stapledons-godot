@@ -3,25 +3,39 @@
  "budgets": [
   {
    "design": "above 1 s is a stop (sprint plan, pause 1); 1/p = 10,000 draws",
+   "judged_on": "the worst run (CPU seconds)",
    "limit_s": 1.0,
-   "measured_cpu_s": 0.3258483999999999,
-   "measured_wall_s": 0.38633330136459937,
+   "mean_cpu_s": 0.3258483999999999,
+   "mean_wall_s": 0.38633330136459937,
    "name": "new-game draw loop at p = 1e-4",
+   "note": "32.6 us CPU per draw measured against the design's estimate of about 16 us (2.0 times); still inside the budget",
    "pass": true,
    "worst_run_cpu_s": 0.3262773
   },
   {
    "design": "less than 6 times one is a stop (sprint plan, pause 1)",
+   "judged_on": "the worst run (slowest 12-process run against the fastest 1-process run)",
    "limit_x": 6.0,
-   "measured_x": 4.5284309878649065,
+   "mean_x": 4.5284309878649065,
    "name": "12 shards against one",
    "pass": false,
-   "worst_pairing_x": 3.5695917488339535
+   "worst_run_x": 3.5695917488339535
   }
  ],
  "host": {
+  "core_layout": [
+   {
+    "cores": 12,
+    "kind": "performance"
+   },
+   {
+    "cores": 4,
+    "kind": "efficiency"
+   }
+  ],
   "logical_cpus": 16,
   "machine": "arm64",
+  "recorded": "when the file was re-judged, on the machine that measured it",
   "system": "Darwin"
  },
  "load_average_at_end": [
@@ -54,7 +68,9 @@
      "mean": 32.58483999999999,
      "min": 32.53601
     },
+    "design_estimate_us_per_draw": 16.0,
     "draws_per_cpu_second": 30689.11800702413,
+    "measured_over_design_estimate": 2.0365524999999995,
     "wall_s_for_10000_draws": {
      "max": 0.4446204584091902,
      "mean": 0.38633330136459937,
@@ -566,5 +582,5 @@
   "entry": "draws",
   "size": 100000
  },
- "schema": "lab-probe-1"
+ "schema": "lab-probe-2"
 }
