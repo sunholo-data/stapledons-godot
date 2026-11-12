@@ -12,7 +12,10 @@ and compilation are not counted. CPU seconds are the child's user + system time
 from wait4; wall seconds are also kept. The 1-minute load average is recorded
 before every timing, because the host is shared. Budgets are judged on CPU
 time (design: "budgets use CPU time and record the load"), except shard
-scaling, which is wall-clock throughput by definition.
+scaling, which is wall-clock throughput by definition. EVERY budget is judged on
+its worst run, never the mean. --rejudge re-derives a recorded file's budgets
+under the current rules without measuring; --verify (make lab-probe-check) fails
+if a committed file's budgets are not what the rules give from its own runs.
 
 A failed budget does not fail this command: it is a stop for the owner (sprint
 plan, pause 1), printed on the last line and recorded in the file. Differing
@@ -122,11 +125,123 @@ def field(line, key):
     sys.exit("lab-probe: FAIL no %s= in %r" % (key, line))
 
 
+DESIGN_US_PER_DRAW = 16.0  # design r3/universe-lab.md, "Budget at new game": "estimated at about 16 us a draw"
+
+
+def host():
+    """Logical CPUs and, on Apple silicon, the split into performance and efficiency cores."""
+    h = {"logical_cpus": os.cpu_count(), "machine": platform.machine(), "system": platform.system()}
+    if sys.platform == "darwin":
+        def sysctl(key):
+            r = subprocess.run(["sysctl", "-n", key], capture_output=True, text=True)
+            return r.stdout.strip() if r.returncode == 0 else None
+        levels = []
+        for i in (0, 1):
+            name, n = sysctl("hw.perflevel%d.name" % i), sysctl("hw.perflevel%d.physicalcpu" % i)
+            if name and n:
+                levels.append({"kind": name.lower(), "cores": int(n)})
+        if levels:
+            h["core_layout"] = levels
+    return h
+
+
+def judge(doc):
+    """Derived figures and the budgets, from the recorded runs alone (no measurement).
+    EVERY budget is judged on its WORST run, never the mean: the slowest draw-loop run, and
+    for shards the slowest 12-process run against the fastest 1-process run."""
+    p, shards = doc["probes"], doc["scaling"]
+    draws, quads, intervals, filt = p["draws"], p["quadrature"], p["intervals"], p["filter"]
+    n = draws["size"]
+    us = lambda s: {k: 1e6 * v / n for k, v in s.items()}
+    per_draw_cpu, per_draw_wall = us(draws["work_cpu_s"]), us(draws["work_wall_s"])
+    draws["derived"] = {"cpu_us_per_draw": per_draw_cpu, "wall_us_per_draw": per_draw_wall,
+                        "draws_per_cpu_second": 1e6 / per_draw_cpu["mean"],
+                        "cpu_s_for_10000_draws": {k: v / 100.0 for k, v in per_draw_cpu.items()},
+                        "wall_s_for_10000_draws": {k: v / 100.0 for k, v in per_draw_wall.items()},
+                        "design_estimate_us_per_draw": DESIGN_US_PER_DRAW,
+                        "measured_over_design_estimate": per_draw_cpu["mean"] / DESIGN_US_PER_DRAW}
+    for q in quads:
+        q["derived"] = {"evaluations": q["size"] ** 2, "abs_error": abs(float(field(q["value"], "err")))}
+    intervals["derived"] = {"cpu_ms_per_1024_rows_3_intervals": {k: 1e3 * v / intervals["size"] for k, v in intervals["work_cpu_s"].items()}}
+    filt["derived"] = {"rows": 500000, "build_cpu_s": stats([r["base_cpu_s"] for r in filt["runs"]]),
+                       "cpu_s_per_pass": {k: v / filt["size"] for k, v in filt["work_cpu_s"].items()},
+                       "peak_rss_mb": stats([r["peak_rss_mb"] for r in filt["runs"]])}
+    t12 = [s for s in shards["by_processes"] if s["processes"] == 12][0]["throughput_x"]
+    worst_draw = draws["derived"]["cpu_s_for_10000_draws"]["max"]
+    return [
+        {"name": "new-game draw loop at p = 1e-4", "design": "above 1 s is a stop (sprint plan, pause 1); 1/p = 10,000 draws",
+         "judged_on": "the worst run (CPU seconds)", "worst_run_cpu_s": worst_draw,
+         "mean_cpu_s": draws["derived"]["cpu_s_for_10000_draws"]["mean"], "mean_wall_s": draws["derived"]["wall_s_for_10000_draws"]["mean"],
+         "limit_s": 1.0, "pass": worst_draw <= 1.0,
+         "note": "%.1f us CPU per draw measured against the design's estimate of about %.0f us (%.1f times); still inside the budget" % (
+             per_draw_cpu["mean"], DESIGN_US_PER_DRAW, per_draw_cpu["mean"] / DESIGN_US_PER_DRAW)},
+        {"name": "12 shards against one", "design": "less than 6 times one is a stop (sprint plan, pause 1)",
+         "judged_on": "the worst run (slowest 12-process run against the fastest 1-process run)", "worst_run_x": t12["min"],
+         "mean_x": t12["mean"], "limit_x": 6.0, "pass": t12["min"] >= 6.0},
+    ]
+
+
+def report(doc, where):
+    p, shards, budgets = doc["probes"], doc["scaling"], doc["budgets"]
+    draws, quads, intervals, filt = p["draws"], p["quadrature"], p["intervals"], p["filter"]
+    per_draw_cpu = draws["derived"]["cpu_us_per_draw"]
+    layout = ", ".join("%d %s" % (l["cores"], l["kind"]) for l in doc["host"].get("core_layout", [])) or "core layout not recorded"
+    print("lab-probe: %s; %s logical CPUs (%s); load average %.1f at start, %.1f at end; %d runs each" % (
+        doc["ailang"], doc["host"]["logical_cpus"], layout, doc["load_average_at_start"][0], doc["load_average_at_end"][0], doc["runs_each"]))
+    print("lab-probe: draws %.1f us CPU per draw (%.1f to %.1f; the design estimated about %.0f), %.0f draws per CPU second; 10,000 draws %.3f s CPU worst run, %.3f s wall mean" % (
+        per_draw_cpu["mean"], per_draw_cpu["min"], per_draw_cpu["max"], DESIGN_US_PER_DRAW, draws["derived"]["draws_per_cpu_second"],
+        budgets[0]["worst_run_cpu_s"], budgets[0]["mean_wall_s"]))
+    for q in quads:
+        print("lab-probe: quadrature %4d x %-4d %.3f s CPU (%.3f to %.3f), |error| %.2e" % (
+            q["size"], q["size"], q["work_cpu_s"]["mean"], q["work_cpu_s"]["min"], q["work_cpu_s"]["max"], q["derived"]["abs_error"]))
+    iv = intervals["derived"]["cpu_ms_per_1024_rows_3_intervals"]
+    print("lab-probe: intervals %.3f ms CPU per 1,024-row sample, three intervals (%.3f to %.3f)" % (iv["mean"], iv["min"], iv["max"]))
+    fd = filt["derived"]
+    print("lab-probe: filter 500,000 rows: %.3f s CPU per pass (%.3f to %.3f); build %.2f s CPU; peak %.0f MB" % (
+        fd["cpu_s_per_pass"]["mean"], fd["cpu_s_per_pass"]["min"], fd["cpu_s_per_pass"]["max"], fd["build_cpu_s"]["mean"], fd["peak_rss_mb"]["max"]))
+    for s in shards["by_processes"]:
+        print("lab-probe: %2d processes: wall %.2f s (%.2f to %.2f), %.2f CPU s each, throughput %.2fx one on the mean, %.2fx on the worst run (load %.1f)" % (
+            s["processes"], s["wall_s"]["mean"], s["wall_s"]["min"], s["wall_s"]["max"], s["cpu_s_per_process"]["mean"],
+            s["throughput_x"]["mean"], s["throughput_x"]["min"], s["load1"]["mean"]))
+    print("lab-probe: values identical across runs; %s" % "; ".join("%s %s" % kv for kv in sorted(doc["parity"].items())))
+    print("lab-probe: %s; budgets, each on its worst run: %s" % (where, "; ".join(
+        "%s %s" % (b["name"], "PASS" if b["pass"] else "FAIL (a stop for the owner)") for b in budgets)))
+
+
+def write(doc, out):
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    with open(out, "w") as f:
+        json.dump(doc, f, indent=1, sort_keys=True)
+        f.write("\n")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="data/lab/probe.json")
     ap.add_argument("--runs", type=int, default=3)
+    ap.add_argument("--rejudge", metavar="FILE", help="re-derive the budgets of a recorded file under the current rules; measures nothing")
+    ap.add_argument("--verify", metavar="FILE", nargs="+", help="fail unless each recorded file's budgets are what the current rules give")
     a = ap.parse_args()
+    if a.verify:
+        for path in a.verify:
+            doc = json.load(open(os.path.join(ROOT, path)))
+            stored = doc.get("budgets")
+            if doc.get("schema") != "lab-probe-2" or "core_layout" not in doc.get("host", {}):
+                sys.exit("lab-probe-check: FAIL %s: not schema lab-probe-2 with the host's core layout" % path)
+            if judge(doc) != stored:
+                sys.exit("lab-probe-check: FAIL %s: its budgets are not what the rules give from its own runs (every budget is judged on the worst run)" % path)
+            print("lab-probe-check: %s: %s" % (path, "; ".join("%s %s" % (b["name"], "PASS" if b["pass"] else "FAIL (a stop for the owner)") for b in stored)))
+        return
+    if a.rejudge:
+        out = os.path.join(ROOT, a.rejudge)
+        doc = json.load(open(out))
+        doc["schema"] = "lab-probe-2"
+        if "core_layout" not in doc["host"]:
+            doc["host"] = dict(host(), recorded="when the file was re-judged, on the machine that measured it")
+        doc["budgets"] = judge(doc)
+        write(doc, out)
+        report(doc, "re-judged %s (nothing measured)" % a.rejudge)
+        return
     if a.runs < 3:
         sys.exit("lab-probe: --runs must be at least 3")
     version = subprocess.run([ailang(), "--version"], cwd=ROOT, capture_output=True, text=True).stdout.split("\n")[0].strip()
@@ -153,59 +268,15 @@ def main():
     if not (math.isclose(exact, (1.3 ** 4 - 4 * 0.3 ** 4) / 24.0, rel_tol=1e-12) and errs[0] < 1e-6 and errs[2] < errs[1] < errs[0]):
         sys.exit("lab-probe: FAIL quadrature: errors %s against the closed form %r" % (errs, exact))
 
-    us = lambda s: {k: 1e6 * v / draws_n for k, v in s.items()}
-    per_draw_cpu, per_draw_wall = us(draws["work_cpu_s"]), us(draws["work_wall_s"])
-    draws["derived"] = {"cpu_us_per_draw": per_draw_cpu, "wall_us_per_draw": per_draw_wall,
-                        "draws_per_cpu_second": 1e6 / per_draw_cpu["mean"],
-                        "cpu_s_for_10000_draws": {k: v / 100.0 for k, v in per_draw_cpu.items()},
-                        "wall_s_for_10000_draws": {k: v / 100.0 for k, v in per_draw_wall.items()}}
-    for q in quads:
-        q["derived"] = {"evaluations": q["size"] ** 2, "abs_error": abs(float(field(q["value"], "err")))}
-    intervals["derived"] = {"cpu_ms_per_1024_rows_3_intervals": {k: 1e3 * v / reps for k, v in intervals["work_cpu_s"].items()}}
-    filt["derived"] = {"rows": 500000, "build_cpu_s": stats([r["base_cpu_s"] for r in filt["runs"]]),
-                       "cpu_s_per_pass": {k: v / passes for k, v in filt["work_cpu_s"].items()},
-                       "peak_rss_mb": stats([r["peak_rss_mb"] for r in filt["runs"]])}
-
-    t12 = [s for s in shards["by_processes"] if s["processes"] == 12][0]["throughput_x"]
-    budgets = [
-        {"name": "new-game draw loop at p = 1e-4", "design": "above 1 s is a stop (sprint plan, pause 1); 1/p = 10,000 draws",
-         "measured_cpu_s": draws["derived"]["cpu_s_for_10000_draws"]["mean"], "worst_run_cpu_s": draws["derived"]["cpu_s_for_10000_draws"]["max"],
-         "measured_wall_s": draws["derived"]["wall_s_for_10000_draws"]["mean"], "limit_s": 1.0,
-         "pass": draws["derived"]["cpu_s_for_10000_draws"]["max"] <= 1.0},
-        {"name": "12 shards against one", "design": "less than 6 times one is a stop (sprint plan, pause 1)",
-         "measured_x": t12["mean"], "worst_pairing_x": t12["min"], "limit_x": 6.0, "pass": t12["mean"] >= 6.0},
-    ]
-    doc = {"schema": "lab-probe-1", "run": "R3-UNIVERSE-LAB UL0a", "ailang": version,
-           "host": {"logical_cpus": os.cpu_count(), "machine": platform.machine(), "system": platform.system()},
+    doc = {"schema": "lab-probe-2", "run": "R3-UNIVERSE-LAB UL0a", "ailang": version, "host": host(),
            "runs_each": a.runs, "load_average_at_start": list(load_start), "load_average_at_end": list(os.getloadavg()),
            "method": "full size minus base size per run, one process at a time; CPU = child user + system (wait4); "
                      "every probe is a stand-in for a module not yet written (see sim/tools/lab_probe.ail)",
            "parity": parity, "probes": {"draws": draws, "quadrature": quads, "intervals": intervals, "filter": filt},
-           "scaling": shards, "budgets": budgets}
-    out = os.path.join(ROOT, a.out)
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, "w") as f:
-        json.dump(doc, f, indent=1, sort_keys=True)
-        f.write("\n")
-
-    print("lab-probe: %s; load average %.1f at start, %.1f at end; %d runs each" % (version, load_start[0], os.getloadavg()[0], a.runs))
-    print("lab-probe: draws %.1f us CPU per draw (%.1f to %.1f), %.0f draws per CPU second; 10,000 draws %.3f s CPU, %.3f s wall" % (
-        per_draw_cpu["mean"], per_draw_cpu["min"], per_draw_cpu["max"], draws["derived"]["draws_per_cpu_second"],
-        budgets[0]["measured_cpu_s"], budgets[0]["measured_wall_s"]))
-    for q in quads:
-        print("lab-probe: quadrature %4d x %-4d %.3f s CPU (%.3f to %.3f), |error| %.2e" % (
-            q["size"], q["size"], q["work_cpu_s"]["mean"], q["work_cpu_s"]["min"], q["work_cpu_s"]["max"], q["derived"]["abs_error"]))
-    iv = intervals["derived"]["cpu_ms_per_1024_rows_3_intervals"]
-    print("lab-probe: intervals %.3f ms CPU per 1,024-row sample, three intervals (%.3f to %.3f)" % (iv["mean"], iv["min"], iv["max"]))
-    fd = filt["derived"]
-    print("lab-probe: filter 500,000 rows: %.3f s CPU per pass (%.3f to %.3f); build %.2f s CPU; peak %.0f MB" % (
-        fd["cpu_s_per_pass"]["mean"], fd["cpu_s_per_pass"]["min"], fd["cpu_s_per_pass"]["max"], fd["build_cpu_s"]["mean"], fd["peak_rss_mb"]["max"]))
-    for s in shards["by_processes"]:
-        print("lab-probe: %2d processes: wall %.2f s (%.2f to %.2f), %.2f CPU s each, throughput %.2fx one (load %.1f)" % (
-            s["processes"], s["wall_s"]["mean"], s["wall_s"]["min"], s["wall_s"]["max"], s["cpu_s_per_process"]["mean"],
-            s["throughput_x"]["mean"], s["load1"]["mean"]))
-    print("lab-probe: values identical across runs; %s" % "; ".join("%s %s" % kv for kv in sorted(parity.items())))
-    print("lab-probe: wrote %s; budgets: %s" % (a.out, "; ".join("%s %s" % (b["name"], "PASS" if b["pass"] else "FAIL (a stop for the owner)") for b in budgets)))
+           "scaling": shards}
+    doc["budgets"] = judge(doc)
+    write(doc, os.path.join(ROOT, a.out))
+    report(doc, "wrote %s" % a.out)
 
 
 if __name__ == "__main__":
