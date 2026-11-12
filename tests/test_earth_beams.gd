@@ -12,7 +12,7 @@ extends SceneTree
 
 var failures := 0
 var passes := 0
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
 
 
 func check(label: String, ok: bool) -> void:

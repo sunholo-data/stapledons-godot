@@ -7,6 +7,7 @@ dropped reply and a stale digest must each fail. Run: python3 tools/test_replay.
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -324,6 +325,93 @@ def plan_index_mismatches(log_texts, stars):
     return bad
 
 
+# 7am: a catalogue target written by hand in GDScript or Python carries its stars.json index, as a
+# recorded log's must (GalaxyMap.target_name()/subtitle_text() trust the index only when
+# catalogue[index].id == id). Both key orders, JSON spacing or none. Ids not in stars.json (Sol, the
+# design row, synthetic ports) are not catalogue targets and are skipped. Id literals are decoded first
+# (decode_id: \" \\ and \uXXXX); any other escape fails rather than passing as a synthetic id. This file is exempt: its
+# controls write wrong pairs on purpose. AILANG sources are out of scope: the sim never reads the
+# index (sim/core.ail stores it, sim/protocol.ail echoes it) and its tests number local catalogues.
+#  The pair is taken within one dictionary: SOURCE_TOKEN lists each "index" and "id" literal and each
+# brace, and other string literals are consumed whole, so a "pos": {...} between the keys does not hide
+# the pair, and a nested dictionary's id is never paired with the outer index (both key orders).
+SOURCE_TOKEN = re.compile(r'"index"\s*:\s*(-?\d+)|"id"\s*:\s*"((?:[^"\\\n]|\\.)*)"|"(?:[^"\\\n]|\\.)*"|([{}])')
+SOURCE_EXEMPT = ("tools/test_replay.py",)
+# Pairs left wrong on purpose until Mark rules (7am OQ1): fixing them moves a review capture. Each must
+# still be wrong (a stale entry fails), so the list only shrinks.
+SOURCE_PENDING = ("tools/earth_link_capture.gd:16",)
+
+
+def source_files():
+    """Tracked *.gd and *.py files, in any directory (git pathspec * crosses /)."""
+    out = subprocess.run(["git", "-C", ROOT, "ls-files", "-z", "--", "*.gd", "*.py"], capture_output=True, check=True).stdout
+    return sorted(f for f in out.decode().split("\0") if f and f not in SOURCE_EXEMPT)
+
+
+def decode_id(raw):
+    """The id a GDScript or Python string literal spells. Supported escapes, which mean the same in
+    GDScript, Python and JSON: \\" \\\\ and \\uXXXX (four hex digits). Any other escape returns None."""
+    out, i = [], 0
+    while i < len(raw):
+        if raw[i] != "\\":
+            out.append(raw[i])
+            i += 1
+        elif raw[i + 1:i + 2] in ('"', "\\"):
+            out.append(raw[i + 1])
+            i += 2
+        elif raw[i + 1:i + 2] == "u" and re.fullmatch(r"[0-9A-Fa-f]{4}", raw[i + 2:i + 6]):
+            out.append(chr(int(raw[i + 2:i + 6], 16)))
+            i += 6
+        else:
+            return None
+    return "".join(out)
+
+
+def _level_pairs(level):
+    """Every (start, index, raw id) of one dictionary's own level: its index and id literals pair up."""
+    idx = [(p, v) for p, k, v in level if k == "index"]
+    ids = [(p, v) for p, k, v in level if k == "id"]
+    return [(min(p, q), i, raw) for p, i in idx for q, raw in ids]
+
+
+def source_pairs(text):
+    """(start, index, raw id) for each dictionary in text, in source order (dictionary-aware, see SOURCE_TOKEN)."""
+    out, frames = [], [[]]
+    for m in SOURCE_TOKEN.finditer(text):
+        if m.group(3) == "{":
+            frames.append([])
+        elif m.group(3) == "}":
+            if len(frames) > 1:
+                out.extend(_level_pairs(frames.pop()))
+        elif m.group(1) is not None:
+            frames[-1].append((m.start(), "index", m.group(1)))
+        elif m.group(2) is not None:
+            frames[-1].append((m.start(), "id", m.group(2)))
+    for level in frames:  # unclosed braces: the open dictionaries still count
+        out.extend(_level_pairs(level))
+    return sorted(out)
+
+
+def source_index_pairs(file_texts, stars):
+    """(checked, bad): every hand-written (index, catalogue id) pair, and those whose index is not the id's.
+    An id literal with an unsupported escape is reported as bad, never skipped as a synthetic id."""
+    index = {s["id"]: i for i, s in enumerate(stars)}
+    checked, bad = [], []
+    for name, text in file_texts:
+        for start, i, raw in source_pairs(text):
+            where = "%s:%d" % (name, text.count("\n", 0, start) + 1)
+            sid = decode_id(raw)
+            if sid is None:
+                bad.append('%s unsupported escape in id literal "%s"' % (where, raw))
+                continue
+            if sid not in index:
+                continue
+            checked.append(where)
+            if int(i) != index[sid]:
+                bad.append("%s %s index %s, stars.json %d" % (where, sid, i, index[sid]))
+    return checked, bad
+
+
 class MapIndex(unittest.TestCase):
     """A committed log's plan targets point at the shipped map: index == stars.json index of the id
     (companions round 1: Sirius B moving ahead of Sirius A changed Sirius A's index 8 -> 9)."""
@@ -347,13 +435,77 @@ class MapIndex(unittest.TestCase):
     def test_an_unknown_id_fails(self):
         logs = [(n, t.replace('"id":"CNS5:1676"', '"id":"CNS5:999999"')) for n, t in self.logs()]
         self.assertEqual(len(plan_index_mismatches(logs, self.stars())), 1)
-    def test_the_7ai_index_fails(self):  # control: alpha Cen A (CNS5:3627) at HIP 71681's index 1, as earth_log_voyage had it until 7ai
+    def test_the_7ai_index_fails(self):  # control: alpha Cen A (CNS5:3627) at HIP 71681's index, as earth_log_voyage had it until 7ai
+        stars = self.stars()
+        a, b = self.at(stars, "CNS5:3627"), self.at(stars, "HIP 71681")
+        good, wrong = '"index":%d,"id":"CNS5:3627"' % a, '"index":%d,"id":"CNS5:3627"' % b
         logs = self.logs()
-        n = sum(t.count('"index":2,"id":"CNS5:3627"') for _, t in logs)
-        bad = plan_index_mismatches([(f, t.replace('"index":2,"id":"CNS5:3627"', '"index":1,"id":"CNS5:3627"')) for f, t in logs], self.stars())
+        n = sum(t.count(good) for _, t in logs)
+        bad = plan_index_mismatches([(f, t.replace(good, wrong)) for f, t in logs], stars)
         self.assertGreater(n, 0)
         self.assertEqual(len(bad), n)
-        self.assertIn("earth_log_voyage.ndjson:3 plan CNS5:3627 index 1, stars.json 2", bad)
+        self.assertIn("earth_log_voyage.ndjson:3 plan CNS5:3627 index %d, stars.json %d" % (b, a), bad)
+
+    @staticmethod
+    def at(stars, sid):
+        return [s["id"] for s in stars].index(sid)
+
+    def sources(self):
+        out = []
+        for f in source_files():
+            with open(os.path.join(ROOT, f), encoding="utf-8") as h:
+                out.append((f, h.read()))
+        return out
+
+    def test_source_literals_match_the_map(self):  # 7am
+        checked, bad = source_index_pairs(self.sources(), self.stars())
+        self.assertEqual([b for b in bad if b.split(" ")[0] not in SOURCE_PENDING], [])
+        self.assertEqual([p for p in SOURCE_PENDING if p not in [b.split(" ")[0] for b in bad]], [])
+        self.assertIn("ui/transit_harness.gd:10", checked)  # known positive: the scan sees a real pair
+
+    def test_source_scan_covers_gd_and_py_in_subdirectories(self):  # 7am: enumeration control
+        files = source_files()
+        for f in ("ui/transit_harness.gd", "tools/worlds_leak.py", "tests/test_earth_beams.gd"):
+            self.assertIn(f, files)
+        self.assertNotIn("tools/test_replay.py", files)
+
+    def test_the_7am_literals_fail(self):  # control: each 7am shape, at a wrong index, is caught by name
+        stars = self.stars()
+        a, b, s9 = self.at(stars, "CNS5:3627"), self.at(stars, "HIP 71681"), self.at(stars, "CNS5:1676")
+        texts = [("x.gd", 'const ALPHA := {"index": %d, "id": "CNS5:3627", "pos": {}}\n' % b),
+                 ("y.py", 'pass\nt = {"index":%d,"id":"CNS5:1676","pos":{}}\n' % (s9 - 7)),
+                 ("z.gd", 'var d:={"id":"CNS5:3627","index":%d,"x":0.}\n' % (a + 1)),
+                 ("w.gd", 'const P := {"k": "plan", "target": {"index": 2, "id": "CNS5:1142",\n\t"pos": {}}}\n'),
+                 ("ok.gd", 'const A := {"index": %d, "id": "CNS5:3627"}\nconst S := {"index": 0, "id": "Sol"}\n' % a)]
+        checked, bad = source_index_pairs(texts, stars)
+        self.assertEqual(bad, ["x.gd:1 CNS5:3627 index %d, stars.json %d" % (b, a),
+                               "y.py:2 CNS5:1676 index %d, stars.json %d" % (s9 - 7, s9),
+                               "z.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "w.gd:1 CNS5:1142 index 2, stars.json %d" % self.at(stars, "CNS5:1142")])
+        self.assertEqual(len(checked), 5)  # Sol is not a catalogue id
+
+    def test_the_7am_escaped_ids_fail(self):  # control: an escaped catalogue id is decoded and checked; an unsupported escape fails
+        stars = self.stars()
+        a, b = self.at(stars, "CNS5:3627"), self.at(stars, "HIP 71681")
+        texts = [("e.gd", 'const E := {"index": %d, "id": "\\u0043NS5:3627"}\n' % b),
+                 ("q.py", 'Q = {"index": %d, "id": "CNS5\\u003a3627"}\n' % a),
+                 ("u.gd", 'const U := {"index": %d, "id": "CNS5\\x3a3627"}\n' % a)]
+        checked, bad = source_index_pairs(texts, stars)
+        self.assertEqual(checked, ["e.gd:1", "q.py:1"])
+        self.assertEqual(bad, ["e.gd:1 CNS5:3627 index %d, stars.json %d" % (b, a),
+                               'u.gd:1 unsupported escape in id literal "CNS5\\x3a3627"'])
+
+    def test_the_7am_intervening_fields_fail(self):  # control: a pos field or nested dictionary between the pair does not hide it, either key order
+        stars = self.stars()
+        a = self.at(stars, "CNS5:3627")
+        texts = [("p.gd", 'const P := {"index": 1, "pos": {"x": 1}, "id": "CNS5:3627"}\n'),
+                 ("q.gd", 'const Q := {"id": "CNS5:3627", "pos": {}, "index": 1}\n'),
+                 ("n.gd", 'const N := {"index": 1, "sub": {"id": "CNS5:3627"}}\n'),
+                 ("ok.gd", 'const A := {"index": %d, "pos": {"x": {"y": 1}}, "id": "CNS5:3627"}\n' % a)]
+        checked, bad = source_index_pairs(texts, stars)
+        self.assertEqual(bad, ["p.gd:1 CNS5:3627 index 1, stars.json %d" % a,
+                               "q.gd:1 CNS5:3627 index 1, stars.json %d" % a])
+        self.assertEqual(checked, ["p.gd:1", "q.gd:1", "ok.gd:1"])  # n.gd: the nested id is not paired with the outer index
 
 
 class AiSession(unittest.TestCase):

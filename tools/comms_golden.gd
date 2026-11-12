@@ -20,7 +20,7 @@ extends SceneTree
 ## log axis, the diagram's box) are the views' presentation; the physics (400 x D, the light cone) is
 ## computed here, independently. 16 cases, plus the line that the voyage ran (17 lines).
 
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
 const SOL := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
 const PHI := 2.6466524123622457
 const WF := Vector2i(920, 400)

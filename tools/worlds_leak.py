@@ -26,7 +26,7 @@ def requests(preset, ticks):
     assert ticks >= 6
     messages = [{"v": 2, "type": "hello", "want": {"major": 2, "minor": 17}}]
     targets = (
-        {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}, "star": {"name": "alpha Centauri A", "v": -0.01, "teff": 5795}},
+        {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}, "star": {"name": "alpha Centauri A", "v": -0.01, "teff": 5795}},
         {"index": 2, "id": "synthetic-only", "pos": {"x": 5.0, "y": 0.0, "z": 0.0}, "star": {"name": "Synthetic test star", "v": 0.7, "teff": 5780}},
     )
     for raw in targets:

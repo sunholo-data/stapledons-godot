@@ -7,7 +7,7 @@ extends SceneTree
 ## test checks the sim, not this tool. Regenerate: make earth-rate-fixture (review the diff).
 
 const OUT := "res://tests/fixtures/earth/earth_rates.json"
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
 const SOL := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
 const PHI := 2.6466524123622457 # atanh(0.99)
 
