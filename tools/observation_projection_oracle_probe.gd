@@ -1,5 +1,6 @@
 extends SceneTree
 
+const Fits = preload("res://tools/observation_fits.gd")
 const ProjectionMath = preload("res://physics/observation_projection.gd")
 
 # Test-only transport. All reference maths and FITS decoding live in the
@@ -35,5 +36,8 @@ func _init() -> void:
 		ProjectionMath.sky_to_pixel(singular, 0.0, 0.0).error == "InvalidWcs",
 		ProjectionMath.sky_to_pixel(wcs, 180.0, 0.0).error == "OutsideTangentHemisphere"
 	]
-	print("OBSERVATION_ORACLE_JSON:", JSON.stringify({"results": results, "rejected": rejected}, "", true, true))
+	var header_accepted: Array = []
+	for row: Dictionary in request.get("header_cases",[]):
+		header_accepted.append(Fits.registration_errors(row.header,row.registration).is_empty())
+	print("OBSERVATION_ORACLE_JSON:", JSON.stringify({"results": results, "rejected": rejected, "header_accepted": header_accepted}, "", true, true))
 	quit()

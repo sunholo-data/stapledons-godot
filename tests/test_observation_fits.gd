@@ -61,5 +61,17 @@ func _init() -> void:
 		unsupported[key]="1"
 		check(not Fits.registration_errors(unsupported,registration).is_empty(),"unsupported alternate WCS encoding refused "+key)
 	check(not Fits.decode(fixture(-32,[-0.25,0.,1.5,11.],[["BZERO","garbage"]])).get("ok",false),"malformed numeric calibration cannot silently become zero")
+	for units in [[""," "],["deg","deg"]]:
+		var explicit_units := header.duplicate(true)
+		explicit_units.CUNIT1=units[0]
+		explicit_units.CUNIT2=units[1]
+		check(Fits.registration_errors(explicit_units,registration).is_empty(),"blank/default or explicit celestial degrees accepted")
+	for units in ["rad","arcsec","DEG","degree"]:
+		var invalid_units := header.duplicate(true)
+		invalid_units.CUNIT1=units
+		check(not Fits.registration_errors(invalid_units,registration).is_empty(),"nonstandard units refused "+units)
+	var detector_distortion := header.duplicate(true)
+	detector_distortion.DET2IM1="LOOKUP"
+	check(not Fits.registration_errors(detector_distortion,registration).is_empty(),"detector distortion cannot be ignored")
 	print("observation-fits-test: %d passed, %d failures" % [passed, failed])
 	quit(1 if failed else 0)

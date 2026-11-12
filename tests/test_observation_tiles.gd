@@ -89,20 +89,36 @@ func _init() -> void:
 	cache.request_tile(bin)
 	cache.pump()
 	check(not cache.get_tile(bin.key).is_empty(), "export png.bin decodes by bytes")
-	var bundle_dir := "res://observation_bundle/cache-fixture-%d" % OS.get_process_id()
+	# All fixture writes stay writable outside res://. A one-file data pack gives
+	# the unchanged production resolver a virtual exported-bundle entry to read.
+	var bundle_dir := "user://observation-cache-fixture-%d" % OS.get_process_id()
 	DirAccess.make_dir_recursive_absolute(bundle_dir)
-	var bundled_path := bundle_dir.path_join("tile.png.bin")
+	var fixture_source := bundle_dir.path_join("tile.png.bin")
+	var fixture_pack := bundle_dir.path_join("fixture.pck")
+	var bundled_path := "res://observation_bundle/cache-fixture-%d/tile.png.bin" % OS.get_process_id()
 	var staged: Dictionary = left.duplicate(true)
 	staged.key = "staged"
 	staged.path = "res://data/raw/observations/tiles/cache-fixture-%d/tile.png" % OS.get_process_id()
-	var sf := FileAccess.open(bundled_path, FileAccess.WRITE)
+	var sf := FileAccess.open(fixture_source, FileAccess.WRITE)
+	if sf == null:
+		check(false,"user fixture byte copy writable")
+		finish()
+		return
 	sf.store_buffer(FileAccess.get_file_as_bytes(left.path))
 	sf.close()
+	var packer := PCKPacker.new()
+	var packed := packer.pck_start(fixture_pack) == OK
+	if packed:packed = packer.add_file(bundled_path,fixture_source) == OK
+	if packed:packed = packer.flush() == OK
+	check(packed,"one-file fallback fixture pack written under user directory")
+	var mounted := packed and ProjectSettings.load_resource_pack(fixture_pack,false)
+	check(mounted,"fixture mounts a read-only virtual exported bundle entry")
 	cache.set_visible([staged.key])
 	cache.request_tile(staged)
 	cache.pump()
 	check(not cache.get_tile(staged.key).is_empty() and Cache.available_path(staged.path) == bundled_path, "missing source tile resolves to exact bundled byte copy")
-	DirAccess.remove_absolute(bundled_path)
+	DirAccess.remove_absolute(fixture_source)
+	DirAccess.remove_absolute(fixture_pack)
 	DirAccess.remove_absolute(bundle_dir)
 	var missing: Dictionary = left.duplicate(true)
 	missing.key = "missing"

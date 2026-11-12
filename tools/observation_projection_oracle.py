@@ -79,14 +79,52 @@ def validate_wcs(w):
 
 
 def header_wcs(h):
-    if (h.get("CTYPE1"), h.get("CTYPE2"), h.get("RADESYS"), h.get("CUNIT1"), h.get("CUNIT2")) != ("RA---TAN", "DEC--TAN", "ICRS", "deg", "deg"):
-        raise ValueError("only undistorted ICRS RA/DEC TAN in degrees supported")
-    distortion = r"^(PV|PS)\d_|^(CPDIS|DP\d|D2IM|DET2IM)|^(A|B|AP|BP)_ORDER$|^PC\d_|^CDELT"
+    if (h.get("CTYPE1"), h.get("CTYPE2"), h.get("RADESYS")) != ("RA---TAN", "DEC--TAN", "ICRS"):
+        raise ValueError("only undistorted ICRS RA/DEC TAN supported")
+    # FITS 4.0 section 8.2: CUNIT defaults to blank; recognised celestial
+    # coordinates use degrees. Unit tokens are case-sensitive (section 4.3).
+    if any(str(h.get(key, "")).strip() not in ("", "deg") for key in ("CUNIT1", "CUNIT2")):
+        raise ValueError("celestial CUNIT must be absent, blank or deg")
+    distortion = r"^(PV[12]_|PS[12]_|A_|B_|AP_|BP_|CPDIS|CQDIS|D2IM|DET2IM|DP1|DP2|PC[12]_)|^(CDELT[12]|CROTA[12]|LONPOLE|LATPOLE)$"
     if any(re.search(distortion, k) for k in h):
-        raise ValueError("distortion or mixed linear convention refused")
-    w = dict(zip(FIELDS, (float(h[k].replace("D", "E")) for k in ("CRPIX1", "CRPIX2", "CRVAL1", "CRVAL2", "CD1_1", "CD1_2", "CD2_1", "CD2_2"))))
+        raise ValueError("distortion or unsupported explicit WCS convention refused")
+    if "EQUINOX" in h:
+        equinox = float(h["EQUINOX"].replace("D", "E").replace("d", "e"))
+        finite(equinox)
+        if equinox != 2000:
+            raise ValueError("unsupported equinox")
+    w = dict(zip(FIELDS, (float(h[k].replace("D", "E").replace("d", "e")) for k in ("CRPIX1", "CRPIX2", "CRVAL1", "CRVAL2", "CD1_1", "CD1_2", "CD2_1", "CD2_2"))))
     validate_wcs(w)
     return w
+
+
+def header_controls(header):
+    """Contract fixtures shared as raw headers, not expected results, with Godot."""
+    cases = [("source header", dict(header), True)]
+    absent = {key: value for key, value in header.items() if key not in ("CUNIT1", "CUNIT2")}
+    cases.append(("absent celestial CUNIT defaults to degrees", absent, True))
+    cases.append(("blank celestial CUNIT defaults to degrees", dict(header, CUNIT1="", CUNIT2=" "), True))
+    cases.append(("explicit celestial degrees", dict(header, CUNIT1="deg", CUNIT2="deg"), True))
+    for unit in ("rad", "arcsec", "DEG", "degree"):
+        cases.append(("non-degree CUNIT " + unit, dict(header, CUNIT1=unit), False))
+    # This intentionally narrow CD/TAN profile refuses even default-valued legacy
+    # rotations and pole parameters rather than silently ignoring their presence.
+    for key, value in (("CROTA1", "0"), ("CROTA2", "0"), ("LONPOLE", "180"), ("LATPOLE", "90"),
+                       ("PC1_1", "1"), ("CDELT2", "1"), ("PV1_0", "0"), ("PS2_0", "ignored"),
+                       ("A_0_2", "0"), ("B_ORDER", "2"), ("AP_0_2", "0"), ("BP_ORDER", "2"),
+                       ("CPDIS1", "LOOKUP"), ("CQDIS2", "LOOKUP"), ("D2IMDIS1", "LOOKUP"),
+                       ("DET2IM1", "LOOKUP"), ("DP1", "ignored"), ("DP2", "ignored")):
+        cases.append(("unsupported explicit header " + key, dict(header, **{key: value}), False))
+    cases.append(("unsupported non-2000 equinox", dict(header, EQUINOX="1980"), False))
+    cases.append(("nonfinite equinox", dict(header, EQUINOX="NaN"), False))
+    for label, changed, expected in cases:
+        try:
+            header_wcs(changed)
+            accepted = True
+        except (ValueError, KeyError):
+            accepted = False
+        check(accepted == expected, "independent header policy: " + label)
+    return cases
 
 
 def fits_value(text):
@@ -208,6 +246,7 @@ def main(godot, probe_fault):
     blob = pinned(FITS.read_bytes(), FITS_HASH)
     catalogue = pinned((PACK / "sources.csv").read_bytes(), CSV_HASH)
     h, w, width, height, values = read_fits(blob)
+    header_cases = header_controls(h)
     check((width, height) == (724, 724), "pinned real FITS dimensions")
     rows = list(csv.DictReader(io.StringIO(catalogue.decode())))
     chosen = []
@@ -269,12 +308,15 @@ def main(godot, probe_fault):
             if case["op"] == "pixel":
                 case["oracle_ra"], case["oracle_dec"] = pixel_to_sky(case["wcs"], case["a"], case["b"])
         path = Path(temporary) / "requests.json"
-        path.write_text(json.dumps({"cases": cases, "probe_fault": probe_fault}, allow_nan=False))
+        registration = {"projection": "TAN", "frame": "ICRS", "width": width, "height": height, "wcs": w}
+        header_requests = [{"header": changed, "registration": registration} for _, changed, _ in header_cases]
+        path.write_text(json.dumps({"cases": cases, "header_cases": header_requests, "probe_fault": probe_fault}, allow_nan=False))
         run = subprocess.run([godot, "--headless", "--path", str(ROOT), "--script", "tools/observation_projection_oracle_probe.gd", "--", str(path)], text=True, capture_output=True, timeout=20)
     check(run.returncode == 0 and "SCRIPT ERROR" not in run.stdout + run.stderr, "Godot probe exit and script errors")
     output = [line.split(":", 1)[1] for line in run.stdout.splitlines() if line.startswith("OBSERVATION_ORACLE_JSON:")]
     check(len(output) == 1, "exactly one structured probe response")
     response = json.loads(output[0])
+    check(response["header_accepted"] == [expected for _, _, expected in header_cases], "Godot and independent oracle header acceptance agree")
     check(len(response["results"]) == len(cases), "probe response count")
     for case, actual in zip(cases, response["results"]):
         check(actual.get("ok") is True, "valid projection accepted")

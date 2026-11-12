@@ -69,7 +69,7 @@ static func decode(bytes: PackedByteArray) -> Dictionary:
 # alone cannot prove the manifest copied the authoritative WCS correctly.
 static func _unsupported_header(header: Dictionary) -> String:
 	for key: String in header:
-		if key.begins_with("PV1_") or key.begins_with("PV2_") or key.begins_with("PS1_") or key.begins_with("PS2_") or key.begins_with("A_") or key.begins_with("B_") or key.begins_with("AP_") or key.begins_with("BP_") or key.begins_with("CPDIS") or key.begins_with("CQDIS") or key.begins_with("D2IM") or key.begins_with("DP1") or key.begins_with("DP2"):
+		if key.begins_with("PV1_") or key.begins_with("PV2_") or key.begins_with("PS1_") or key.begins_with("PS2_") or key.begins_with("A_") or key.begins_with("B_") or key.begins_with("AP_") or key.begins_with("BP_") or key.begins_with("CPDIS") or key.begins_with("CQDIS") or key.begins_with("D2IM") or key.begins_with("DET2IM") or key.begins_with("DP1") or key.begins_with("DP2"):
 			return "unsupported FITS distortion keyword " + key
 	for key: String in header:
 		if key.begins_with("PC1_") or key.begins_with("PC2_") or key in ["CDELT1","CDELT2","CROTA1","CROTA2","LONPOLE","LATPOLE"]:return "unsupported FITS WCS encoding " + key
@@ -90,8 +90,10 @@ static func registration_errors(header: Dictionary, registration: Dictionary) ->
 	if registration.get("projection") != "TAN" or registration.get("frame") != "ICRS":errors.append("manifest requires unsupported celestial frame/projection")
 	if header.get("CTYPE1") != "RA---TAN" or header.get("CTYPE2") != "DEC--TAN":errors.append("FITS CTYPE must be RA---TAN/DEC--TAN")
 	if header.get("RADESYS") != "ICRS":errors.append("FITS RADESYS must explicitly identify ICRS")
+	# FITS 4.0 sections 8.2/4.3: absent/blank celestial CUNIT implies degrees;
+	# explicit unit symbols are case-sensitive. Keep oracle acceptance identical.
 	for key in ["CUNIT1","CUNIT2"]:
-		if header.has(key) and str(header[key]).to_lower() != "deg":errors.append("FITS celestial units must be degrees")
+		if str(header.get(key,"")).strip_edges() not in ["","deg"]:errors.append("FITS celestial units must be degrees")
 	if header.has("EQUINOX"):
 		var equinox := _header_number(header.EQUINOX)
 		if not equinox.ok or equinox.value != 2000.:errors.append("unsupported FITS equinox")
