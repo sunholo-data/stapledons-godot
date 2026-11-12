@@ -4,26 +4,42 @@ module stapledons/sim/lab_scenario
 -- file format. Pure; reading the file is the tool shell's job (sim/tools/lab_scenarios.ail).
 --
 -- A SCENARIO is a named, versioned set of switches: `data/lab/scenarios/<id>.json`.
---   { "format": "lab-scenario-1", "id": "...", "version": 1, "summary": "...",
+--   { "format": "lab-scenario-2", "id": "...", "version": 1,
+--     "baseline": { "registry": "baseline-2026.11", "departures": "<the departures table read>" },
+--     "summary": "...",
 --     "switches": [ { "switch": "<name>", "value": <value> }, ... ] }
+--
+-- THE BASELINE IS THE REGISTRY'S, NOT "THE LITERATURE" (ledger D-156, OQ2). The values a
+-- switch is compared with are the ones the design repo's registry and sunholo/worlds pin. That
+-- baseline has deliberate departures from the literature OF ITS OWN (the 1e8-year lifetime
+-- bound is the first), listed, sized and reasoned in the design repo,
+-- physics/life-and-worlds.md section 7, and mirrored in data/lab/baseline_departures.json. So
+-- a scenario with no departures departs from nothing BEYOND those. Every scenario therefore
+-- names what it stands on: `baseline.registry` must be this module's `registryBaseline()`
+-- (the package's `baselineVersion()`; a test holds the two equal), and `baseline.departures`
+-- names the table it was read against (the tool shell holds it equal to the mirror's
+-- reference). Both are in the digest: re-pinning the table changes every digest.
 -- EVERY switch below appears exactly once. Nothing is defaulted: a file that leaves a switch
 -- out is refused, so a scenario's file says everything about it and its digest covers it all.
 --
---   switch             value                                             baseline (the literature)
+--   switch             value                                             the registry baseline
 --   earth_clock_yr     a number of years, > 0                            100000  (premise 2; D-154)
 --   reach_ly           a number of light-years, > 0                      3000    (the Ranger, OQ3)
 --   universe_rule      "pure"                                            "pure"  (one unselected draw)
 --                      {"dial": {"life","minds","tech","lifetime"}}      offsets in dex, each within +-100
 --                      {"select": {"found","ended","late"}}              each a band [lo, hi]; null = open
---   lifetime_prior     "canon" (1e2..1e8 yr) | "sandberg-as-printed"     "canon" (sunholo/worlds baseline)
+--   lifetime_prior     "canon" (1e2..1e8 yr) | "sandberg-as-printed"     "canon" (what sunholo/worlds pins;
+--                      (1e2..1e10 yr, the paper's table)                         section 7, row 1, says why)
 --   signature_classes  a non-empty list of radar, tv, beacon, structure  ["radar", "tv"]
 --   quiet_minds        true | false                                      false
 --
 -- THE STANDING RULE. A switch whose value differs from the baseline is a DEPARTURE, and its
--- entry must also carry "reason" (not blank) and exactly one of "source" (not blank) or
--- "design": true. A departure without them is refused: the lab does not run it. A reason on
--- a switch that does NOT depart is refused too (it would explain a difference that is not
--- there). The `literature` scenario is the one with no departures.
+-- entry must also carry "reason" and exactly one of "source" or "design": true. A reason or a
+-- source must have something to read: text made only of spaces or of characters that draw
+-- nothing (U+200B to U+200D, U+2060, U+FEFF) counts as blank. A departure without them is
+-- refused: the lab does not run it. A reason on a switch that does NOT depart is refused too
+-- (it would explain a difference that is not there). The `baseline` scenario is the one with
+-- no departures of its own.
 --
 -- NOTHING IS GUESSED. Every malformed input is a named `Refusal`: text that is not JSON, an
 -- unknown or repeated key anywhere, an unknown, repeated or missing switch, a value of the
@@ -32,21 +48,26 @@ module stapledons/sim/lab_scenario
 --
 -- THE DIGEST is the sha256 of the CANONICAL ENCODING: the scenario re-encoded from its decoded
 -- values with keys and switches in the fixed order above, classes in ladder order, and one
--- number spelling. It therefore changes when any value, reason, source, id, version or summary
--- changes, and does not depend on the file's key order, switch order or whitespace. The
+-- number spelling. It therefore changes when any value, reason, source, id, version, summary
+-- or baseline reference changes, and does not depend on the file's key order, switch order or whitespace. The
 -- canonical text is itself a valid scenario file (the round trip).
 --
--- Known on the pinned runtime (v0.56.1): std/json `decode` accepts text after the closing
--- brace. Fixed upstream by v0.60.0 (`decode: trailing data`); not worked around here.
+-- KNOWN GAP on the pinned runtime (v0.56.1): std/json `decode` accepts text after the closing
+-- brace, so a file with trailing text is accepted and shares the digest of the file without
+-- it. Fixed upstream by v0.60.0 (`decode: trailing data`); not worked around here. A test
+-- states today's behaviour and fails at the bump (lab_scenario_test, "KNOWN GAP"), and
+-- `make lab-test` prints the gap. RE-CHECK AT THE NEXT RUNTIME BUMP.
 import std/json (Json, JNull, JBool, JNumber, JString, JArray, JObject, decode, encode, jo, kv, js, jnum, jb, ja, jn)
 import std/crypto (sha256Hex)
 import std/list (map, filter, foldl, any, length)
 import std/math (floor, floatToInt, intToFloat)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
-import std/string (trim, chars, charCode, length as strLength)
+import std/string (chars, charCode, length as strLength)
 
-export pure func formatId() -> string = "lab-scenario-1"
+export pure func formatId() -> string = "lab-scenario-2"
+-- The registry baseline every scenario stands on: sunholo/worlds `baselineVersion()`.
+export pure func registryBaseline() -> string = "baseline-2026.11"
 
 -- ------------------------------------------------------------ the types
 -- A band on one acceptance statistic; None is an open end.
@@ -61,7 +82,10 @@ export type Settings = { earthClockYr: float, reachLy: float, rule: UniverseRule
 -- Where a departure's value comes from: a citation, or the label Design (no measurement).
 export type Basis = Source(string) | Design deriving (Eq)
 export type Departure = { name: string, reason: string, basis: Basis }
-export type Scenario = { id: string, version: int, summary: string, settings: Settings, departures: [Departure] }
+-- What the scenario's "no departure" is measured from: the registry baseline's version, and
+-- the reference of the table of that baseline's own departures from the literature.
+export type BaselineRef = { registry: string, departures: string }
+export type Scenario = { id: string, version: int, baseline: BaselineRef, summary: string, settings: Settings, departures: [Departure] }
 
 -- Why a scenario is refused. The strings name the place (a key or a switch) and, for BadValue,
 -- what was expected.
@@ -84,6 +108,8 @@ export type Refusal =
   | DepartureWithoutBasis(string)   -- switch: neither a source nor the label Design
   | BothSourceAndDesign(string)     -- switch
   | ReasonWithoutDeparture(string)  -- switch: annotated, but its value is the baseline
+  | WrongBaseline(string)           -- the registry baseline it names
+  | BlankBaselineReference          -- no departures table named
   deriving (Eq)
 
 export pure func refusalText(r: Refusal) -> string =
@@ -102,10 +128,12 @@ export pure func refusalText(r: Refusal) -> string =
     DuplicateSwitch(s) => "switch \"${s}\" appears twice",
     MissingSwitch(s) => "switch \"${s}\" is missing (every switch is stated; nothing is defaulted)",
     BadValue(s, want) => "switch \"${s}\": expected ${want}",
-    DepartureWithoutReason(s) => "switch \"${s}\" departs from the literature and has no reason",
-    DepartureWithoutBasis(s) => "switch \"${s}\" departs from the literature and has neither a source nor \"design\": true",
+    DepartureWithoutReason(s) => "switch \"${s}\" departs from the registry baseline and has no reason",
+    DepartureWithoutBasis(s) => "switch \"${s}\" departs from the registry baseline and has neither a source nor \"design\": true",
     BothSourceAndDesign(s) => "switch \"${s}\" has both a source and \"design\": true",
-    ReasonWithoutDeparture(s) => "switch \"${s}\" carries a reason, source or design label but its value is the baseline"
+    ReasonWithoutDeparture(s) => "switch \"${s}\" carries a reason, source or design label but its value is the baseline",
+    WrongBaseline(b) => "baseline registry \"${b}\" is not ${registryBaseline()}",
+    BlankBaselineReference => "the baseline reference names no departures table"
   }
 
 -- ------------------------------------------------------------ the switches and the baseline
@@ -115,8 +143,12 @@ export pure func className(c: SignatureClass) -> string = match c { Radar => "ra
 pure func classOf(s: string) -> Option[SignatureClass] =
   if s == "radar" then Some(Radar) else if s == "tv" then Some(Tv) else if s == "beacon" then Some(Beacon) else if s == "structure" then Some(Structure) else None
 export pure func priorName(p: LifetimePrior) -> string = match p { Canon => "canon", SandbergAsPrinted => "sandberg-as-printed" }
+-- The log-uniform range each name stands for, in years. `canon` is what sunholo/worlds pins
+-- (a test reads the package and holds it to this); the other is Sandberg, Drexler and Ord
+-- 2018, table 1, as printed (registry LW-41).
+export pure func priorBoundsYr(p: LifetimePrior) -> (float, float) = match p { Canon => (100.0, 1.0e8), SandbergAsPrinted => (100.0, 1.0e10) }
 
--- The literature's baseline: what the `literature` scenario states, switch by switch.
+-- The registry baseline: what the `baseline` scenario states, switch by switch.
 export pure func baselineSettings() -> Settings =
   { earthClockYr: 100000.0, reachLy: 3000.0, rule: Pure, lifetimePrior: Canon, classes: [Radar, Tv], quietMinds: false }
 
@@ -156,14 +188,20 @@ pure func switchJson(sc: Scenario, name: string) -> Json {
 }
 -- The canonical text: fixed key order, switches in `switchNames` order, no whitespace.
 export pure func canonical(sc: Scenario) -> string =
-  encode(jo([kv("format", js(formatId())), kv("id", js(sc.id)), kv("version", jnum(intToFloat(sc.version))), kv("summary", js(sc.summary)),
+  encode(jo([kv("format", js(formatId())), kv("id", js(sc.id)), kv("version", jnum(intToFloat(sc.version))),
+    kv("baseline", jo([kv("registry", js(sc.baseline.registry)), kv("departures", js(sc.baseline.departures))])), kv("summary", js(sc.summary)),
     kv("switches", ja(map(\n. switchJson(sc, n), switchNames())))]))
 -- sha256 of the canonical text, lower-case hex.
 export pure func digest(sc: Scenario) -> string = sha256Hex(canonical(sc))
 
 -- ------------------------------------------------------------ validation (one path)
 pure func finite(x: float) -> bool = x - x == 0.0
-pure func blank(s: string) -> bool = trim(s) == ""
+-- Code points that draw nothing: controls and spaces, and the zero-width characters.
+pure func unseen(n: int) -> bool =
+  n <= 32 || n == 127 || n == 133 || n == 160 || n == 173 || n == 5760 || (n >= 8192 && n <= 8205) || n == 8232 || n == 8233 || n == 8239 ||
+  n == 8287 || n == 8288 || n == 12288 || n == 65279
+-- Nothing to read: empty, or only spaces and characters that draw nothing.
+pure func blank(s: string) -> bool = !any(\c. !unseen(charCode(c)), chars(s))
 pure func idChar(c: string, first: bool) -> bool {
   let n = charCode(c);
   (n >= 97 && n <= 122) || (!first && ((n >= 48 && n <= 57) || n == 45))
@@ -212,6 +250,8 @@ pure func ruleRefusal(s: Settings, ds: [Departure], names: [string]) -> Option[R
 export pure func check(sc: Scenario) -> Result[Scenario, Refusal] =
   if !validId(sc.id) then Err(BadId(sc.id))
   else if sc.version < 1 || sc.version > 1000000 then Err(BadVersion)
+  else if sc.baseline.registry != registryBaseline() then Err(WrongBaseline(sc.baseline.registry))
+  else if blank(sc.baseline.departures) then Err(BlankBaselineReference)
   else if blank(sc.summary) then Err(BlankSummary)
   else match settingsRefusal(sc.settings) {
     Some(r) => Err(r),
@@ -381,8 +421,20 @@ pure func versionOf(kvs: [KV]) -> Result[int, Refusal] =
     Some(_) => Err(BadVersion)
   }
 
+pure func baselineOf(kvs: [KV]) -> Result[BaselineRef, Refusal] =
+  match field(kvs, "baseline") {
+    None => Err(MissingKey("the scenario", "baseline")),
+    Some(j) => (match shape(j, "the baseline reference", ["registry", "departures"]) {
+      Err(r) => Err(r),
+      Ok(bs) => (match needString(bs, "the baseline reference", "registry") {
+        Err(r) => Err(r),
+        Ok(registry) => (match needString(bs, "the baseline reference", "departures") { Err(r) => Err(r), Ok(table) => Ok({ registry: registry, departures: table }) })
+      })
+    })
+  }
+
 pure func scenarioOf(j: Json) -> Result[Scenario, Refusal] =
-  match shape(j, "the scenario", ["format", "id", "version", "summary", "switches"]) {
+  match shape(j, "the scenario", ["format", "id", "version", "baseline", "summary", "switches"]) {
     Err(r) => Err(r),
     Ok(kvs) => (match needString(kvs, "the scenario", "format") {
       Err(r) => Err(r),
@@ -400,7 +452,10 @@ pure func scenarioOf(j: Json) -> Result[Scenario, Refusal] =
                   Some(r) => Err(r),
                   None => (match settingsOf(es) {
                     Err(r) => Err(r),
-                    Ok(settings) => check({ id: id, version: version, summary: summary, settings: settings, departures: notesOf(es) })
+                    Ok(settings) => (match baselineOf(kvs) {
+                      Err(r) => Err(r),
+                      Ok(base) => check({ id: id, version: version, baseline: base, summary: summary, settings: settings, departures: notesOf(es) })
+                    })
                   })
                 })
               }),
