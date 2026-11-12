@@ -28,7 +28,7 @@ max = ["IO", "FS"]
 level = "experimental"
 
 [dependencies]
-"sunholo/worlds" = "0.1.0"
+"sunholo/worlds" = "0.2.0" # R3-REASONS RT3b: propagate (the prediction at arrival); 0.1.0 modules unchanged byte for byte
 "sunholo/celestial" = "0.6.0" # W1.1: published habitability; prior stellar API/results retained
 "sunholo/relativity" = "0.12.0"
 "sunholo/observe" = "0.1.0" # R3-EARTH-LINK EL1: lightcone (light cone, catch-up, link windows, beam rays, the Earth rate)
