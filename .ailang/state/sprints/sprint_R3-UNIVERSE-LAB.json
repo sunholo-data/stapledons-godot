@@ -361,10 +361,10 @@
     "the literature scenario has no departures",
     "make strict passes"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-12",
+   "completed": "2026-11-12",
+   "notes": "sim/lab_scenario.ail (format lab-scenario-1), sim/tools/lab_scenarios.ail, data/lab/scenarios/{literature,lonely,pure}.json. Six switches, every one stated in every file (a missing switch is refused, nothing is defaulted): earth_clock_yr, reach_ly, universe_rule (pure | dial offsets | select bands), lifetime_prior, signature_classes, quiet_minds. A switch whose value is not the baseline's needs a reason and a source or design:true. 18 named refusals. Digest = sha256 of the canonical encoding. Gates: make lab-test 16/16, lab-parity (strict VM = interpreter), lab-scenarios with a failing control, make strict rc 0, ailang check --package sim 169 files. 16 mutants, all killed. OPEN POINTS FOR LATER RUNS: (1) reach_ly's meaning (the binding strategy's range, baseline 3000) and the list of signature classes are this run's reading of the design's switch table; UL3d and UL2b may need to change them, which is a format version bump. (2) pure.json states the same values as literature.json (the design defines both as one unselected draw); they differ in id and summary only. (3) select carries its bands in the file, as UL7a's 'provisional bands, scenario files only' needs, although the design also says nobody writes bands by hand. (4) checkShape and checkValues are evaluator-only on the strict VM (ailang#2310, reported) and are not in scenarioVm; they run under ailang test. (5) On v0.56.1 std/json decode accepts text after the closing brace (fixed upstream by v0.60.0); not worked around."
   },
   {
    "id": "UL3b",
