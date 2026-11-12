@@ -45,4 +45,12 @@ Claude Opus scored the public `2ddd7516` snapshot **75/100**, conditional on N1.
 
 The row-level legacy provenance field remains for format compatibility; per-fact methods are authoritative, and the UI never describes the mixed record as wholly measured. This is explicitly a deprecated aggregate label. The recording sidecar is write-only audit metadata: no save/load subsystem exists, and restoration is not claimed.
 
-Final-head CI, final independent verdict, complete exported-app smoke, final composed-UI rerender when the GPU is free, and Mark's combined dev-build visual acceptance remain separate gates. No landing or completion is claimed here.
+## Round 3
+
+Claude Opus reviewed public 581cb165 and scored **80/100, code pass, no remaining P1/P2 defects**. Full report: `.ailang/state/evaluations/eval_R3-TELESCOPE_round_3.json`. It ran no tests and correctly left landing_ready false. Its statement that the exported-app positive was pending predates the actual 32/0 full-app run at the same checkpoint, with all 176 hashes verified and exact live Sun material exercised.
+
+The read-only-first behaviour is deliberate: it starts with the simulation's default consent-crew orders and no implicit Alpha Centauri plan. Entering the helm applies the normal critical-only preset exactly once, while plotting remains an explicit action. Browsing does not pause clocks or suppress default crew consequences. Normal helm-first startup retains its existing default. The first-entry test covers direct helm entry; chart-to-chair coverage is a non-blocking follow-up alongside the existing chair interaction tests.
+
+The package's initial scalar oracle maximum (6.86e-10 pixel) and the tracked game-mirror oracle maximum (6.36e-10) are separate measurements. The empirical source registration maximum is 0.368168 pixel. The export audit subsequently classified the probe's extensionless runtime binary and canonical directory spelling; 152 literals pass, with no export-filter widening.
+
+Final-head CI, current combined review-build publication and Mark's visual acceptance remain separate gates. The GPU was busy at the final source freeze, so new composed-UI cases defer to nightly/dev-build review under CLAUDE.md. No landing or completion is claimed here.

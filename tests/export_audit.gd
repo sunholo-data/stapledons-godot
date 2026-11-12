@@ -63,6 +63,8 @@ const DYNAMIC := [
 		"reason": "planets/planet_smoke.gd:13 exported-build fallback for assets/planets"},
 	{"prefix": "res://runtime", "filter": "runtime/*", "witnesses": ["runtime/bin/ailang"],
 		"reason": "bridge/sim_bridge.gd:395 _unpack_runtime copies res://runtime"},
+	{"prefix": "res://runtime/bin/ailang", "filter": "runtime/*", "witnesses": ["runtime/bin/ailang"],
+		"reason": "Packaged diagnostic hashes the extensionless bundled executable before checking its extracted copy"},
 	{"prefix": "res://runtime/VERSION", "filter": "runtime/*", "witnesses": ["runtime/VERSION"],
 		"reason": "bridge/sim_bridge.gd:386 reads the bundled runtime version"},
 	{"prefix": "res://runtime/cache", "filter": "runtime/*", "witnesses": ["runtime/cache/registry/sunholo/relativity/0.12.0/_smoke.ail"],

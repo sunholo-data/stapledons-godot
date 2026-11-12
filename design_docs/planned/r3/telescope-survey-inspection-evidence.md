@@ -30,10 +30,13 @@ The offline source decoder accepts only bounded, uncompressed primary float32 FI
 | Chair integration | 54/0: actual projected Telescope click; Esc/pad Back and screen-switch cache/viewport lifecycle; one panel/callback |
 | Physics regression | 1080/0 after importing main's new classes |
 | Finder regression | Existing ship-star-identification 60/0; existing chair geometry 101/0 |
-| Export filter audit | 143 runtime path literals, 0 failures |
+| Export filter audit | 152 runtime path literals, 0 failures |
 | Offline PCK | Minimal actual PCK opens all 176 production tiles from `.png.bin`; raw manifest/index/tile paths absent. Missing bundled manifest negative control fails. 2/0 |
+| Complete macOS app | Actual release-template app at 581cb165, fresh HOME/empty cwd and network denied: 32/0; real bundled AILANG child/cache, exact host metadata pin, all 176 tile hashes, visible archive ImageTexture decoded from bundled bytes, exact live Sun source/material and closed viewport lifecycle |
 
-The PCK probe verifies the observation bundle/cache independently. It does **not** substitute for a complete macOS app or live-renderer export test.
+The minimal PCK test and complete-app test are separate. The latter uses the headless dummy renderer and checks real source material and decoded texture payload, without claiming GPU readback. At its ordinary 1280×720 fit state one visible overview tile is decoded; all 176 bundled tile hashes are verified. The app is 709 MB including existing game assets. A first run caught two harness assumptions (escaped apostrophe in argv stringification and the default 64² headless viewport); structured argv and ordinary viewport sizing fixed them without changing sky maths.
+
+The celestial package oracle's 6.86e-10-pixel maximum and the game mirror oracle's 6.36e-10-pixel maximum come from different case sets/runs. Neither number is an empirical image-registration residual; that separate five-centroid maximum is 0.368168 pixel.
 
 ## Performance and size
 
@@ -51,6 +54,6 @@ The public immutable observation cache has 193 hash-addressed objects; 12 anonym
 
 - Current main `0154b7c2` is integrated. The final lock uses celestial 0.7.0 and worlds 0.2.1; the latter's 19 AILANG files and 78 interfaces are identical to main's worlds 0.2.0, with 65 native tests passing.
 - Final stable-source rendered evidence and GitHub fast tier on the review head (earlier checkpoints `04cdd5e6` and `dc15f91e` passed).
-- Independent cross-family evaluation under `sprint-evaluator`: round 1 scored 62; round 2 scored 75 with a required deferred-crew-orders fix. That fix has red/green evidence (47/1 → 48/0); final re-review remains pending.
+- Independent cross-family evaluation under `sprint-evaluator`: round 1 scored 62, round 2 scored 75, round 3 scored **80, code pass, no remaining P1/P2 findings** at 581cb165. The judge reviewed public text and ran no tests. Its pending-app observation preceded the successful complete-app run above. Final-head CI and visual acceptance remain independent gates.
 - Complete combined macOS review build, opened rendered evidence and Mark's visual verdict.
 - Only after those gates: land, move design/sprint to implemented, and update the canon/roadmap. The sprint remains in progress until then.

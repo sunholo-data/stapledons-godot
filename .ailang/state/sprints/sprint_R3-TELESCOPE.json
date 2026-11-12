@@ -399,10 +399,10 @@
         "make observation-assets-check telescope-export-smoke telescope-cache-test export-filter-audit uid-guard python-guard pass",
         "New fast/headless/nightly gate edges and failure controls wired with deadlines and counted summaries"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-12T19:28:03Z",
-      "completed": null,
-      "notes": null
+      "completed": "2026-11-12T21:18:00Z",
+      "notes": "Actual complete macOS release app at581cb165: fresh HOME/empty cwd, network denied, real bundled runtime/cache and child handshake, exact pins, all176 tile hashes, visible archive ImageTexture and exact live Sun:32/0. Minimal PCK2/0 remains separate. Bundle60,515,006B/182files. Final audit152literals/0; assets4plates verified; pin27/0/cache38/0/failure controls pass. Final publication will revalidate the complete app."
     },
     {
       "id": "TS11_REVIEW",
@@ -442,21 +442,21 @@
   },
   "progress": {
     "total": 12,
-    "completed": 10,
-    "percentage": 83
+    "completed": 11,
+    "percentage": 92
   },
   "evaluation": {
-    "round": 2,
-    "status": "conditional_pass",
-    "score": 75,
+    "round": 3,
+    "status": "code_pass",
+    "score": 80,
     "model": "claude-opus-5-5",
-    "report": ".ailang/state/evaluations/eval_R3-TELESCOPE_round_2.json",
-    "scope": "Public source only; N1 fixed with recorded-wire red/green proof; final independent review pending"
+    "report": ".ailang/state/evaluations/eval_R3-TELESCOPE_round_3.json",
+    "scope": "Public source only; no blocking code defects; judge ran no tests; landing_ready false pending external gates"
   },
   "review_state": {
     "main_integrated": "0154b7c2841a93b30730d125be39e43d3290ff90",
     "assets": "193 immutable objects published; 12 anonymous hash samples verified; publisher28/0",
-    "remaining": "Final focused regressions, GPU evidence, CI, independent cross-family evaluation, complete combined dev build and Mark visual acceptance",
+    "remaining": "Final-head CI, combined dev-build publication and Mark visual acceptance; composed-UI rerender deferred to nightly/dev-build review while GPU busy",
     "ci_checkpoint": "dc15f91e GitHub fast tier SUCCESS; post-review fixes require next-head CI",
     "gpu": "40-frame capture passed; Sun viewport valid and archive invariant. UI fit/scroll corrections need final rerender; Mark visual acceptance pending."
   }

@@ -40,7 +40,7 @@ func run(tree: SceneTree, args: PackedStringArray) -> int:
 	check(expected.length() == 40 and commit == expected,"exact packaged build commit")
 	evidence["build_commit"] = commit; evidence["expected_commit"] = expected
 	evidence["executable"] = OS.get_executable_path(); evidence["home"] = OS.get_environment("HOME"); evidence["user_data"] = OS.get_user_data_dir()
-	check(not DirAccess.dir_exists_absolute("res://data/raw/observations"),"raw observation source directory excluded")
+	check(not DirAccess.dir_exists_absolute("res://data/raw/observations/"),"raw observation source directory excluded")
 	check(ResourceLoader.exists("res://demos/ship_geometry_demo.tscn") and ResourceLoader.exists("res://ui/observation_panel.gd"),"real packaged ship scene and shared telescope resources")
 	if failures: return _finish(report)
 	var runtime: String = Bridge._unpack_runtime()
