@@ -80,10 +80,11 @@
         "AC2b: sh tools/bridge_operator_drills.sh --selftest; echo rc=$? -> 'bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)' and rc=0 (V49)",
         "commit tools/bridge_operator_drills.sh mk/captain-anim.mk BEFORE running the drills; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Exit 3 = HARNESS (timeout, SCRIPT ERROR, unknown drill, mutation not applied, restore failure), never a kill: read the HARNESS line, recover with git checkout -- the four drill files if named, rerun on a quieter host (BOD_TIMEOUT default 300 s; slowest drill ~28 s at load 30). Exit 1 = a real MISMATCH against the measured table: stop and report, never edit the table."
+      "passes": true,
+      "started": "2026-11-12",
+      "completed": "2026-11-12",
+      "notes": "Runner from Appendix C verbatim (178 lines). make target inserted after line 12 (test: bridge-operator-test) exactly as design section D10 block; not a prerequisite of make test.",
+      "measured": "AC2: make bridge-operator-drills rc 0, wall 133 s (load 14-20): bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS); 16 MATCH rows: d0 x2 (56/0), k1a (0/1), k1b (32/24), k2 (53/3), k3a (44/12), k3b (44/12), k3c (49/7), k4a (54/2), k4b (rc 0, 54/0, pin red), k5a (55/1), k5b (51/5), k5c (53/3), k5d (55/1), k5e (54/2), k6 (55/1); bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$); porcelain empty after. AC2a: cmp same. AC2b: sh tools/bridge_operator_drills.sh --selftest rc 0, wall 25 s, load 20: selftest: ok (...). Runner wc -l 178, sha256 6a9508253b8b1444f9ec653781b8cf2bdd078e700cc62efd79c1b562a9b1c304. Make target is +4 lines (design block is 4 lines; plan text said +5)."
     },
     {
       "id": "MS4",
