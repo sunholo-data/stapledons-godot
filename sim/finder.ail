@@ -26,9 +26,12 @@ module stapledons/sim/finder
 -- trip's energy ledger over c^2 (D-69: the drive turns mass into light), the uniform medium's
 -- or, under lism-1, the route's column.
 import ./core (Params as ShipParams, Plan, PlanView, planView)
-import pkg/sunholo/worlds/dial (Params as WorldParams)
+import ./data/presets (Preset)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Params as WorldParams, applyDial)
 import pkg/sunholo/worlds/propagate (Belief, PredictionError, propagateExact)
 import std/result (Result, Ok, Err)
+import std/option (Option, Some, None)
 
 -- Why no prediction was computed. BadLightAge and BadTravelTime are this module's: a negative
 -- or non-finite part (tested before the two are summed, so -5 and 10 never pass as 5).
@@ -43,26 +46,38 @@ export type LegCost = { earthYears: float, shipYears: float, massKg: float }
 
 -- One candidate destination for one planned leg: how old the picture is now, how old it will
 -- be on arrival, the belief at last light, the prediction at arrival, and the cost.
--- staleYearsAtArrival is the sum of the two inputs as given; when atArrival is
--- NoPrediction(BadLightAge) it is not a duration and must not be shown.
-export type Candidate = { lightAgeYears: float, staleYearsAtArrival: float, atLastLight: Belief, atArrival: Prediction, cost: LegCost }
+-- staleYearsAtArrival is None when the light age or the leg's duration is not a duration
+-- (negative or non-finite): a refused input exposes no number. It is Some when both are, even
+-- if the package then refuses the prediction (an invalid belief still has an age).
+export type Candidate = { lightAgeYears: float, staleYearsAtArrival: Option[float], atLastLight: Belief, atArrival: Prediction, cost: LegCost }
 
 pure func isYears(x: float) -> bool = x >= 0.0 && x - x == 0.0
 
+-- The universe a preset stands for: its dial applied to the package's baseline. GAME CODE
+-- TAKES ITS PARAMETERS FROM HERE (or calls `candidate`, which does). Bare `baseline()` medians
+-- are not a universe the game plays in, and passing them to predictionAtArrival gives a
+-- valid-looking prediction for the wrong one. Never put these parameters, the preset's status
+-- or its dial on the protocol wire (data/presets.ail; premise §5: the luck number stays hidden).
+export pure func universeOf(preset: Preset) -> WorldParams = applyDial(baseline(), preset.dial)
+
 -- The interval the prediction spans: from the moment the light left to the moment the ship
--- arrives, in galaxy-frame years.
-export pure func predictionIntervalYears(lightAgeYears: float, legEarthYears: float) -> float = lightAgeYears + legEarthYears
+-- arrives, in galaxy-frame years. Internal: callers get it through staleYearsAtArrival.
+pure func intervalYears(lightAgeYears: float, legEarthYears: float) -> float = lightAgeYears + legEarthYears
 
--- How out of date the picture will be on arrival: the same interval, by construction.
-export pure func staleYearsAtArrival(lightAgeYears: float, legEarthYears: float) -> float = predictionIntervalYears(lightAgeYears, legEarthYears)
+-- How out of date the picture will be on arrival: the prediction's own interval, by
+-- construction. None unless both parts are durations (>= 0 and finite).
+export pure func staleYearsAtArrival(lightAgeYears: float, legEarthYears: float) -> Option[float] =
+  if isYears(lightAgeYears) && isYears(legEarthYears) then Some(intervalYears(lightAgeYears, legEarthYears)) else None
 
--- The belief at arrival. `belief` is the belief at last light, `universe` the parameters the
--- prediction is made under (the preset's, through applyDial), `lightAgeYears` the age of that
--- light now, `legEarthYears` the planned leg's galaxy-frame duration (LegCost.earthYears).
+-- The belief at arrival, the lower-level form: `universe` is taken as given. Game code calls
+-- `candidate` with the session's Preset (or passes universeOf(preset) here); only tests and
+-- tools hand this function parameters of their own. `belief` is the belief at last light,
+-- `lightAgeYears` the age of that light now, `legEarthYears` the planned leg's galaxy-frame
+-- duration (LegCost.earthYears).
 export pure func predictionAtArrival(belief: Belief, universe: WorldParams, lightAgeYears: float, legEarthYears: float) -> Prediction =
   if !isYears(lightAgeYears) then NoPrediction(BadLightAge)
   else if !isYears(legEarthYears) then NoPrediction(BadTravelTime)
-  else match propagateExact(belief, universe, predictionIntervalYears(lightAgeYears, legEarthYears)) {
+  else match propagateExact(belief, universe, intervalYears(lightAgeYears, legEarthYears)) {
     Ok(b) => ExactLaw(b),
     Err(e) => NoPrediction(Refused(e))
   }
@@ -74,10 +89,10 @@ export pure func legCostOfView(v: PlanView) -> LegCost = { earthYears: v.earthYe
 -- (planView's tau and t move only its arrival dates), so the view is taken at 0, 0.
 export pure func legCost(p: ShipParams, pl: Plan) -> LegCost = legCostOfView(planView(p, pl, 0.0, 0.0))
 
--- Prediction and cost for one candidate, from one plan: the interval uses the same Earth
--- years the cost reports.
-export pure func candidate(belief: Belief, universe: WorldParams, lightAgeYears: float, p: ShipParams, pl: Plan) -> Candidate {
+-- Prediction and cost for one candidate, from one plan, in the preset's universe: the
+-- interval uses the same Earth years the cost reports.
+export pure func candidate(belief: Belief, preset: Preset, lightAgeYears: float, p: ShipParams, pl: Plan) -> Candidate {
   let cost = legCost(p, pl);
   { lightAgeYears: lightAgeYears, staleYearsAtArrival: staleYearsAtArrival(lightAgeYears, cost.earthYears), atLastLight: belief,
-    atArrival: predictionAtArrival(belief, universe, lightAgeYears, cost.earthYears), cost: cost }
+    atArrival: predictionAtArrival(belief, universeOf(preset), lightAgeYears, cost.earthYears), cost: cost }
 }

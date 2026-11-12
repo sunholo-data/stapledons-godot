@@ -6,11 +6,11 @@ module stapledons/sim/finder_test
 -- values come from the journey core's own Plan, from the packages called directly, or from
 -- the package's reference table; never from this module's output.
 import ./finder (Prediction, ExactLaw, NoPrediction, NoReason, BadLightAge, BadTravelTime, Refused, LegCost, Candidate,
-  predictionIntervalYears, staleYearsAtArrival, predictionAtArrival, legCost, legCostOfView, candidate)
+  staleYearsAtArrival, universeOf, predictionAtArrival, legCost, legCostOfView, candidate)
 import ./core (World, Params as ShipParams, Target, Intent, IPlan, Plan, PlanView, Planned, newWorld, defaultParams, tick, planView, journeyView)
-import ./data/presets (presetOf)
+import ./data/presets (Preset, presetOf)
 import pkg/sunholo/worlds/baseline (baseline)
-import pkg/sunholo/worlds/dial (Params as WorldParams, applyDial)
+import pkg/sunholo/worlds/dial (Params as WorldParams, applyDial, zeroDial)
 import pkg/sunholo/worlds/history (Technological, Remnant, PreTech)
 import pkg/sunholo/worlds/propagate (Belief, PredictionError, InvalidParams, InvalidBelief, InvalidYears, OutsideExactDomain, SeenImpossible,
   certain, exactDomain, propagateExact, validBelief)
@@ -23,7 +23,7 @@ import pkg/sunholo/celestial/frames (unitFromAngles)
 import std/option (Option, Some, None)
 import std/result (Result, Ok, Err)
 import std/list (foldl)
-import std/json (Json, encode, jo, kv, js, jnum, ja)
+import std/json (Json, encode, jo, kv, js, jnum, ja, jn)
 
 pure func fAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
 pure func fNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
@@ -47,8 +47,11 @@ pure func aldWorld() -> World = plannedTo(lism(), aldebaran(), phi0999())
 -- ------------------------------------------------------------ fixtures: beliefs and universes
 -- The Lonely preset is the zero-offset baseline (data/presets.ail); the package's reference
 -- table calls the same numbers `base` (propagate_reference_test.ail).
-pure func lonely() -> WorldParams = applyDial(baseline(), (presetOf("lonely")).dial)
-pure func stapledon() -> WorldParams = applyDial(baseline(), (presetOf("stapledon")).dial)
+-- The universes go through the finder's own universeOf, the one game code must call.
+pure func lonelyPreset() -> Preset = presetOf("lonely")
+pure func stapledonPreset() -> Preset = presetOf("stapledon")
+pure func lonely() -> WorldParams = universeOf(lonelyPreset())
+pure func stapledon() -> WorldParams = universeOf(stapledonPreset())
 pure func mixed() -> Belief = { sterile: 0.1, microbial: 0.2, complex: 0.3, preTech: 0.05, technological: 0.25, remnant: 0.1, transcended: 0.0, ecocide: 0.0 }
 pure func notABelief() -> Belief = { sterile: 0.5, microbial: 0.2, complex: 0.3, preTech: 0.05, technological: 0.25, remnant: 0.1, transcended: 0.0, ecocide: 0.0 }
 pure func noRemnants() -> WorldParams = { fLife: 1.0, fComplex: 1.0, fMinds: 1.0, fTech: 1.0, lifetimeYr: 600000.0, windowYr: 1000000.0, remnantLoYr: 50000.0, remnantHiYr: 500000.0 }
@@ -66,6 +69,8 @@ pure func sameAsPackage(got: Prediction, want: Result[Belief, PredictionError]) 
 pure func refusedAs(got: Prediction, want: PredictionError) -> bool =
   match got { NoPrediction(why) => (match why { Refused(e) => e == want, _ => false }), ExactLaw(_) => false }
 pure func isBadLightAge(got: Prediction) -> bool = match got { NoPrediction(why) => (match why { BadLightAge => true, _ => false }), ExactLaw(_) => false }
+pure func someIs(got: Option[float], want: float) -> bool = match got { Some(x) => x == want, None => false }
+pure func isNone(got: Option[float]) -> bool = match got { Some(_) => false, None => true }
 pure func isBadTravelTime(got: Prediction) -> bool = match got { NoPrediction(why) => (match why { BadTravelTime => true, _ => false }), ExactLaw(_) => false }
 
 -- ------------------------------------------------------------ AC6: the costs are the plan's
@@ -124,7 +129,7 @@ pure func checkOneCall() -> bool =
     sameAsPackage(predictionAtArrival(certain(Technological), lonely(), 212.0, 655.0), propagateExact(certain(Technological), lonely(), 867.0)),
     sameAsPackage(predictionAtArrival(mixed(), lonely(), 212.0, 655.0), propagateExact(mixed(), lonely(), 212.0 + 655.0)),
     sameAsPackage(predictionAtArrival(mixed(), stapledon(), 65.3, 66.7), propagateExact(mixed(), stapledon(), 65.3 + 66.7)),
-    predictionIntervalYears(212.0, 655.0) == 867.0, staleYearsAtArrival(212.0, 655.0) == 867.0,
+    someIs(staleYearsAtArrival(212.0, 655.0), 867.0), someIs(staleYearsAtArrival(0.0, 0.0), 0.0),
     -- one call, never chained: light age then travel time as two steps would restart every clock
     (match predictionAtArrival(certain(Technological), lonely(), 50000.0, 50000.0) {
       ExactLaw(b) => b.technological == 0.0,
@@ -171,17 +176,45 @@ test "outside the exact domain and every other refusal: a named NoPrediction, ne
 pure func checkCandidate() -> bool =
   match planOf(acenWorld()) {
     Some(pl) => {
-      let c = candidate(mixed(), stapledon(), 4.37, defaultParams(), pl);
+      let c = candidate(mixed(), stapledonPreset(), 4.37, defaultParams(), pl);
       let cost = legCost(defaultParams(), pl);
-      fAll([c.lightAgeYears == 4.37, c.staleYearsAtArrival == 4.37 + pl.trip.trip.galaxyTime, sameBelief(c.atLastLight, mixed()),
+      let bad = candidate(notABelief(), stapledonPreset(), 4.37, defaultParams(), pl);
+      fAll([c.lightAgeYears == 4.37, someIs(c.staleYearsAtArrival, 4.37 + pl.trip.trip.galaxyTime), sameBelief(c.atLastLight, mixed()),
         c.cost.earthYears == cost.earthYears, c.cost.shipYears == cost.shipYears, c.cost.massKg == cost.massKg,
-        sameAsPackage(c.atArrival, propagateExact(mixed(), stapledon(), 4.37 + pl.trip.trip.galaxyTime)),
-        -- a refused prediction leaves the cost standing
-        refusedAs((candidate(notABelief(), stapledon(), 4.37, defaultParams(), pl)).atArrival, InvalidBelief),
-        (candidate(notABelief(), stapledon(), 4.37, defaultParams(), pl)).cost.earthYears == cost.earthYears])
+        -- the preset's dial is applied by the finder: the prediction is the dialled universe's, not bare baseline's
+        sameAsPackage(c.atArrival, propagateExact(mixed(), applyDial(baseline(), (presetOf("stapledon")).dial), 4.37 + pl.trip.trip.galaxyTime)),
+        !sameAsPackage(c.atArrival, propagateExact(mixed(), applyDial(baseline(), zeroDial()), 4.37 + pl.trip.trip.galaxyTime)),
+        -- a prediction the package refused leaves the cost and the (valid) age standing
+        refusedAs(bad.atArrival, InvalidBelief), bad.cost.earthYears == cost.earthYears, someIs(bad.staleYearsAtArrival, 4.37 + pl.trip.trip.galaxyTime)])
     },
     None => false
   }
+-- universeOf is the preset's dial on the baseline, for every preset; Lonely is the zero dial.
+pure func checkUniverse() -> bool =
+  fAll([sameParams(universeOf(presetOf("lonely")), applyDial(baseline(), zeroDial())),
+    sameParams(universeOf(presetOf("scattered")), applyDial(baseline(), (presetOf("scattered")).dial)),
+    sameParams(universeOf(presetOf("stapledon")), applyDial(baseline(), (presetOf("stapledon")).dial)),
+    sameParams(universeOf(presetOf("teeming")), applyDial(baseline(), (presetOf("teeming")).dial)),
+    !sameParams(universeOf(presetOf("teeming")), universeOf(presetOf("lonely")))])
+pure func sameParams(a: WorldParams, b: WorldParams) -> bool =
+  a.fLife == b.fLife && a.fComplex == b.fComplex && a.fMinds == b.fMinds && a.fTech == b.fTech &&
+  a.lifetimeYr == b.lifetimeYr && a.windowYr == b.windowYr && a.remnantLoYr == b.remnantLoYr && a.remnantHiYr == b.remnantHiYr
+test "universeOf is the preset's dial applied to the baseline; candidate predicts under it" { checkUniverse() }
+
+-- A refused light age or travel time exposes no staleness number at all (light age -5 with a
+-- 4.4-year leg must not read as -0.6 years).
+pure func checkNoStaleNumber() -> bool =
+  fAll([isNone(staleYearsAtArrival(0.0 - 5.0, 4.414)), isNone(staleYearsAtArrival(nan(), 4.414)), isNone(staleYearsAtArrival(1.0 / 0.0, 4.414)),
+    isNone(staleYearsAtArrival(4.37, 0.0 - 1.0)), isNone(staleYearsAtArrival(4.37, nan())), isNone(staleYearsAtArrival(4.37, 1.0 / 0.0)),
+    (match planOf(acenWorld()) {
+      Some(pl) => {
+        let neg = candidate(mixed(), stapledonPreset(), 0.0 - 5.0, defaultParams(), pl);
+        let bad = candidate(mixed(), stapledonPreset(), nan(), defaultParams(), pl);
+        isNone(neg.staleYearsAtArrival) && isBadLightAge(neg.atArrival) && isNone(bad.staleYearsAtArrival) && isBadLightAge(bad.atArrival) &&
+        neg.cost.earthYears == pl.trip.trip.galaxyTime
+      },
+      None => false })])
+test "a refused light age or travel time carries no staleness number (None), in the function and in the candidate" { checkNoStaleNumber() }
 test "a candidate bundles the prediction and the cost of the same leg: the interval is the light age plus the plan's Earth years" { checkCandidate() }
 
 -- ------------------------------------------------------------ determinism, VM = interpreter
@@ -197,19 +230,20 @@ pure func predictionJson(p: Prediction) -> Json =
   }
 -- Test-only rendering (not a wire format): time before mass, as everywhere a cost is shown.
 pure func candidateJson(c: Candidate) -> Json =
-  jo([kv("light_age_years", jnum(c.lightAgeYears)), kv("stale_years_at_arrival", jnum(c.staleYearsAtArrival)),
+  jo([kv("light_age_years", jnum(c.lightAgeYears)), kv("stale_years_at_arrival", match c.staleYearsAtArrival { Some(x) => jnum(x), None => jn() }),
     kv("earth_years", jnum(c.cost.earthYears)), kv("ship_years", jnum(c.cost.shipYears)), kv("mass_kg", jnum(c.cost.massKg)),
     kv("at_last_light", beliefJson(c.atLastLight)), kv("at_arrival", predictionJson(c.atArrival))])
-pure func probeOf(w: World, b: Belief, u: WorldParams, lightAge: float) -> Json =
+pure func probeOf(w: World, b: Belief, u: Preset, lightAge: float) -> Json =
   match planOf(w) { Some(pl) => candidateJson(candidate(b, u, lightAge, w.params, pl)), None => js("no plan") }
 -- Every float the finder produces, on both legs, plus two refusals. `make finder-test` compares
 -- this text from the strict VM and from the interpreter byte for byte.
 export pure func finderProbe(n: int) -> string =
-  encode(ja([probeOf(acenWorld(), mixed(), stapledon(), 4.37), probeOf(acenWorld(), certain(Technological), lonely(), 4.37),
-    probeOf(aldWorld(), mixed(), lonely(), 66.6), probeOf(aldWorld(), certain(PreTech), stapledon(), 66.6),
-    probeOf(aldWorld(), notABelief(), lonely(), 66.6), probeOf(acenWorld(), mixed(), lonely(), 2499900000.0)]))
+  encode(ja([probeOf(acenWorld(), mixed(), stapledonPreset(), 4.37), probeOf(acenWorld(), certain(Technological), lonelyPreset(), 4.37),
+    probeOf(aldWorld(), mixed(), lonelyPreset(), 66.6), probeOf(aldWorld(), certain(PreTech), stapledonPreset(), 66.6),
+    probeOf(aldWorld(), notABelief(), lonelyPreset(), 66.6), probeOf(acenWorld(), mixed(), lonelyPreset(), 2499900000.0),
+    probeOf(acenWorld(), mixed(), presetOf("teeming"), 0.0 - 5.0)]))
 test "determinism: the same inputs give the same bytes" { finderProbe(0) == finderProbe(1) }
 
 export pure func finderVm(n: int) -> string =
-  if checkAcenCost() && checkAldebaranCost() && checkOneCall() && checkZero() && checkHalfLife() && checkRefusals() && checkCandidate() && finderProbe(0) == finderProbe(1)
+  if checkAcenCost() && checkAldebaranCost() && checkOneCall() && checkZero() && checkHalfLife() && checkRefusals() && checkCandidate() && checkUniverse() && checkNoStaleNumber() && finderProbe(0) == finderProbe(1)
   then "finder-ok" else "finder-BAD"
