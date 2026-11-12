@@ -1,0 +1,152 @@
+{
+  "sprint_id": "R1-7AE-BRIDGE-OPERATOR-CONTACT",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "Mark's attended ruling D-148 (2026-11-12): OQ-1 = A (working spots 0.275 m back, 1.50 m from the desk, iteration-76 candidate measured 56/0; no expected-failure; look reviewed in the next dev build, separate from the merge); OQ-2 stays at default (a). Design revision 3 after quorum r3 (2-seat BLOCK) under the narrow-refinement carve-out; mission iteration 90.",
+  "created": "2026-11-12",
+  "design_doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ae-bridge-operator-contact-sprint.md",
+  "branch": "mission/stapledon-iter90-7ae",
+  "base": "b6c93c11 (origin/main = merge-base = the design's measured base; HEAD ce9cc560 is the r3 design commit)",
+  "implements": [
+    "7ae"
+  ],
+  "scope": "S1 + S2 under D-148 A plus the AC2 enforcing drill runner: the eight files of the design's AC6 (tests/test_bridge_operator_contact.gd +38/-8 via Appendix A, sha256 d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf; art/view-finish-v1/bridge-operator-contact.json +37/-20 via Appendix B + jq, sha256 43f2f7e215e5141e5bdb29326b6577ddca40241b2716daa8d0972e4a7ca222fe; the count pin in mk/captain-anim.mk +1/-1 -> '^bridge-operator-contact: 56 passed, 0 failures$$'; assets/ship_demo/manifest.json +4/-4 -> sha256 ff14f59f97834c51a17d010d83d1af5c83f3b73a0dd353091ada442823b605a7; art/deck-layout-v2/bow_a.json +4/-4 -> sha256 0b433ca735848bf47d93027be04e8d6e057b1134fa596d8245710c36d84253c0; art/deck-layout-v2/budgets.json +1/-1 re-pin, bytes stays 12794; art/deck-layout-v2/asset-pins.json +1/-1 line 9 layout_sha256 only, line 364 comms_v2.layout untouched; tools/bridge_operator_drills.sh +178/-0, Appendix C verbatim) and the make bridge-operator-drills target (+5 in mk/captain-anim.mk, NOT a prerequisite of make test), plus an 8-line changelog fragment. No file under interior/, demos/, ui/, audio/ or sim/ changes; under assets/ only the manifest's two use_m pairs. No new .gd -> no .uid; no .py -> no allowlist row. No GPU, no make golden, no capture, no full local make test (merge rule); headless only.",
+  "environment": "export PATH=$PWD/runtime/bin:$PATH (AILANG v0.56.1, commit 05c860a; runtime/ untracked, present in this clone, planner-verified); Godot 4.7.2.stable; headless only, no GPU; every run from the clone root in the executor's disposable full clone.",
+  "features": [
+    {
+      "id": "MS1",
+      "description": "RED (S1): Appendix A applied to the test (+38/-8, sha256 d77c1dc9...), Appendix B through jq to the record (+37/-20, sha256 43f2f7e2...), the 56-count pin in mk/captain-anim.mk (+1/-1); manifest, bow_a.json and budgets.json stay at HEAD. make bridge-operator-test shows the measured RED: bridge-operator-contact: 54 passed, 2 failures, the two capsule FAILs, layout agreement ok (V28 = design AC10: S1 cannot merge without S2).",
+      "files": [
+        "tests/test_bridge_operator_contact.gd",
+        "art/view-finish-v1/bridge-operator-contact.json",
+        "mk/captain-anim.mk"
+      ],
+      "estimated_loc": "test +38/-8, record +37/-20, mk +1/-1 (~105 changed lines)",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "D=design_docs/planned/r1/m4-7ae-bridge-operator-contact.md; { echo '--- a/tests/test_bridge_operator_contact.gd'; echo '+++ b/tests/test_bridge_operator_contact.gd'; sed -n '/^## Appendix A/,/^## Appendix B/p' $D | sed -n '/^```diff$/,/^```$/p' | sed '1d;$d' | perl -pe 'if(/^([ +-])((?:    )+)/){my $p=$1; my $n=length($2)/4; s/^[ +-](?:    )+/$p.\"\\t\" x $n/e}'; } > /tmp/7ae-appendix-a.patch; git apply --recount /tmp/7ae-appendix-a.patch && shasum -a 256 tests/test_bridge_operator_contact.gd -> d77c1dc9edc59b6c09df3ec86f085c57356e3327f4fe936c3c23b17dd92dfdcf (V33, V47; fence 79 lines)",
+        "sed -n '/^## Appendix B/,/^## Appendix C/p' $D | sed -n '/^```json$/,/^```$/p' | sed '1d;$d' > /tmp/7ae-record.json; jq . /tmp/7ae-record.json > art/view-finish-v1/bridge-operator-contact.json; shasum -a 256 art/view-finish-v1/bridge-operator-contact.json -> 43f2f7e215e5141e5bdb29326b6577ddca40241b2716daa8d0972e4a7ca222fe (V40)",
+        "mk/captain-anim.mk line 11 gate regex becomes '^bridge-operator-contact: 56 passed, 0 failures$$' (design D3, +1/-1)",
+        "make bridge-operator-test; echo rc=$? -> gate FAIL against the 56 pin (shape per V14), log summary 'bridge-operator-contact: 54 passed, 2 failures'; grep '^FAIL' .godot/tmp/bridge-operator-test.log -> exactly 'FAIL voyage full 1.8m capsule clear at corrected point' and 'FAIL crew full 1.8m capsule clear at corrected point'; layout agreement ok (V28, AC10)",
+        "commit the three named files only; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>; git status --porcelain empty afterwards"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Test-first: this RED run is the demonstration that the two capsule checks can fail. Anchor asserts first (mk line 11 regex, record schema 1 / advance_bow_m 0.775, test line 34 capsule label); any mismatch -> stop, tree drift vs b6c93c11."
+    },
+    {
+      "id": "MS2",
+      "description": "GREEN (S2, D-148 A): the four number edits exactly per design D9 (manifest lines 168/169 -> -12.708, / 11.442; 175/176 -> 12.708, / 11.442; bow_a.json lines 57/58 and 68/69 the same), the hash gate (ff14f59f... / 0b433ca7..., V33) BEFORE the two re-pins (budgets.json manifest sha256, bytes stays 12794; asset-pins.json line 9 layout_sha256 only, line 364 untouched). Closes AC1 (56/0 twice), AC6, AC6a, AC8.",
+      "files": [
+        "assets/ship_demo/manifest.json",
+        "art/deck-layout-v2/bow_a.json",
+        "art/deck-layout-v2/budgets.json",
+        "art/deck-layout-v2/asset-pins.json"
+      ],
+      "estimated_loc": "manifest +4/-4, bow_a +4/-4, budgets +1/-1, asset-pins +1/-1 (18 changed lines)",
+      "dependencies": ["MS1"],
+      "acceptance_criteria": [
+        "AC1: make bridge-operator-test, run twice -> both times 'script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, ...)' (V34)",
+        "AC6: git diff --name-only origin/main -- assets art mk tests tools -> exactly the seven files so far (runner joins at MS3); git diff --numstat origin/main shows asset-pins +1/-1, bow_a +4/-4, budgets +1/-1, record +37/-20, manifest +4/-4, mk +1/-1 so far, test +38/-8; git diff -U0 origin/main -- assets art/deck-layout-v2 shows only the D9 number lines and hashes (V33, V42)",
+        "AC6a: shasum -a 256 assets/ship_demo/manifest.json art/deck-layout-v2/bow_a.json vs jq -r '.pins[\"assets/ship_demo/manifest.json\"].sha256' art/deck-layout-v2/budgets.json and jq -r .layout_sha256 art/deck-layout-v2/asset-pins.json -> each pair equal (ff14f59f... and 0b433ca7..., V33)",
+        "AC8: make deck-assets-check deck-layout-eval-test deck-layout-eval comms-walk-test levels-regress captain-chair-test -> 'deck-assets-check: ok (12 pins, ...)' plus 'negative controls (wrong pin, emissive prop) fail as they must'; 'deck-layout-eval-test: 26 passed, 0 failures'; 'deck-layout: bridge ok'; 'comms-walk: 11 passed, 0 failures'; 'levels-regress: ok (1 levels: bridge)' plus both negative controls; 'captain-chair: 15 passed, 0 failures' (all V36)",
+        "commit the four named files only; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Order per D9: edit manifest and bow_a.json, compute both hashes, then re-pin. A hash other than ff14f59f.../0b433ca7... -> stop; never re-pin a drifted file."
+    },
+    {
+      "id": "MS3",
+      "description": "The enforcing drill runner (design R): tools/bridge_operator_drills.sh installed verbatim from Appendix C (178 lines, V52; POSIX sh, no .uid, python-guard unaffected) and the +5 make target right after 'test: bridge-operator-test' (measured V42). bridge-operator-drills is NOT a prerequisite of make test (design D10). Committed before any run, because the runner restores from the index and refuses a dirty tree. Closes AC2, AC2a, AC2b.",
+      "files": [
+        "tools/bridge_operator_drills.sh",
+        "mk/captain-anim.mk"
+      ],
+      "estimated_loc": "runner +178/-0, mk +5 (183 changed lines)",
+      "dependencies": ["MS2"],
+      "acceptance_criteria": [
+        "install: sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' > tools/bridge_operator_drills.sh; wc -l -> 178 (V52)",
+        "AC2: make bridge-operator-drills; echo rc=$? on the clean tree, then git status --porcelain -> 'bridge-operator-drills selftest: ok (...)'; 16 MATCH rows (d0 x2, k1a, k1b, k2, k3a, k3b, k3c, k4a, k4b, k5a-k5e, k6) with the design drill table's counts; 'bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$)'; rc=0; then empty porcelain (V51, revision-3 runner, 233 s; revision 2: V42, 99 s)",
+        "AC2a: sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' | cmp - tools/bridge_operator_drills.sh && echo same -> same (V54)",
+        "AC2b: sh tools/bridge_operator_drills.sh --selftest; echo rc=$? -> 'bridge-operator-drills selftest: ok (wrong row -> rc 1 MISMATCH; unknown drill, no-op mutation, parse error, timeout, failed checkout, unrestored file -> rc 3 HARNESS)' and rc=0 (V49)",
+        "commit tools/bridge_operator_drills.sh mk/captain-anim.mk BEFORE running the drills; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Exit 3 = HARNESS (timeout, SCRIPT ERROR, unknown drill, mutation not applied, restore failure), never a kill: read the HARNESS line, recover with git checkout -- the four drill files if named, rerun on a quieter host (BOD_TIMEOUT default 300 s; slowest drill ~28 s at load 30). Exit 1 = a real MISMATCH against the measured table: stop and report, never edit the table."
+    },
+    {
+      "id": "MS4",
+      "description": "Changelog fragment and evidence (design L): changelogs/unreleased/2026-11-12-7ae-bridge-operator-contact.md (~8 lines, per changelogs/unreleased/README.md) plus this JSON's measured fields. Closes AC3, AC4, AC5, AC7.",
+      "files": [
+        "changelogs/unreleased/2026-11-12-7ae-bridge-operator-contact.md",
+        ".ailang/state/sprints/sprint_R1-7AE-BRIDGE-OPERATOR-CONTACT.json"
+      ],
+      "estimated_loc": "~8 lines + JSON evidence",
+      "dependencies": ["MS3"],
+      "acceptance_criteria": [
+        "AC3: make script-gate-lint -> 'script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; ...)' and 'script-gate-prereqs: ok (5 pairs ...)' (V36, V42; counts move only if main adds gates first)",
+        "AC4: git diff --check origin/main -> silent; make uid-guard -> 'uid-guard: ok (... .uid files)' (no new .gd, V42); make python-guard -> ok (no *.py touched)",
+        "AC5: git diff --name-only origin/main -- interior demos ui audio sim -> empty",
+        "AC7: godot --headless --path . --check-only --script tools/bridge_operator_review.gd; echo rc=$? -> rc=0 (V39; headless, no GPU)",
+        "fragment in place; JSON measured fields filled, passes true, started/completed dates set; commit the fragment and the JSON, named files only, trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Fragment content per the plan (### Fixed: schema-2 contact test/record on the R3-COMMS-V2 desks, 56 checks count-pinned, closing the nightly red; the D-148 A 0.275 m step-back with manifest/layout/pins moving together. ### Added: make bridge-operator-drills, not in make test)."
+    }
+  ],
+  "controller_steps": {
+    "AC8a": "make camera-test -> 'camera-director: <n> passed, 0 failures'. Not measured green on b6c93c11 (red with and without the candidate, V37/V38; last green under A 187/0 at e292a860/dc51e3cb, V25/V31). Controller runs it once on an idle host; if red, compares FAIL lines with a pristine origin/main run on the same host and records both; a red that also appears on pristine main does not block this row. NOT an executor step (iteration-90 mission; the design's AC8a text says executor - listed under ambiguities).",
+    "AC9": "controller: make -k test on the fix head -> no failure in bridge-operator-test; any other red compared target by target with issue #392 and the previous nightly (129 targets follow bridge-operator-test, V35; UNMEASURED in the design). NOT an executor step.",
+    "AC11": "make publish-dev from the fix head's clone; Mark installs with tools/install_review_build.sh --dev and looks at the Voyage and Crew working spots. ATTENDED, out of this sprint (D-148: visual acceptance separate from the merge; CLAUDE.md combined-dev-build rule applies)."
+  },
+  "commit_rules": "Commit per milestone; stage named files only, never git add -A; this sprint adds no .gd so no .uid; every commit message ends with 'Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>'.",
+  "risks": [
+    "Facing derivation assumes the operator stands on the desk's +X side - measured V5; k3b kills a sign error.",
+    "Margins at A's working point: 45-50 mm capsule clearance; the negative control probes 0-5 mm past the first collision (same structure as D-132's 0.825/0.8/0.775).",
+    "Count pin goes stale when a check is added - one-line edit in the same commit; the runner's table is data (comms-golden precedent).",
+    "Record/manifest drift (k2, k1b) and bow_a/manifest drift (k6, V27, V41) turn the gate red by design; a manifest edit without a re-pin turns deck-assets-check red (V24).",
+    "Runner tree corruption: refuses a dirty tree, restores after every drill and in EXIT/INT/TERM traps (V43, V52), fails closed on a restore failure with exit 3 and the recovery command (V50); not in make test.",
+    "Host load vs BOD_TIMEOUT: a timeout is HARNESS (exit 3), never a kill; rerun quieter (~28 s slowest at load 30 against 300 s).",
+    "camera-test red with and without the candidate (V37, V38) - not this row's cause; the controller's pristine comparison (AC8a) applies.",
+    "make -k test may show other reds (issue #392's sound-test) - out of scope; the controller compares target by target (AC9).",
+    "(Planner-added) The planner's sandbox cannot run Godot (user:// unwritable, iteration-89 measurement); every run is executor-side; quoted numbers are the design's V-row measurements.",
+    "(Planner-added) runtime/ is untracked: present in this clone (planner-verified); a fresh executor clone points PATH at the main checkout's runtime and asserts v0.56.1."
+  ],
+  "pause_points": [
+    "ailang --version != v0.56.1 or godot --version != 4.7.2 -> stop.",
+    "Any anchor assert mismatch (MS1 step 2, MS2 step 1) -> tree drift vs b6c93c11, stop.",
+    "Applied test sha256 != d77c1dc9..., record != 43f2f7e2..., patched manifest/bow_a != ff14f59f.../0b433ca7... -> re-extract once; still mismatched -> stop; never retype, never re-pin a drifted file.",
+    "MS1 RED not exactly 54 passed, 2 failures with the two capsule FAIL labels and layout agreement ok -> stop (V28).",
+    "AC1 not 56 passed, 0 failures rc 0 on either run -> stop.",
+    "Runner exit 3 -> HARNESS, read the line, git checkout -- the four drill files if named, rerun quieter; exit 1 -> real MISMATCH, stop and report, never edit the table.",
+    "git status --porcelain non-empty after the drills or any gate -> stop; never commit over a dirty tree.",
+    "uid-guard not ok, script-gate-lint counts moved without a main rebase, AC5 non-empty -> stop.",
+    "Any urge to touch interior/, demos/, ui/, audio/, sim/, GLBs, shaders, asset-pins.json line 364, or to add bridge-operator-drills to make test -> stop (design Non-goals).",
+    "No merge before the cross-family evaluation (generator != judge)."
+  ],
+  "local_pr_gates": [
+    "MS1 on record: anchor asserts; fence extractions and sha256s; the RED gate line 54/2 with the two capsule FAILs and layout agreement ok (V28).",
+    "MS2 on record: the hash gate before the re-pins; AC1's two 56/0 ok lines (V34); AC6 file list/numstats; AC6a equal pairs (V33); AC8's six gates with the exact lines (V36).",
+    "MS3 on record: 178-line runner; AC2 selftest-ok + 16 MATCH rows + '16 rows: 16 match, 0 mismatch, 0 harness', rc=0, empty porcelain (V51); AC2a same (V54); AC2b selftest line, rc=0 (V49).",
+    "MS4 on record: AC3 lint line (V36/V42), AC4 silent + uid-guard ok (V42), AC5 empty, AC7 rc=0 (V39); fragment in place; JSON filled, passes true.",
+    "GitHub gate: make ci-fast green on the PR. No GPU gate, no make golden, no capture, no full local make test (merge rule); the nightly rig/full runs the suite on main post-merge."
+  ],
+  "plan_verification": "Planner 2026-11-12, HEAD ce9cc560, read-only checks only (no Godot, no make - the iteration-89 sandbox measurement). Base: merge-base with origin/main = b6c93c11 = origin/main = the design's measured base; porcelain empty. Toolchain: runtime/bin/ailang -> AILANG v0.56.1 (05c860a), runtime/ untracked and present. Anchors planner-verified on this tree: mk/captain-anim.mk:11 the [1-9][0-9]* regex, 'test: bridge-operator-test' at line 12; record schema 1 with advance_bow_m 0.775; test line 34 the capsule label; manifest lines 168/169 and 175/176 and bow_a.json lines 57/58 and 68/69 the four old use_m values; budgets.json pins the manifest at bytes 12794 sha256 9ec33fc4...90743; asset-pins.json line 9 layout_sha256 9f8df46a...8e474a; tools/bridge_operator_drills.sh absent. Fences: Appendix C sh fence extracts to exactly 178 lines (= V52's wc -l); Appendix A diff fence 79 lines; neither applied, porcelain stayed empty. All run expectations are copied from the design's Verification log: V28 (MS1 RED), V33/V34 (MS2), V36 (AC8), V49-V54 (MS3), V39 (AC7), V40/V42/V47 (recipes, lint, uid-guard).",
+  "velocity": "Eight files, ~310 changed lines (test +38/-8, record +37/-20, mk +6/-1, manifest +4/-4, bow_a +4/-4, budgets +1/-1, asset-pins +1/-1, runner +178/-0) plus the ~8-line fragment; every milestone under the ~250-line cap. MS1 ~20 min; MS2 ~45-60 min (six gates); MS3 ~15-25 min (drills 99-233 s, load-dependent, V42/V51); MS4 ~15 min. One iteration, as with the recent rows of this size (7ak ~4, 7ai ~16, 7aj ~55, 7am ~135, 7an ~42 LOC).",
+  "ambiguities": [
+    "The design's Sub-milestones table puts the record under S2; V28/AC10 measure the S1-RED state WITH the Appendix B record applied, and the mission fixes MS1 = test + record + pin. This plan follows V28/the mission.",
+    "Why 'installed working point matches physical target' stays green in the MS1 state (manifest at HEAD, record carrying the A points) is measured (V28: only the two capsule checks fail) but not explained in the design.",
+    "AC8a's owner: the design text assigns the camera-test run to the executor; the iteration-90 mission assigns AC8a and AC9 to the controller. This plan follows the mission.",
+    "AC4's uid-guard count is elided in the design (7an pinned 422); the executor records the actual count - the assertion is no change, not the number.",
+    "The changelog date: the design writes <date>-7ae-bridge-operator-contact.md; this plan fixes 2026-11-12 (the revision-3 date); the slug does not change if landing slips a day.",
+    "MS1's exact script-gate FAIL wording at the 56 pin is inferred from V14's shape at other pins; V28 quotes the 54/2 summary and that the run FAILs."
+  ]
+}
