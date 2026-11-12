@@ -102,7 +102,9 @@
       ],
       "loc": "~120 + the r2 delta (Appendix-A fence +118/-4 planner-measured; D2: the design header's +104/-4 is stale; the r2 dictionary-aware rework and the fifth new test are sprint-measured on top; mk 2 changed lines, comment untouched; fixture +1 line)",
       "depends_on": [],
-      "acceptance": ["AC1"],
+      "acceptance": [
+        "AC1"
+      ],
       "commands": [
         "preamble: cd <executor clone>; export PATH=/Users/voightkampff/dev/sunholo-data/stapledons-godot/runtime/bin:$PATH  # AILANG v0.56.1 (this clone has no runtime/, planner-measured; PATH's ailang is v0.59.0-92-dirty — never it); B=c35efb57  # origin/main = merge-base = the design's measured base; S=$PWD/.godot/tmp/7am; mkdir -p $S; export TMPDIR=$S  # D1: /tmp blocked (planner-measured); ailang --version (expect v0.56.1 commit 05c860a); godot --version (expect 4.7.2); python3 --version",
         "anchor assert: sed -n '7,13p;300p;324p;327p;350,356p;359p' tools/test_replay.py; sed -n '17p;20p' mk/script-gates.mk; tail -1 tests/fixtures/script_gate/prereq_negative.mk.txt; sed -n '476,479p' Makefile   # -> the planner-verified lines (fixture tail: ship-console-test: import ship-baseline; Makefile:479: ci-fast: replay-map-index); any mismatch -> stop",
@@ -120,10 +122,26 @@
         "cleanliness: git status --porcelain   # only the three MS1 files (plus controller plan/JSON); no .bak; step-mutations all reverted; record in this JSON that MS1 ends with replay-map-index RED by design (AC1) — do not push"
       ],
       "expectations": "Extraction 146/2/1; git apply --check clean; shortstat '1 file changed, 118 insertions(+), 4 deletions(-)'. Intermediate r1: Ran 8 tests, FAILED (failures=1) in test_source_literals_match_the_map, 'First list contains 14 additional elements.', rc=1. AC1 (the milestone's RED end state): Ran 9 tests (sprint-measured), FAILED (failures=1) in test_source_literals_match_the_map, 'First list contains 14 additional elements.' (the 14 non-pending mismatches of V2), rc=1. M12: test_the_7am_intervening_fields_fail fails on both key orders with a nested dictionary between (sprint-measured lines recorded). M10: rc 1, \"Lists differ: [] != ['e.gd:1', 'q.py:1']\". M11: rc 1, the unsupported-escape entry missing. M9: ERROR + CalledProcessError exit status 128. M4: B1-ok cmp; ' 2 files changed, 3 insertions(+), 2 deletions(-)' (V26); the 5-pair ok line.",
-      "notes": null,
-      "status": "pending",
-      "passes": false,
-      "measured": null
+      "notes": " MS1 executed: RED by design (AC1), not pushed. Deviation recorded: M10/M11 on the unfixed tree also show the pre-existing source-literal failure; the named control fails with its expected shape.",
+      "status": "executed",
+      "passes": true,
+      "measured": {
+        "fence": "git apply --check of the 146-line Appendix-A diff fails as extracted (no git header); prepended the 4-line diff --git/---/+++ header (the doc says the proto is fence + 4-line header, 150 lines) and it applies",
+        "r1_apply_shortstat": "1 file changed, 118 insertions(+), 4 deletions(-)",
+        "r1_red": "Ran 8 tests; FAILED (failures=1) in test_source_literals_match_the_map; First list contains 14 additional elements.; rc=1",
+        "AC1": "Ran 9 tests in 0.174s; FAILED (failures=1); First list contains 14 additional elements.; rc=1",
+        "intervening_field_messages": [
+          "p.gd:1 CNS5:3627 index 1, stars.json 2",
+          "q.gd:1 CNS5:3627 index 1, stars.json 2"
+        ],
+        "inventory": "16 checked; 15 bad = 14 non-pending + tools/earth_link_capture.gd:16 (pending)",
+        "M12": "adjacency-only scan: test_the_7am_intervening_fields_fail FAILED, Lists differ: [] != [p.gd:1 ..., q.gd:1 ...]; restored (cmp identical), AC1 re-asserted rc=1 Ran 9",
+        "M10": "sid = raw: rc=1, failed test_the_7am_escaped_ids_fail (Lists differ: [] != [e.gd:1, q.py:1]) PLUS test_source_literals_match_the_map (the 14 pre-existing red); failures=2 on the unfixed tree; restored. Re-measure on green tree in MS2",
+        "M11": "return raw: rc=1, test_the_7am_escaped_ids_fail (u.gd:1 unsupported escape missing) PLUS the pre-existing source-literal red; failures=2 on the unfixed tree; restored. Re-measure on green tree in MS2",
+        "M9": "non-git copy outside the clone (mktemp under /var/folders): test_source_literals_match_the_map ERROR CalledProcessError ... returned non-zero exit status 128; the other 8 tests ERROR on missing data/starmap/stars.json (copy has no data/); a copy under .godot/tmp was nested in the clone and git found the parent repo, so that form was not used",
+        "M4_B1": "cmp B1-ok; git diff --shortstat mk/script-gates.mk prereq_negative.mk.txt: 2 files changed, 3 insertions(+), 2 deletions(-)",
+        "M4_lint": "script-gate-prereqs: ok (5 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline ci-fast:replay-map-index)"
+      }
     },
     {
       "id": "MS2",
@@ -141,8 +159,15 @@
         "tools/ism_service_bench.gd"
       ],
       "loc": "14 (one token per line; V23: 10 files changed, 14 insertions(+), 14 deletions(-))",
-      "depends_on": ["MS1"],
-      "acceptance": ["AC2", "AC3", "AC4", "AC5"],
+      "depends_on": [
+        "MS1"
+      ],
+      "acceptance": [
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5"
+      ],
       "commands": [
         "anchor assert: sed -n '15,16p' tests/test_bridge_monitors.gd; sed -n '15p' tests/test_earth_beams.gd; sed -n '21,22p' tests/test_earth_history.gd; sed -n '14,15p' tests/test_earth_log_bridge.gd; sed -n '23p' tools/comms_golden.gd; sed -n '26,27p' tools/comms_station_capture.gd; sed -n '10p' tools/earth_rate_fixture.gd; sed -n '29p' tools/worlds_leak.py; sed -n '22p' tools/exposure_solar_recovery.gd; sed -n '5p' tools/ism_service_bench.gd   # -> the planner-verified literals; any mismatch -> stop",
         "ALPHA 1->2 (7 GDScript files): sed -i.bak 's/^const ALPHA := {\"index\": 1,/const ALPHA := {\"index\": 2,/' <file> && rm <file>.bak   # tests/test_bridge_monitors.gd tests/test_earth_beams.gd tests/test_earth_history.gd tests/test_earth_log_bridge.gd tools/comms_golden.gd tools/comms_station_capture.gd tools/earth_rate_fixture.gd",
@@ -175,8 +200,19 @@
         "changelogs/unreleased/2026-11-12-alpha-index-literals.md"
       ],
       "loc": "1 fragment (scratch $S/7am_mk* and AC11's mktemp dir are evidence, never committed)",
-      "depends_on": ["MS2"],
-      "acceptance": ["AC6", "AC7", "AC8", "AC9", "AC10", "AC11", "AC12", "AC13"],
+      "depends_on": [
+        "MS2"
+      ],
+      "acceptance": [
+        "AC6",
+        "AC7",
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC12",
+        "AC13"
+      ],
       "commands": [
         "AC6 (verbatim; /tmp -> $S per D1): make -s script-gate-lint 2>&1 | tail -1; grep -v '^ci-fast: replay-map-index$' Makefile > $S/7am_mk && cp Makefile $S/7am_mk.orig && cp $S/7am_mk Makefile; make -s script-gate-lint 2>&1 | tail -2; cp $S/7am_mk.orig Makefile; git diff --quiet Makefile && echo restored   # expect the 5-pair ok line; then 'ci-fast lost its prerequisite replay-map-index (…)' and 'make: *** [script-gate-lint] Error 1'; then restored — the Makefile is never left modified",
         "E2 (pin ratchet; scratch, reverted): remove ci-fast:replay-map-index from the SG_PREREQS line, pin left at 5 -> make -s script-gate-lint rc 2 with 'SG_PREREQS holds 4 pairs (4 distinct) but SG_PREREQS_PAIRS is 5: the pin moves with the pairs, and only up'; restore; re-assert the 5-pair ok line",
