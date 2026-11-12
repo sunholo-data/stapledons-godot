@@ -395,10 +395,10 @@
     "a mean on a band edge stays unsettled in the fixture",
     "make strict passes"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-12",
+   "completed": "2026-11-12",
+   "notes": "sim/lab_stats.ail, sim/lab_stats_test.ail (15 tests), tools/lab_stats_ref.py (oracle) with tests/fixtures/lab/stats_reference.json, make lab-stats-oracle. Mean, sample spread (n - 1), standard error; the mean's 95 % interval on Student's t with n - 1 degrees of freedom (the plan does not say t or normal; 1.96 is 2 % too narrow at 64 seeds); exact order-statistic intervals for the median, 10th and 90th percentiles, each tail at most 2.5 % (the conservative choice), refused as NoInterval below n = 6 (median) and n = 36 (10th, 90th); met / missed / unsettled strict at the edges (touching is unsettled; a band may be open at one end); batches of 64 to 1,024; paired differences. 12 named refusals. Oracle: 2,997 rank pairs exact for n = 1..1,024 (75 refusals), 60 t values within 1e-9, 11 samples and a paired difference within 1e-12. 25 mutants: 24 killed, 1 equivalent (> against >= on a tail that never equals 2.5 %). Gates: make lab-test 31/31, lab-parity strict VM = interpreter, make strict rc 0, ailang check --package sim 171 files. NOT BUILT: the control variate (in the design's run plan, not in this row). checkQuantiles (ailang#2311) and checkVerdict (ailang#2310) are evaluator-only on the strict VM and are left out of statsVm; both reported, neither worked around."
   },
   {
    "id": "UL3d",
