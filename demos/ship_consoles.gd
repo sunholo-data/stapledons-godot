@@ -53,7 +53,7 @@ var now_s := 0.0
 var stations := {} # id -> {id, name, active, meshes: [{name, node, origin, box, use}], use, path_len}
 var mesh_station := {} # mesh name -> station id
 var focused := ""
-var interaction_origin := "station" # D-149: chair authority is separate from the active system.
+var interaction_origin := "station" # D-150: chair authority is separate from the active system.
 var command: CaptainCommand
 var focus_mesh := ""
 var used_once := false
@@ -481,7 +481,7 @@ func leave() -> void:
 	demo.director.restore()
 
 
-## D-149: a seated command origin hosts the same panel/handlers without desk reach or dolly.
+## D-150: a seated command origin hosts the same panel/handlers without desk reach or dolly.
 func open_chair_system(id: String) -> void:
 	if not command.visible or not command.authorized() or not ACTIONS.has(id): return
 	interaction_origin = "chair"

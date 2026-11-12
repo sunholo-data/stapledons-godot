@@ -3,7 +3,7 @@
 **Status:** Implemented locally 2026-11-09 under Mark's sprint approval; acceptance/evaluation in progress, rendered contact and dev-build approval pending. Remains planned until landing.
 **Release:** r2 · **Milestone:** ship usability; supplements R2-CAPTAIN-ANIMATION CA2 and R1-SHIP-UI.
 **Priority:** P1. Make the existing systems practical to play together.
-**Implements:** [bridge interior](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/02-bridge-interior.md), the bridge as command centre; [core pillars](https://github.com/sunholo-data/stapledons-design/blob/main/vision/core-pillars.md); D-149's attended amendment to D-56.
+**Implements:** [bridge interior](https://github.com/sunholo-data/stapledons-design/blob/main/features/phase2-core-views/02-bridge-interior.md), the bridge as command centre; [core pillars](https://github.com/sunholo-data/stapledons-design/blob/main/vision/core-pillars.md); D-150's attended amendment to D-56.
 **Depends on:** existing Navigation, Voyage, Crew, Comms and Archive panels; painted chair clips; Godot 4.7+. No package or protocol change anticipated.
 **Estimated:** 850 code/test/tool LOC plus measured contact-data corrections; three implementation milestones.
 **Evidence:** source survey at `13bc0766`; live GitHub checked 2026-11-09. No runtime or render verdict is claimed by this design.
@@ -19,7 +19,7 @@
 | Grounded Strangeness | 0 | 0 | No new world or biology rules. |
 | We Are Not Built For This | + | +1 | Crew concerns remain visible and answerable from the seat during a long crossing. |
 | Hard sci-fi authenticity (spec) | + | +1 | Existing sim fields and scientific views are reused. No new physics formula. |
-| **Net** | | **+7** | **Go**, with the attended D-149 amendment to the previous walk-to-every-console rule. |
+| **Net** | | **+7** | **Go**, with the attended D-150 amendment to the previous walk-to-every-console rule. |
 
 ## Problem
 
@@ -125,7 +125,7 @@ Product direction and sprint are approved (Mark, attended 2026-11-09: “yep go�
 
 ## Design-repo changes this needs
 
-Record D-149 in the bridge/ship UI design: the captain's chair is an additional diegetic command station for all existing systems. This amends D-56's requirement to walk to each individual console; it keeps decisions aboard a physical bridge station. No physics or narrative canon changes. Prepare the companion canon change during execution; do not silently reinterpret the old rule.
+Record D-150 in the bridge/ship UI design: the captain's chair is an additional diegetic command station for all existing systems. This amends D-56's requirement to walk to each individual console; it keeps decisions aboard a physical bridge station. No physics or narrative canon changes. Prepare the companion canon change during execution; do not silently reinterpret the old rule.
 
 ## Deliverables
 

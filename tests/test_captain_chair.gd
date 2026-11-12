@@ -59,7 +59,7 @@ func _run() -> void:
 		demo.walk_motion(Vector2(0, 1), DT)
 		demo._process(DT)
 	check("stood up: back beside the chair, free to walk", not demo.seated() and demo.walk_bridge.is_walkable(demo.avatar_pos), "%s seated %s" % [demo.avatar_pos, demo.seated()])
-	# D-149: E closes/reopens command; the explicit Stand up action stands.
+	# D-150: E closes/reopens command; the explicit Stand up action stands.
 	demo.avatar_pos = beside
 	demo._process(DT)
 	demo.use_nearest()

@@ -50,7 +50,7 @@ Independent cross-family review: **Claude Sonnet 4.6, 86/100 checkpoint PASS**, 
 
 ## Attended cockpit refinement and laptop candidate — 2026-11-09
 
-**Combined-build direction (D-151):** Mark requests one app containing both cockpit and AI-panel work. Merged current main `28d0ee23` (final AI-panel PR #414, including `204c7943`) into this branch without conflicts. Both feature histories are ancestors of the combined candidate. The normal `--dev` channel replaces the existing `~/Applications/Stapledons Voyage.app`; pinned feature-install instructions are superseded for everyday play. No additional app installation is created.
+**Combined-build direction (D-152):** Mark requests one app containing both cockpit and AI-panel work. Merged current main `28d0ee23` (final AI-panel PR #414, including `204c7943`) into this branch without conflicts. Both feature histories are ancestors of the combined candidate. The normal `--dev` channel replaces the existing `~/Applications/Stapledons Voyage.app`; pinned feature-install instructions are superseded for everyday play. No additional app installation is created.
 
 Resolved the cockpit judge's drag-state finding: selection/close reset drag and pointer state. New regressions check both resets and Esc disarm → look up → close. Combined-source cockpit **44/0**, AI settings **105/0**, title/menu **111/0** and guided review/Brake **10/0** pass headlessly; theme and UID guards pass. No live-provider calls or GPU work were part of these checks. The previous independent reviews remain recorded (cockpit Claude 92; AI panel Codex 80); no source conflict or simulation edit was introduced by integration.
 
@@ -60,7 +60,7 @@ Resolved the cockpit judge's drag-state finding: selection/close reset drag and 
 
 Fresh cross-family cockpit checkpoint: Claude Sonnet 4.6 **92/100 PASS**, [verbatim report](../../../.ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_2.json), landing_ready false. Reset drag state on system changes/close before merge; Esc-chain coverage and avoiding an unused overview viewport render are noted follow-ups. This does not validate a build without the chair source.
 
-Mark rejected the flat dashboard during playtesting and requested seated first person, consoles around the chair and camera movement between them (D-150). The replacement uses five physical displays and one reusable SubViewport for the existing system controls. Navigation's real map and the Archive/crossing reader layers are hosted there and restored on exit. The captain remains seated; first person hides its own painted billboard. Third-person contact acceptance remains pending.
+Mark rejected the flat dashboard during playtesting and requested seated first person, consoles around the chair and camera movement between them (D-151). The replacement uses five physical displays and one reusable SubViewport for the existing system controls. Navigation's real map and the Archive/crossing reader layers are hosted there and restored on exit. The captain remains seated; first person hides its own painted billboard. Third-person contact acceptance remains pending.
 
 Fresh targeted headless results: command **39/0** (including a projected display click reaching a real GUI button exactly once), physical cockpit **101/0**, layout **18/0 cases**, guided review/Brake **10/0**, real-sim parity/hold **52/0**. Theme/UID guards pass. No GPU, GUI, app rendering or capture checks ran for this refinement: Mark expressly reserved the GPU for training and chose laptop playtesting.
 

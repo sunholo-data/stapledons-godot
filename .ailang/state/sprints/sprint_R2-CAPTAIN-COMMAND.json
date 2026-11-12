@@ -11,9 +11,9 @@
     392
   ],
   "decision_refs": [
-    "D-149",
     "D-150",
-    "D-151"
+    "D-151",
+    "D-152"
   ],
   "external_dependencies": [
     {
@@ -37,7 +37,7 @@
     {
       "what": "D-148 desk contact is an inherited nightly failure, independent of chair repair",
       "blocks": [],
-      "status": "open; not resolved by D-149"
+      "status": "open; not resolved by D-150"
     }
   ],
   "registry_reuse": [

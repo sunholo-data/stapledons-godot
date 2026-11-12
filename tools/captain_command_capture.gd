@@ -1,5 +1,5 @@
 extends SceneTree
-## D-149: real system panels in the seated command shell, at three viewport sizes.
+## D-150: real system panels in the seated command shell, at three viewport sizes.
 ## --layout-only is headless geometry evidence, never a rendered visual verdict.
 var out := "res://renders/captain_command"
 var layout_only := false

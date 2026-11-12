@@ -1,6 +1,6 @@
 class_name CaptainCommand
 extends Control
-## D-149: the chair is a physical command origin for the existing station controls.
+## D-150: the chair is a physical command origin for the existing station controls.
 ## This shell owns layout/selection only. ShipConsoles remains the decision dispatcher.
 const SYSTEMS := {"navigation": "Navigation", "voyage": "Voyage", "crew": "Crew", "comms": "Comms", "archive": "Archive"}
 const ORDER := ["overview", "navigation", "voyage", "crew", "comms", "archive"]

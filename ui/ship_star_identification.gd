@@ -238,7 +238,7 @@ func click_at(point: Vector2) -> bool:
 		_show_card()
 	return true # I-click never propagates to walking, even on empty sky
 ## A text field has keyboard focus: on the main screen, or on the captain's chair display, whose
-## controls live in their own SubViewport (D-149), so the main viewport reports no focus there.
+## controls live in their own SubViewport (D-150), so the main viewport reports no focus there.
 func typing() -> bool:
 	if not is_inside_tree():return false
 	if _is_text(get_viewport().gui_get_focus_owner()):return true

@@ -3,7 +3,7 @@
 **Status:** Approved 2026-11-09 (Mark, attended: “yep go”); implemented locally, validation and independent review in progress. Visual acceptance remains pending.
 **Design:** [captain-command.md](captain-command.md).
 **Sprint JSON:** `.ailang/state/sprints/sprint_R2-CAPTAIN-COMMAND.json`.
-**Direction:** Mark's attended request of 2026-11-09, recorded as D-149.
+**Direction:** Mark's attended request of 2026-11-09, recorded as D-150.
 **Estimate:** 850 code/test/tool LOC, three focused implementation sessions plus independent evaluation and attended visual review. Contact art replacement, if needed, is a separate estimate after measurement.
 
 ## Playable outcome
@@ -12,7 +12,7 @@ Sit in the captain's chair, read the ship overview, plot/commit a journey, talk 
 
 ## Rulings and approval
 
-D-149 authorizes this direction and chair clipping repair, amending D-56's per-console walking requirement. It does not approve a finished layout or resolve D-148. This plan is the concrete implementation proposal. **Do not execute until Mark approves this sprint**, per CLAUDE.md's development cycle, step 2. Once approved, do not re-ask for settled product choices. Mark's acceptance of the dev build remains the visual merge gate.
+D-150 authorizes this direction and chair clipping repair, amending D-56's per-console walking requirement. It does not approve a finished layout or resolve D-148. This plan is the concrete implementation proposal. **Do not execute until Mark approves this sprint**, per CLAUDE.md's development cycle, step 2. Once approved, do not re-ask for settled product choices. Mark's acceptance of the dev build remains the visual merge gate.
 
 ## Preflight
 
