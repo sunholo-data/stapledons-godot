@@ -1,0 +1,42 @@
+module stapledons/sim/tools/evidence_probe
+-- R3-REASONS RT2a diagnostic, never on the wire: what the full passive suite
+-- records from one position at one galaxy time, counted. It covers only the
+-- hosts with catalogued planets (data/world_hosts.ail); the synthesised
+-- planets of the rest of the registry need the registry file and are RT2b's
+-- measurement. Counts read the truth only through the records.
+--   ailang run --quiet --strict-bytecode --caps IO --package-dir sim --entry counts \
+--     --args-json '{"seed":0,"preset":"stapledon","x":0,"y":0,"z":0,"year":0}' sim/tools/evidence_probe.ail
+import stapledons/sim/evidence (Observation, Quantity, QPlanet, QOxygen, QOxygenMethane, QRedEdge, QLeakage, Method, DirectImaging, Transit, Radio,
+ Strong, targetsOf, observeAtStop)
+import stapledons/sim/data/detect (shipSuite)
+import stapledons/sim/data/exoplanets (planets)
+import stapledons/sim/data/world_hosts (knownHostRows)
+import stapledons/sim/data/presets (presetOf)
+import stapledons/sim/worlds_catalogue (rowOf)
+import stapledons/sim/worlds_model (systemFrom)
+import std/list (flatMap, filter, length, foldl, any)
+import std/json (encode, jo, kv, jint, js)
+import std/io (println)
+
+pure func count(rs:[Observation],q:Quantity,m:Method,seen:bool) -> int = length(filter(\o. o.quantity==q && o.method==m && o.detected==seen,rs))
+pure func worlds(rs:[Observation]) -> int = length(foldl(\acc o. if any(\w. w==o.world,acc) then acc else o.world::acc,[],rs))
+export pure func ledgerFrom(seed:int,preset:string,x:float,y:float,z:float,year:float) -> [Observation] {
+ let ps=planets();
+ let dial=(presetOf(preset)).dial;
+ let suite=shipSuite();
+ observeAtStop(suite,suite.stopLookS,flatMap(\r. {
+  let row=rowOf(r.id,r.pos,r.v,r.teff,r.flags,ps);
+  targetsOf(seed,row,(systemFrom(seed,dial,row,ps)).planets)
+ },knownHostRows()),{x:x,y:y,z:z},year)
+}
+export func counts(a:{seed:int,preset:string,x:float,y:float,z:float,year:float}) -> () ! {IO} {
+ let rs=ledgerFrom(a.seed,a.preset,a.x,a.y,a.z,a.year);
+ let seen=filter(\o. o.detected,rs);
+ println(encode(jo([kv("scope",js("hosts with catalogued planets only")),kv("hosts",jint(length(knownHostRows()))),kv("planets",jint(length(planets()))),
+  kv("records",jint(length(rs))),kv("worlds_with_a_detection",jint(worlds(seen))),
+  kv("planet_imaged",jint(count(rs,QPlanet,DirectImaging,true))),kv("planet_imaged_strong",jint(length(filter(\o. o.quantity==QPlanet && o.method==DirectImaging && o.level==Strong,rs)))),
+  kv("planet_in_transit",jint(count(rs,QPlanet,Transit,true))),
+  kv("o2_ch4",jint(count(rs,QOxygenMethane,DirectImaging,true))),kv("o2_alone",jint(count(rs,QOxygen,DirectImaging,true))),kv("o2_not_seen",jint(count(rs,QOxygen,DirectImaging,false))),
+  kv("red_edge",jint(count(rs,QRedEdge,DirectImaging,true))),kv("red_edge_not_seen",jint(count(rs,QRedEdge,DirectImaging,false))),
+  kv("leakage",jint(count(rs,QLeakage,Radio,true))),kv("radio_silences",jint(count(rs,QLeakage,Radio,false)))])))
+}
