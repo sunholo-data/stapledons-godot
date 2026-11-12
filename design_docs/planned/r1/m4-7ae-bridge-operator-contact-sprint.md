@@ -213,7 +213,7 @@ to 233 s at load ~38 — V42, V51). 183 changed lines. Closes: **AC2, AC2a, AC2b
 
    .PHONY: bridge-operator-drills
    bridge-operator-drills: import ## 7ae AC2: the contact test's kill drills, enforced by an expected table (mutates tracked files; not in make test)
-   	@GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh --selftest && GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh
+	@GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh --selftest && GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh
    ```
 
    **`bridge-operator-drills` is NOT a prerequisite of `make test`** (design §D10: it rewrites tracked
