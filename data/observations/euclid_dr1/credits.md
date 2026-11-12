@@ -15,6 +15,9 @@ under each linked ESA image page's **CC BY-SA 3.0 IGO** option. Those composites
 retained as unregistered archival plates. Their original observation dates are
 not inferred from their November 2026 publication dates. See individual URLs,
 licences, modifications and hashes in `manifest.json`.
+The colour products are resized into display levels and re-encoded as PNG tiles
+with one-pixel gutters; these display derivatives retain the same attribution
+and CC BY-SA 3.0 IGO terms. The source composites are retained separately.
 
 The independent registration report describes five empirical source centroids,
 the analytical TAN oracle and its limitations. The scratch oracle is an independent

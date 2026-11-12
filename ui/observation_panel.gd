@@ -26,6 +26,7 @@ var image_area := Control.new()
 var field_picker := OptionButton.new()
 var live_button := Button.new()
 var archive_button := Button.new()
+var map_button := Button.new()
 var live_view := Live.new()
 var source_picker := PopupMenu.new()
 var _hits: Array = []
@@ -33,6 +34,9 @@ var _drag := false
 var _dragged := false
 var _drag_start := Vector2.ZERO
 var session_pack_id := ""
+var session_pin: Dictionary = {}
+var archive_mismatch := false
+var last_error := ""
 var show_details := false
 var show_sources := false
 
@@ -84,7 +88,6 @@ func _init() -> void:
 			if float(spec[1]) == 0.0: zoom = 1.0; pan = Vector2.ZERO; _update_tiles()
 			else: zoom_at(float(spec[1]), image_area.size * 0.5))
 		controls.add_child(button)
-	var map_button := Button.new()
 	map_button.text = "Open in map"
 	map_button.pressed.connect(func():
 		if not reference.is_empty(): open_map.emit(reference.duplicate(true))
@@ -144,11 +147,18 @@ func _init() -> void:
 	visibility_changed.connect(func():
 		if not is_visible_in_tree(): cache.close(); live_view.set_active(false))
 
-func configure(source_index, star_info = null, snapshot := {}, sv = null) -> void:
-	# A session cannot silently replace its observation release after a file update.
-	if not session_pack_id.is_empty() and session_pack_id != str(source_index.version): return
-	index = source_index
-	session_pack_id = str(index.version)
+func configure(source_index, star_info = null, snapshot := {}, sv = null, expected_pin: Dictionary = {}) -> bool:
+	var candidate: Dictionary = source_index.pin()
+	var expected := expected_pin if not expected_pin.is_empty() else (session_pin if not session_pin.is_empty() else candidate)
+	var matches := not candidate.is_empty() and candidate == expected and (session_pin.is_empty() or session_pin == candidate)
+	if session_pin.is_empty(): session_pin = expected.duplicate(true)
+	session_pack_id = str(session_pin.get("id", ""))
+	archive_mismatch = not matches
+	last_error = "" if matches else "Observation data missing or changed for this session"
+	if archive_mismatch: cache.close(); tile_index = {}
+	if matches or index == null:
+		var isolated: RefCounted = source_index.snapshot()
+		index = isolated if isolated != null else source_index
 	catalogue = star_info
 	update_world(snapshot, sv)
 	field_picker.clear()
@@ -157,6 +167,8 @@ func configure(source_index, star_info = null, snapshot := {}, sv = null) -> voi
 	for id in index.plates:
 		field_picker.add_item(str(index.plate(id).get("name", id)))
 		field_picker.set_item_metadata(field_picker.item_count - 1, id)
+	field_picker.disabled = archive_mismatch
+	return matches
 
 func update_world(snapshot: Dictionary, sv = null) -> void:
 	world = snapshot
@@ -168,13 +180,14 @@ func update_world(snapshot: Dictionary, sv = null) -> void:
 
 func open_reference(ref: Dictionary, preferred := "") -> bool:
 	if index == null: return false
+	if not ref.is_empty() and (not ref.get("kind") in ["catalogue","body","survey"] or not ref.get("id") is String or str(ref.id).is_empty()): return false
 	reference = ref.duplicate(true)
 	plate = {}; tile_index = {}; zoom = 1.0; pan = Vector2.ZERO
+	field_picker.select(0)
 	cache.close()
 	if ref.get("kind") == "survey":
 		var object: Dictionary = index.object(str(ref.get("id", "")))
-		if object.is_empty(): return false
-		_load_plate(str(object.plate_id))
+		if not object.is_empty(): _load_plate(str(object.plate_id))
 	elif ref.is_empty():
 		_load_plate("m81-outreach")
 	visible = true
@@ -228,6 +241,10 @@ static func _read_pinned(meta: Dictionary) -> Dictionary:
 	return data if data is Dictionary else {}
 
 func _load_plate(id: String) -> void:
+	if archive_mismatch:
+		plate = {}; tile_index = {}; cache.close()
+		_archive_source_line()
+		return
 	plate = index.plate(id)
 	tile_index = _read_pinned(plate.get("tiles", {}))
 	zoom = 1.0; pan = Vector2.ZERO
@@ -238,10 +255,18 @@ func _load_plate(id: String) -> void:
 	_update_tiles()
 
 func _archive_source_line() -> void:
+	if archive_mismatch:
+		source_line.text = last_error
+		return
 	source_line.text = "%s · %s · %s" % [plate.get("name", "No survey image"), plate.get("band", ""), (str(plate.get("observation_start")) if plate.get("observation_start") != null else "Observation date unavailable")]
 
 func _refresh_details() -> void:
+	if archive_mismatch and reference.get("kind") == "survey":
+		map_button.disabled = true
+		detail.text = "Survey information unavailable\n\n" + last_error + "\n\n" + str(reference.get("id", ""))
+		return
 	if reference.is_empty():
+		map_button.disabled = not plate.get("registered", false)
 		var lines: Array[String] = [str(plate.get("name", "Choose an object or a survey field")), "Registered source coordinates" if plate.get("registered", false) else "Unregistered image · depth not shown", str(plate.get("credit", ""))]
 		if show_details: lines.append(str(plate.get("processing", "No associated survey image for this object")))
 		if show_sources and not plate.is_empty():
@@ -254,8 +279,10 @@ func _refresh_details() -> void:
 	else:
 		var facts: Dictionary = Facts.facts(reference, index, catalogue, world)
 		if not facts.get("available", false):
-			detail.text = "Information unavailable"
+			map_button.disabled = true
+			detail.text = "Information unavailable\n\n" + str(reference.get("id", ""))
 			return
+		map_button.disabled = false
 		var lines: Array[String] = [str(facts.title)]
 		for row: Dictionary in facts.get("primary", []): lines.append("%s\n%s" % [row.label, row.value])
 		if show_details:
@@ -301,6 +328,11 @@ func _requested() -> Array:
 	return out
 func _update_tiles() -> void:
 	if not visible or mode != "archive": return
+	if archive_mismatch:
+		cache.close()
+		state_line.text = "Archive unavailable · " + last_error
+		image_area.queue_redraw()
+		return
 	var requested := _requested()
 	cache.set_visible(requested.map(func(meta): return meta.key))
 	for meta: Dictionary in requested: cache.request_tile(meta)
@@ -322,19 +354,25 @@ func _draw_image() -> void:
 			image_area.draw_texture_rect_region(entry.texture, _tile_rect(meta, level), Rect2(c[0], c[1], c[2], c[3]))
 	if reference.get("kind") == "survey" and plate.get("registered", false):
 		var row: Dictionary = index.object(reference.id)
-		var point: Vector2 = ProjectionMath.display_point(plate, row)
+		var point: Vector2 = _source_centre(row)
 		if point.is_finite(): image_area.draw_arc(_origin() + point * _scale(), 10.0, 0.0, TAU, 32, Color(0.95, 0.82, 0.45), 1.5, true)
 
 func point_candidates(at: Vector2) -> Array:
-	if not plate.get("registered", false) or index == null: return []
+	if archive_mismatch or not plate.get("registered", false) or index == null: return []
 	var hits: Array = []
 	for id in index.objects:
 		var row: Dictionary = index.object(id)
 		if row.get("plate_id") != plate.id: continue
-		var point: Vector2 = ProjectionMath.display_point(plate, row)
+		var point: Vector2 = _source_centre(row)
 		if point.is_finite() and Rect2(Vector2.ZERO, _source_size()).has_point(point) and (_origin() + point * _scale()).distance_to(at) <= 12.0: hits.append(row)
 	return hits
+
+func _source_centre(row: Dictionary) -> Vector2:
+	# The projection adapter returns zero-based pixel-centre indices. Canvas
+	# rectangles use pixel edges, so the first rendered texel is centred at .5.
+	return ProjectionMath.display_point(plate, row) + Vector2(.5,.5)
 func select_object(id: String) -> void:
+	if archive_mismatch: return
 	var source: Dictionary = index.object(id)
 	if source.is_empty(): return
 	if source.get("plate_id") != plate.get("id"): _load_plate(str(source.plate_id))
@@ -381,9 +419,12 @@ func _input(event: InputEvent) -> void:
 	if event.is_command_or_control_pressed(): return
 	if event.keycode == KEY_ESCAPE:
 		close_panel(); get_viewport().set_input_as_handled()
-	elif event.keycode == KEY_T and mode == "live":
-		if live_view.level == 2: close_panel()
-		else: live_view.level = 2; _refresh_live()
+	elif event.keycode == KEY_T:
+		var focus := get_viewport().gui_get_focus_owner()
+		if focus is LineEdit or focus is TextEdit: return
+		if mode == "live":
+			if live_view.level == 2: close_panel()
+			else: live_view.level = 2; _refresh_live()
 		get_viewport().set_input_as_handled()
 func _process(_delta: float) -> void:
 	if not is_visible_in_tree(): return

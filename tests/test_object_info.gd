@@ -87,6 +87,7 @@ func _initialize() -> void:
 	copied.name = "mutated"
 	check(body.name == "Fixture finite star", "inspection cannot mutate simulation snapshot")
 	check(not gt.contains("Star candidate") and gt.contains("classification"), "probability never replaces published candidate classification")
-	check(s.get("provenance") == "measured" and a.get("provenance") == "catalogue", "measured survey and catalogue provenance remain typed")
+	check(str(s.get("provenance")).contains("methods vary") and a.get("provenance") == "catalogue", "mixed survey methods cannot be labelled uniformly measured")
+	check(survey_text.contains("classifier output") and survey_text.contains("epoch unavailable") and survey_text.contains("measured"), "per-fact measured/classifier methods and unknown epochs are explicit")
 	print("object-info: %d passed, %d failures" % [passed, failures])
 	quit(1 if failures else 0)

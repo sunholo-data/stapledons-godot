@@ -9,7 +9,7 @@ mkdir -p "$SCRATCH"
 SCRATCH=$(cd "$SCRATCH" && pwd)
 run_gate() {
   name=$1; log=$2; limit=$3; summary=$4; shift 4
-  if "$SCRIPT_GATE" "$name" "$log" "$limit" "$summary" -- "$@" > "$log.gate" 2>&1; then
+  if sh "$SCRIPT_GATE" "$name" "$log" "$limit" "$summary" -- "$@" > "$log.gate" 2>&1; then
     printf '%s: passed\n' "$name"
   else
     cat "$log.gate" >&2
@@ -25,7 +25,7 @@ set +e
 "$GODOT" --headless --path "$SCRATCH/empty" --main-pack "$SCRATCH/broken.pck" --script res://tools/telescope_offline_probe.gd > "$SCRATCH/broken.log" 2>&1
 status=$?
 set -e
-if [ "$status" -eq 0 ] || ! rg -q '^FAIL offline telescope: missing res://observation_bundle/manifest.json.bin$' "$SCRATCH/broken.log" || rg -q '^SCRIPT ERROR:' "$SCRATCH/broken.log"; then
+if [ "$status" -eq 0 ] || ! grep -q '^FAIL offline telescope: missing res://observation_bundle/manifest.json.bin$' "$SCRATCH/broken.log" || grep -q '^SCRIPT ERROR:' "$SCRATCH/broken.log"; then
   cat "$SCRATCH/broken.log" >&2
   exit 1
 fi

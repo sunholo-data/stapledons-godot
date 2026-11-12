@@ -43,6 +43,9 @@ include mk/observation-assets.mk
 include mk/survey-map.mk
 include mk/telescope-verification.mk
 include mk/observation-publish.mk
+include mk/observation-pin.mk
+include mk/observation-oracle.mk
+include mk/telescope-first-entry.mk
 include mk/levels.mk
 include mk/commons-civic.mk
 include mk/finder.mk

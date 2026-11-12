@@ -22,6 +22,8 @@ test: observation-pack-test observation-fits-test
 ci-fast: observation-import-parity survey-footprint-parity
 test: observation-import-test observation-import-parity observation-index-test survey-footprint-test survey-footprint-parity survey-map-test
 test: observation-pin-test observation-projection-oracle
+test: telescope-first-entry-test
 telescope-ui-test telescope-verification-test telescope-bench: observation-assets
+observation-projection-oracle-negative: observation-assets
 observation-fits-test:
 	@$(SCRIPT_GATE) observation-fits-test $(SCRATCH)/observations/fits-test.log 60 '^observation-fits-test: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_observation_fits.gd

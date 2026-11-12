@@ -30,6 +30,7 @@ extends Node3D
 signal target_selected(star_id: String)
 signal telescope_requested(reference: Dictionary)
 signal inspect_requested(reference: Dictionary)
+signal observation_opened
 
 const ObjectReference = preload("res://ui/object_reference.gd")
 const ObservationIndex = preload("res://ui/observation_index.gd")
@@ -46,9 +47,12 @@ var observation_star_info := ObservationStarInfo.new()
 var observation_panel: Control
 var _map_canvas: CanvasLayer
 var observer_world: Dictionary = {}
+var observation_metadata: Dictionary = {}
+var observation_pack_available := true
 var observer_system_view
 var telescope_button := Button.new()
 var inspect_button := Button.new()
+var plot_inspection_button := Button.new()
 
 const STAR_SHADER := preload("res://ui/star_point.gdshader")
 const TICK_HZ := 20.0
@@ -269,8 +273,7 @@ func _build() -> void:
 	survey_layer.object_selected.connect(func(reference): focus_object(reference, true))
 	survey_layer.field_selected.connect(func(plate_id):
 		_frame_survey(plate_id)
-		open_observation({}, "archive")
-		observation_panel.select_plate(plate_id))
+		open_observation({}, "archive", plate_id))
 	var panel := PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
 	panel.offset_left = -PANEL_WIDTH
@@ -322,6 +325,11 @@ func _build() -> void:
 	inspect_button.pressed.connect(func(): inspect_requested.emit(observation_reference()))
 	observation_controls.add_child(telescope_button)
 	observation_controls.add_child(inspect_button)
+	plot_inspection_button.text = "Plot inspected star"
+	plot_inspection_button.tooltip_text = "Explicitly replace the planned destination with the inspected local star"
+	plot_inspection_button.pressed.connect(plot_inspected_star)
+	plot_inspection_button.hide()
+	observation_controls.add_child(plot_inspection_button)
 	box.add_child(observation_controls)
 	survey_button.text = "Euclid sky context · directions only"
 	survey_button.toggled.connect(set_survey_context)
@@ -441,7 +449,10 @@ func _build() -> void:
 		_frame_survey(plate_id)
 		observation_panel.close_panel())
 	telescope_requested.connect(func(reference): open_observation(reference))
-	inspect_requested.connect(func(reference): open_observation(reference))
+	inspect_requested.connect(func(reference):
+		if open_observation(reference):
+			var inspection_details: CheckButton = observation_panel.find_child("DetailsToggle",true,false)
+			inspection_details.button_pressed = true)
 	credits.visible = show_hint # captures keep their pinned PNGs; C still toggles the panel in play
 	layer.add_child(credits)
 	_update_camera()
@@ -582,6 +593,7 @@ func display_name(i: int) -> String:
 func attach(bridge: SimBridge) -> void:
 	_build()
 	sim = bridge
+	_bind_observation_pack()
 	var params: Dictionary = sim.world["params"]
 	phi_min = params["cruise_phi_min"]
 	phi_max = params["cruise_phi_max"]
@@ -590,6 +602,21 @@ func attach(bridge: SimBridge) -> void:
 	slider.max_value = phi_max
 	set_cruise_phi(phi_default)
 	refresh()
+
+func _bind_observation_pack() -> void:
+	var actual: Dictionary = observation_index.pin()
+	var stored: Variant = sim.get_meta("observation_pack", {})
+	if stored is Dictionary and stored.is_empty():
+		stored = actual.duplicate(true)
+		sim.set_meta("observation_pack", stored.duplicate(true))
+	observation_metadata = stored.duplicate(true) if stored is Dictionary else {"invalid":true}
+	observation_pack_available = not actual.is_empty() and actual == observation_metadata
+	survey_button.disabled = not observation_pack_available
+	if not observation_pack_available: survey_button.tooltip_text = "Survey archive differs from this session's pinned data"
+	# Host metadata stays outside NDJSON and is retained beside a recorded session.
+	if not sim.record_path.is_empty():
+		var file := FileAccess.open(sim.record_path + ".observations.json", FileAccess.WRITE)
+		if file != null: file.store_string(JSON.stringify({"format_version":1,"observation_pack":observation_metadata},"  ")+"\n")
 
 
 func world_pos(i: int) -> Vector3:
@@ -612,6 +639,7 @@ func select(i: int) -> bool:
 	if not preselect(i):
 		return false
 	observation_selection = {"kind": "catalogue", "id": str(catalogue[i].id)}
+	_refresh_observation_actions()
 	target_selected.emit(catalogue[i]["id"])
 	return true
 
@@ -639,10 +667,12 @@ func focus_object(reference: Dictionary, frame := false) -> bool:
 			index = index_of(reference.id)
 			if index < 0: return false
 		"survey":
+			if not observation_pack_available: return false
 			if observation_index.resolve(reference.id).is_empty(): return false
 		"body":
-			var bodies: Array = sim.world.get("system", {}).get("bodies", []) if sim != null else []
-			if not bodies.any(func(body): return body.get("id") == reference.id): return false
+			var snapshot: Dictionary = observer_world if not observer_world.is_empty() else (sim.world if sim != null else {})
+			var bodies: Array = snapshot.get("system", {}).get("bodies", [])
+			if bodies.filter(func(body): return body.get("id") == reference.id).size() != 1: return false
 	observation_selection = reference.duplicate(true)
 	if frame and index >= 0:
 		set_survey_context(false)
@@ -651,8 +681,22 @@ func focus_object(reference: Dictionary, frame := false) -> bool:
 		set_survey_context(true)
 		survey_layer.selected_id = observation_index.resolve(reference.id)
 		_frame_survey(str(observation_index.object(reference.id).get("plate_id", "")))
+	_refresh_observation_actions()
 	_overlay.queue_redraw()
 	return true
+
+func inspection_index() -> int:
+	return index_of(str(observation_selection.get("id", ""))) if observation_selection.get("kind") == "catalogue" else -1
+
+func _refresh_observation_actions() -> void:
+	var inspected := inspection_index()
+	plot_inspection_button.visible = mode == "helm" and not survey_context and inspected >= 0 and (inspected != selected_index or home_highlight or not selected_body.is_empty())
+	plot_inspection_button.disabled = sim == null or not planning() or journey_state() == "committed"
+
+func plot_inspected_star() -> bool:
+	if sim == null or not planning() or journey_state() == "committed": return false
+	var inspected := inspection_index()
+	return select(inspected) if inspected >= 0 else false
 
 
 func observation_reference() -> Dictionary:
@@ -668,14 +712,21 @@ func set_observer_context(snapshot: Dictionary, system_view = null) -> void:
 	if observation_panel != null: observation_panel.update_world(snapshot, system_view)
 
 
-func open_observation(reference: Dictionary = {}, preferred := "") -> bool:
+func open_observation(reference: Dictionary = {}, preferred := "", field_id := "") -> bool:
 	if observation_panel == null: return false
-	var chosen: Dictionary = reference if not reference.is_empty() else observation_reference()
-	if not chosen.is_empty() and not focus_object(chosen): return false
+	var field: String = field_id
+	if field.is_empty() and reference.is_empty() and survey_context and survey_layer.selected_id.is_empty(): field = survey_layer.active_plate
+	if not field.is_empty() and observation_index.plate(field).is_empty(): return false
+	var chosen: Dictionary = reference if not reference.is_empty() else ({} if not field.is_empty() else observation_reference())
+	if not chosen.is_empty() and not ObjectReference.valid(chosen): return false
+	if not chosen.is_empty(): focus_object(chosen) # Missing records open an explicit unavailable card.
 	close_commit_dialog() # Cancel only the armed UI gesture, never the route or sim intent.
-	observation_panel.configure(observation_index, observation_star_info, observer_world if not observer_world.is_empty() else (sim.world if sim != null else {}), observer_system_view)
+	observation_panel.configure(observation_index, observation_star_info, observer_world if not observer_world.is_empty() else (sim.world if sim != null else {}), observer_system_view, observation_metadata)
 	var opened: bool = observation_panel.open_reference(chosen, preferred)
-	if opened: _map_canvas.hide()
+	if opened:
+		if not field.is_empty(): observation_panel.select_plate(field)
+		_map_canvas.hide()
+		observation_opened.emit()
 	return opened
 
 
@@ -688,6 +739,7 @@ func close_observation() -> bool:
 ## Survey coordinates are directions from Sol, never fabricated local positions.
 ## This changes display state only; navigation selection/queued intents are retained.
 func set_survey_context(on: bool) -> void:
+	if on and not observation_pack_available: return
 	if on == survey_context: return
 	if on:
 		_local_camera = {"pivot": pivot, "yaw": yaw, "pitch": pitch, "dist": dist}
@@ -699,6 +751,8 @@ func set_survey_context(on: bool) -> void:
 	earth_beams.visible = not on and earth_toggle.button_pressed
 	for control in [centre_button, fit_button, home_button, ism_toggle, local_ism_button, earth_toggle, commit_button, cancel_button]:
 		control.disabled = on
+	if sim == null:
+		for control in [home_button, commit_button, cancel_button]: control.disabled = true
 	slider.editable = not on
 	if on:
 		dist = 20.; pivot = Vector3.ZERO
@@ -888,6 +942,7 @@ func planning() -> bool:
 
 
 func set_mode(m: String, carry_selection := true) -> void:
+	if m == "helm": set_survey_context(false)
 	mode = "chart" if m == "chart" else "helm"
 	var helm := mode == "helm"
 	for c: Control in [slider, commit_button, cancel_button, home_button, system_box, _speed]:
@@ -899,6 +954,7 @@ func set_mode(m: String, carry_selection := true) -> void:
 		_pending = {}
 	elif carry_selection and selected_index >= 0 and planning() and str(field_value(sim.world, "journey.plan.target.id") if sim != null else "") != str(catalogue[selected_index]["id"]):
 		_pending = plan_intent(selected_index) # the chart's selection carries over (unless already the plan)
+	_refresh_observation_actions()
 	refresh()
 
 
@@ -1211,6 +1267,7 @@ func refresh() -> void:
 		var i := int(t.index)
 		_sentence(_subtitle, [["client.map.target_id", "%s"]] + ([" · distance unavailable"] if i >= 0 and i < catalogue.size() and catalogue[i].id == t.id else []))
 	_refresh_system_list()
+	_refresh_observation_actions()
 	home_button.disabled = guided_read_only or survey_context
 	_status.text = status_text()
 	commit_button.disabled = guided_read_only or survey_context or journey_state() != "planned"
@@ -1569,13 +1626,22 @@ func _draw_overlay() -> void:
 		_overlay.draw_string(font, sol + Vector2(8, -6), "Sol", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1.0, 0.9, 0.5))
 		taken.append(sol)
 		boxes.append(label_box(font, sol + Vector2(8, -6), "Sol", 15))
-	var focus_index := index_of(str(observation_selection.get("id", ""))) if observation_selection.get("kind") == "catalogue" else selected_index
+	var focus_index := selected_index
 	if focus_index >= 0 and not camera.is_position_behind(world_pos(focus_index)):
 		var sp := screen_position(focus_index)
 		_overlay.draw_arc(sp, 11.0, 0.0, TAU, 40, Color(0.5, 0.85, 1.0), 2.0, true)
 		_overlay.draw_string(font, sp + Vector2(14, 18), display_name(focus_index), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.6, 0.9, 1.0))
 		taken.append(sp)
 		boxes.append(label_box(font, sp + Vector2(14, 18), display_name(focus_index), 16))
+	var inspected := inspection_index()
+	if inspected >= 0 and inspected != selected_index and not camera.is_position_behind(world_pos(inspected)):
+		var at := screen_position(inspected)
+		var amber := Color(.95,.82,.45)
+		for part in range(0,12,2): _overlay.draw_arc(at,16.,TAU*part/12.,TAU*(part+1)/12.,8,amber,1.5,true)
+		var label := "Inspecting: " + display_name(inspected)
+		_overlay.draw_string(font,at+Vector2(18,-14),label,HORIZONTAL_ALIGNMENT_LEFT,-1,14,amber)
+		taken.append(at)
+		boxes.append(label_box(font,at+Vector2(18,-14),label,14))
 	for i: int in names: # faint names for the other named stars, without overlaps
 		var w := world_pos(i)
 		if i == focus_index or camera.is_position_behind(w):

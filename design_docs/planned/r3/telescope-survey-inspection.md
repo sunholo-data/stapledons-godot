@@ -70,12 +70,12 @@ No cosmology formula is needed: a supplied redshift is a redshift, and a supplie
 
 ### T2. Object identity, facts and simulation boundary
 
-Add an observation index, not a replacement for the star-truth table. Its proposed object key is `{namespace, source_id}`; a selection reference also identifies `catalogue`, `body` or `survey`. Keep existing catalogue strings and body IDs unchanged. A Euclid identifier never becomes a navigation catalogue index.
+Add an observation index, not a replacement for the star-truth table. The actual Euclid key is `release:table:tile_id:raw_object_id`, because raw object ID alone is not globally unique. All components remain strings; the selection reference also identifies `catalogue`, `body` or `survey`. Existing catalogue strings and body IDs stay unchanged. A Euclid identifier never becomes a navigation catalogue index.
 
 | Record | Contents and rule |
 |---|---|
 | Object | Stable source ID, aliases, object kind/candidate status, sky direction, coordinate frame/epoch, optional documented distance/redshift, observation references. IDs stay strings, including long numerical IDs. |
-| Fact | Value, unit, method (`measured`, `inferred`, `assumed`, `modelled`), source, epoch and optional uncertainty. Missing is null, never zero. |
+| Fact | Value, unit, method (including `measured`, `classifier_output`, `quality_metadata`, `derived_frame_rotation` or `unavailable`), source, epoch and optional uncertainty. Missing is null, never zero; a classifier output is not a measured object class. |
 | Association | Exact published cross-match first; explicit reviewed links next. Positional matches need an epoch-aware tolerance and ambiguity report; proximity alone cannot overwrite an identity. |
 | Availability | Supported live renderer, registered archive fields, unregistered plates and maximum source resolution. It is not a statement that the object is visible to the ship now. |
 
@@ -85,6 +85,8 @@ AILANG owns import rules, joins, rejection reports and derived catalogue facts. 
 
 **Versioning:** when the world/session is created, retain the observation-pack version/hash in its existing host session metadata, alongside the world's pinned catalogue assets. This is a presentation asset pin, not a new simulation parameter. Define this host field in T2; no network or asset update silently replaces it. New packs become the default for new sessions. Missing pinned bytes produce an unavailable-source state rather than falling forward to another version.
 
+The delivered host field is `observation_pack: {id, manifest_sha256, objects_sha256}` on the `SimBridge` host object, also written beside a recorded session as `.observations.json`. It stays outside NDJSON. Panels use deep snapshots of the originally parsed bytes, reject same-ID content changes and accept a restored expected host pin. The project has no save/load UI to extend; no general save system is added here. A first read-only chart/telescope entry reuses the map host without its normal initial plan or crew-order intents; actual recorded inputs test that boundary.
+
 ### T3. Tie into the existing 3D map
 
 - Add **Inspect** and **Telescope** beside the selected object's current detail. Catalogue stars remain at their current measured xyz; known bodies use existing sim/body links. Selecting a telescope target does not call `select`, `preselect`, `plan_body` or `plan_target` because those can queue a plan. Introduce a separate read-only observation selection and `focus_object` route; only an explicit navigation action reaches the current planning path.
@@ -92,6 +94,8 @@ AILANG owns import rules, joins, rejection reports and derived catalogue facts. 
 - Add a **Survey sky** context layer inside the same map UI: a labelled sky sphere centred on the survey observer at Sol, with field footprints and angular source markers using `SkyFrame`. Its radius is a diagram convention, labelled **Directions from Sol · depth not shown**. It has no distance rings, routes or journey controls for survey sources. Existing local stars retain their real positions in the ordinary 3D map; switching context preserves that view's camera.
 - The context selection/list is the route to M81 and other out-of-range sources. Do not squeeze them into the local 400-ly camera range, invent distances, or pin them to nearby stars. Survey direction remains tied to the archive observer even after the ship travels.
 - Disable plotting for all survey objects in this slice, even when a published distance exists. They remain inspectable and observable. Their type and source ID are distinct from visitable stars.
+
+Observation focus uses a separate amber dashed marker labelled **Inspecting**. The cyan destination ring continues to represent the actual navigation selection. Returning to Navigation retains both references; **Plot inspected star** is an explicit helm-only action for an exact local catalogue star. Information entry itself never queues that plan. Closing Navigation or entering helm mode leaves survey context and restores the local camera.
 
 This adds context to the current map, not a second navigator. A future distance-qualified galaxy layer can reuse these identities without moving local stars or changing this direction-only contract.
 
@@ -156,7 +160,7 @@ Per CLAUDE.md, a merge does not wait on a GPU or a quiet host. Add the golden ca
 
 ## Risks and mitigations
 
-- **New release API/schema not exercised yet:** documentation confirms catalogue/HiPS services, but no DR1 query or scientific cutout retrieval was run in this investigation. T0 must produce the small real extract and registered zoom proof; do not equate the downloaded outreach JPEG with a working archive importer.
+- **Source access and registration:** T0 now proves the actual DR1 cutout/table access. The pinned source bytes, authoritative FITS WCS and all forty in-field associations are checked; the tracked independent oracle remeasures the five centroids and tests full-CD, RA-wrap and polar cases. Outreach images remain unregistered.
 - **Press-image registration:** stitching/distortion may make a simple projection invalid. Admit only independently verified supported plates; use a small science cutout when needed, or leave an image unregistered. Never approximate a sky footprint from its rectangular pixels alone.
 - **Map selection accidentally plans:** current `preselect` can queue `plan_intent` (V1). The new read-only route is mandatory; AC4 observes actual outgoing intents rather than testing only the visible buttons.
 - **Mixed observer/epoch:** Euclid plates include foreground stars at their original Earth viewpoint. Display the whole plate as archival; never paste it into the ship's current sky or subtract catalogue stars by appearance. This avoids false parallax and new unrecoverable geometry.
@@ -164,7 +168,7 @@ Per CLAUDE.md, a merge does not wait on a GPU or a quiet host. Add the golden ca
 - **Heavy images:** tile/mip caps include decompressed GPU memory. No full plate is decoded during ordinary pan; import preprocesses it offline.
 - **Unknown measurements:** no invented distance, spectrum, stellar surface or object identification fills a gap. A plotted confidence interval requires real source metadata.
 - **Adjacent finder changes:** rebase onto the actual landed #431/#433 interfaces before implementation. They remain separate work and are not silently accepted by this design.
-- **AILANG limitations:** no compiler/VM bug was encountered because no new pipeline code ran. If T0/T1 exposes a language/runtime gap, report its minimal repro via the standing upstream channel; do not introduce a Python pipeline workaround.
+- **AILANG limitations:** pure import/projection paths run on the pinned VM and interpreter with matching bytes. An upstream formatter issue was reported through the standing feedback channel. Production pipelines remain AILANG/Godot; the tracked Python code is explicitly an independent oracle.
 
 ## Open questions for Mark
 

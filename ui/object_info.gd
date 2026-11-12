@@ -43,7 +43,7 @@ static func facts(reference: Dictionary, index, star_info, world: Dictionary) ->
 		result.available = true
 		result.id = str(source.get("id",id))
 		result.title = str(source.get("name",result.id))
-		result.provenance = str(source.get("provenance","measured"))
+		result.provenance = "published catalogue · methods vary by fact"
 		var classification := "Survey source; classification unavailable"
 		if source.get("kind", "survey_source") != "survey_source":
 			classification = str(source.kind).capitalize()
@@ -52,19 +52,19 @@ static func facts(reference: Dictionary, index, star_info, world: Dictionary) ->
 		result.primary.append({"label":"Provenance","value":str(result.provenance)})
 		var lines: Array[String] = [classification]
 		if _number(source.get("ra_deg")) and _number(source.get("dec_deg")):
-			lines.append("ICRS coordinates: RA %.8f°, Dec %.8f°" % [source.ra_deg,source.dec_deg])
+			lines.append("ICRS RA: %.8f° (%s)\nICRS Dec: %.8f° (%s)" % [source.ra_deg,_fact_method(source,"ra_deg"),source.dec_deg,_fact_method(source,"dec_deg")])
 		lines.append("Distance: %s" % (("%.3f ly" % source.distance_ly) if _number(source.get("distance_ly")) and float(source.distance_ly) >= 0. else "unavailable"))
 		# Keep the absence unmistakable when read independently of the section heading.
 		if not _number(source.get("distance_ly")):lines.append("Distance unavailable; no light age is assigned.")
 		if _number(source.get("redshift")):lines.append("Redshift: %s (published; no distance conversion)" % str(source.redshift))
 		result.sections.append({"title":"Published survey facts","text":"\n".join(lines)})
 		var quality: Array[String] = []
-		if _number(source.get("point_like_probability")):quality.append("Point-like probability: %s; this probability does not assign an object classification." % str(source.point_like_probability))
+		if _number(source.get("point_like_probability")):quality.append("Point-like probability: %s (%s); this probability does not assign an object classification." % [str(source.point_like_probability),_fact_method(source,"point_like_probability")])
 		var flags: Dictionary = source.get("flags",{}) if source.get("flags") is Dictionary else {}
 		var flag_names := flags.keys()
 		flag_names.sort()
 		for key in flag_names:
-			if _number(flags[key]):quality.append("%s: %s" % [key,str(flags[key])])
+			if _number(flags[key]):quality.append("%s: %s (%s)" % [key,str(flags[key]),_fact_method(source,key)])
 		if not quality.is_empty():result.sections.append({"title":"Catalogue quality","text":"\n".join(quality)})
 		_add_source(result,"Catalogue",str(source.get("source_url","")))
 		var plate_id := str(source.get("plate_id",""))
@@ -81,6 +81,11 @@ static func facts(reference: Dictionary, index, star_info, world: Dictionary) ->
 			_add_source(result,"Survey image",str(plate.get("source_url","")))
 		if not result.image_available:result.sections.append({"title":"Survey image","text":"No survey image available for this source."})
 	return result
+
+static func _fact_method(source: Dictionary, key: String) -> String:
+	var facts: Dictionary = source.get("facts",{}) if source.get("facts") is Dictionary else {}
+	var fact: Dictionary = facts.get(key,{}) if facts.get(key) is Dictionary else {}
+	return "%s; epoch %s" % [str(fact.get("method","unavailable")).replace("_"," "),str(fact.epoch) if fact.get("epoch") != null else "unavailable"]
 
 static func text(reference: Dictionary, index, star_info, world: Dictionary) -> String:
 	var record := facts(reference,index,star_info,world)

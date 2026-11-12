@@ -10,6 +10,12 @@ var aliases: Dictionary = {}
 var manifest: Dictionary = {}
 var version := ""
 var last_error := ""
+# Originals never alias the mutable public lookup dictionaries. A snapshot is
+# reconstructed from these records, not from records a UI caller may have edited.
+var _source_objects: Dictionary = {}
+var _source_manifest: Dictionary = {}
+var _objects_sha256 := ""
+var _manifest_sha256 := ""
 
 func _clear() -> void:
 	objects.clear()
@@ -17,6 +23,10 @@ func _clear() -> void:
 	aliases.clear()
 	manifest.clear()
 	version = ""
+	_source_objects.clear()
+	_source_manifest.clear()
+	_objects_sha256 = ""
+	_manifest_sha256 = ""
 
 func _fail(reason: String) -> bool:
 	_clear()
@@ -28,17 +38,26 @@ func load_files(object_path := OBJECTS_PATH, manifest_path := MANIFEST_PATH) -> 
 	last_error = ""
 	if not FileAccess.file_exists(object_path) or not FileAccess.file_exists(manifest_path):
 		return _fail("Observation source file missing")
-	var raw: Variant = JSON.parse_string(FileAccess.get_file_as_string(object_path))
-	var pack: Variant = JSON.parse_string(FileAccess.get_file_as_string(manifest_path))
+	# Hash the same byte buffers that are parsed, rather than reading twice and
+	# risking content changing between parsing and a separate file hash call.
+	var object_bytes := FileAccess.get_file_as_bytes(object_path)
+	var manifest_bytes := FileAccess.get_file_as_bytes(manifest_path)
+	var raw: Variant = JSON.parse_string(object_bytes.get_string_from_utf8())
+	var pack: Variant = JSON.parse_string(manifest_bytes.get_string_from_utf8())
 	if not raw is Dictionary or not pack is Dictionary:
 		return _fail("Observation source JSON invalid")
-	return set_data(raw, pack)
+	if not set_data(raw, pack):return false
+	_objects_sha256 = _hash_bytes(object_bytes)
+	_manifest_sha256 = _hash_bytes(manifest_bytes)
+	return true
 
 func set_data(data: Dictionary, pack: Dictionary) -> bool:
 	_clear()
 	last_error = ""
 	if data.get("format_version") != 1 or pack.get("format_version") != 1:
 		return _fail("Observation source version unsupported")
+	if not pack.get("id") is String or pack.id.strip_edges().is_empty():
+		return _fail("Observation pack identity missing or empty")
 	if not data.get("objects") is Array or not pack.get("plates") is Array:
 		return _fail("Observation records or plates missing")
 	if not data.get("release") is String or not data.get("table") is String:
@@ -72,8 +91,35 @@ func set_data(data: Dictionary, pack: Dictionary) -> bool:
 		if not alias is String or not target is String or not objects.has(target) or not _add_alias(alias, target):
 			return _fail("Observation manifest alias ambiguous or invalid")
 	manifest = pack.duplicate(true)
-	version = str(pack.get("id", ""))
+	version = pack.id
+	_source_objects = data.duplicate(true)
+	_source_manifest = pack.duplicate(true)
+	# Sorted keys at every nesting level, full float64 precision, no whitespace.
+	_objects_sha256 = JSON.stringify(_source_objects, "", true, true).sha256_text()
+	_manifest_sha256 = JSON.stringify(_source_manifest, "", true, true).sha256_text()
 	return true
+
+static func _hash_bytes(bytes: PackedByteArray) -> String:
+	var context := HashingContext.new()
+	context.start(HashingContext.HASH_SHA256)
+	context.update(bytes)
+	return context.finish().hex_encode()
+
+func pin() -> Dictionary:
+	if version.is_empty() or manifest.get("id") != version or _source_manifest.get("id") != version or _objects_sha256.is_empty() or _manifest_sha256.is_empty():
+		return {}
+	return {"id": version, "manifest_sha256": _manifest_sha256, "objects_sha256": _objects_sha256}
+
+func snapshot() -> RefCounted:
+	if pin().is_empty():return null
+	var isolated: Variant = get_script().new()
+	if not isolated.set_data(_source_objects.duplicate(true), _source_manifest.duplicate(true)):
+		return null
+	# set_data deliberately computes canonical JSON hashes. File-backed indexes
+	# must instead preserve their original exact-byte identity across snapshots.
+	isolated._objects_sha256 = _objects_sha256
+	isolated._manifest_sha256 = _manifest_sha256
+	return isolated
 
 func _add_alias(alias: String, target: String) -> bool:
 	if alias.is_empty() or alias != alias.strip_edges():return false
@@ -113,6 +159,19 @@ static func _valid_object(row: Dictionary, release: String, table: String) -> bo
 		var flag: Variant = flags[key]
 		if flag != null and (not _finite_number(flag) or float(flag) < 0.0 or float(flag) > 2147483647.0 or float(flag) != floor(float(flag))):return false
 	if flags.vis_det != null and float(flags.vis_det) != 0.0 and float(flags.vis_det) != 1.0:return false
+	return _valid_facts(row)
+
+static func _valid_facts(row: Dictionary) -> bool:
+	if not row.get("facts") is Dictionary or not row.get("source_url") is String or row.source_url.is_empty():return false
+	var expected := {"ra_deg":[row.ra_deg,"deg","measured",row.source_url],"dec_deg":[row.dec_deg,"deg","measured",row.source_url],"galactic":[row.galactic,"unit_direction","derived_frame_rotation",row.source_url],"point_like_probability":[row.get("point_like_probability"),"probability","classifier_output",row.source_url],"distance_ly":[row.get("distance_ly"),"ly","unavailable",null],"redshift":[row.get("redshift"),"dimensionless","unavailable",null]}
+	for key in ["vis_det","extended_flag","spurious_flag","det_quality_flag"]:
+		expected[key]=[row.flags[key],"bitmask" if key=="det_quality_flag" else "flag","quality_metadata",row.source_url]
+	for key in expected:
+		var fact = row.facts.get(key)
+		var spec: Array = expected[key]
+		if not fact is Dictionary or not fact.has("value") or fact.value != spec[0] or fact.get("unit") != spec[1] or fact.get("method") != spec[2] or not fact.has("source") or fact.source != spec[3] or not fact.has("epoch"):return false
+		if fact.method == "unavailable" and fact.value != null:return false
+		if fact.epoch != null and (not fact.epoch is String or fact.epoch.strip_edges().is_empty()):return false
 	return true
 
 func resolve(id: String) -> String:

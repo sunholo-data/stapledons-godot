@@ -5,7 +5,7 @@
 **Progress:** `.ailang/state/sprints/sprint_R3-TELESCOPE.json`.
 **Baseline inspected:** game `f3aa83bf`, current branch `feat/captain-command`; unrelated animation/art/mission edits must be preserved. Plan files only in this planning session. Do implementation in a separate full clone based on the combined current game, following CLAUDE.md's checkout policy; retain the approved cockpit work rather than starting a feature build that drops it.
 **Estimate:** 2,600 code/test/tool LOC, 12 small milestones, nine working days of planning capacity including ~25% uncertainty and integration/review allowance. This is not a delivery-date promise; source-service availability and Mark's visual review are not timed commitments. Each coding milestone is sized for a 60–90 minute focused executor run; repeat runs are expected for source investigation and review fixes.
-**Risk:** Medium, primarily scientific image registration and real data retrieval. A single outreach JPEG has been fetched and inspected; a registered scientific cutout/catalogue import has not been proven.
+**Risk:** Medium. Source access and registration are now proven: the real science cutout, forty source rows and independent reproducible registration oracle pass. Remaining risks are final composed-UI/packaged verification and review acceptance.
 
 ## Settled scope and approval boundary
 
@@ -14,7 +14,7 @@
 - Non-commercial use is settled. Retain CC BY-NC DR1 terms/credit and each outreach asset's own terms; no commercial-permission gate.
 - Default collection: M81 group, NGC 1291 and Abell 3128. At least one field must have independently verified astrometric registration and actual catalogue associations; other plates may be explicitly unregistered. Never fake a footprint or association to reach three fields.
 - D-28, D-41, D-56/D-57, D-111 and D-150 apply. No still-OPEN product decision blocks this scope. Do not reopen those rulings or the non-commercial decision during execution.
-- **Execution approval:** CLAUDE.md §Development cycle step 2 requires “Stop for approval before executing.” Keep `approved: false` until Mark approves this plan. Do not send an executor handoff or start coding before that approval. Technical failures use the finite failure handling below; visual acceptance remains the normal merge requirement.
+- **Execution approval:** Mark explicitly approved this plan in the attended session on 2026-11-12; `approved: true` is recorded. Technical failures use the finite failure handling below; visual acceptance remains the normal merge requirement.
 
 ## Current implementation and evidence
 
@@ -75,7 +75,7 @@ All paths below are intended implementation files, not files created by this pla
 
 ### TS0_SOURCE — prove one real registered observation (150 LOC estimate; completed 2026-11-12)
 
-Files/examples: `data/observations/euclid_dr1/{sources.csv,objects.csv,manifest.json,SHA256SUMS,credits.md}`, `tools/observation_pack_verify.gd` and `.uid`, bounded source-download shell glue. Large bytes stay in ignored scratch/content-addressed assets.
+Files delivered: `data/observations/euclid_dr1/{sources.csv,objects.json,manifest.json,registration-evidence.json,credits.md}`, source hashes in the manifest/derived indices, `tools/observation_pack_verify.gd` and `.uid`, bounded source-download shell glue. Large bytes stay in ignored scratch/content-addressed assets.
 
 First write a small verifier that rejects missing/changed hashes, absent rights, unsupported projection and a bad registration anchor; show those red cases using labelled fixtures. Retrieve a real field and real associated rows using the documented API/table route; preserve original columns, schema/quality definitions, query, source date, hashes and IDs. Verify at least five independent anchor positions across a supported plate and two actual zoom levels; no caption-only registration. Log sizes/format and the source URL for each. Read-only external requests are allowed; no account creation or credential dependency.
 
@@ -193,4 +193,4 @@ The existing plan's proposed ≤2-ms p95 CPU and memory caps are acceptance budg
 
 No new product question needs an answer beyond approval of this concrete plan. Navigation/chair placement and the three-field offline collection are the design defaults retained under Mark's continuation. Technical source proof is TS0, not a request to reconfirm the feature. Visual acceptance remains Mark's later dev-build verdict.
 
-Do not execute or hand off while `approved` is false. On explicit sprint approval, record its actual date/words in JSON, load `sprint-executor`, and start at TS0; do not mark a milestone complete from this plan's source inspection. All milestones currently have `passes: null`. No GitHub issue is invented or auto-closed: #433 is adjacent work, not this sprint's issue.
+Execution is authorised. Individual code checkpoints and remaining review gates are tracked in the sprint JSON; the sprint remains in progress. PR #438 holds this implementation; adjacent #433 is separate work. Independent review round 1 requested changes, which are being verified before a second review. No completion or landing is claimed before the remaining gates and Mark's dev-build visual verdict.

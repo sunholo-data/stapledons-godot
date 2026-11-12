@@ -46,6 +46,14 @@ func run() -> void:
 		check(panel.source_line.text == source_before, "returning to archive restores dated Earth observation label")
 		var at_point: Vector2 = panel._origin() + preload("res://physics/observation_projection.gd").display_point(panel.plate, index.object(id)) * panel._scale()
 		check(panel.point_candidates(at_point).any(func(row): return row.id == id), "registered picking reaches exact catalogue source")
+		# FITS pixel centres become integer zero-based indices, while a rendered
+		# texture's first pixel occupies [0,1] and is centred at 0.5.
+		panel.zoom = 64.
+		var pixel_centre := preload("res://physics/observation_projection.gd").display_point(panel.plate, index.object(id)) + Vector2(.5,.5)
+		var canvas_centre := panel.image_area.size * .5
+		panel.pan = canvas_centre - pixel_centre * panel._scale() - (panel.image_area.size - panel._source_size() * panel._scale()) * .5
+		check(panel.point_candidates(canvas_centre).any(func(row): return row.id == id), "high zoom picks the rendered source pixel centre, not its corner")
+		panel.zoom = 1.; panel.pan = Vector2.ZERO; panel._update_tiles()
 		# Dispatch through the actual viewport/GUI rather than calling the handler.
 		panel.image_area.grab_focus()
 		await process_frame
@@ -68,7 +76,16 @@ func run() -> void:
 		var next_index := Index.new()
 		next_index.load_files(); next_index.version = "different-pack"
 		panel.configure(next_index)
-		check(panel.session_pack_id == index.version and panel.index == index, "observation pack stays pinned for this session")
+		check(panel.session_pack_id == index.version and panel.index.pin() == index.pin(), "observation pack stays pinned for this session")
+		check(panel.archive_mismatch and panel.configure(index), "pinned source can recover without adopting the offered replacement")
+		var raw: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(Index.OBJECTS_PATH))
+		var changed: Dictionary = index.manifest.duplicate(true)
+		changed.plates[0].credit = "Labelled changed-credit fixture"
+		var same_id := Index.new(); same_id.set_data(raw,changed)
+		check(not panel.configure(same_id) and panel.archive_mismatch, "same pack ID cannot conceal changed content hashes")
+		panel.open_reference({"kind":"survey","id":id})
+		check(not panel.cache.active and panel.state_line.text.contains("Archive unavailable"), "mismatched content exposes an unavailable archive")
+		panel.configure(index)
 		panel.select_plate("m81-outreach"); panel.select_object(id)
 		check(panel.plate.id == "abell3128-vis", "selecting exact source restores its associated image")
 		panel.show_details = true; panel.show_sources = true; panel._refresh_details()
@@ -82,6 +99,8 @@ func run() -> void:
 			for tile: Dictionary in level.tiles: tile.path = "user://labelled-missing-image-fixture.png"
 		panel._update_tiles(); panel._process(0.)
 		check(panel.state_line.text.contains("unavailable") and panel.state_line.text.contains("missing"), "missing tile data has a visible unavailable state")
+		check(panel.open_reference({"kind":"body","id":"labelled-missing-body"}), "missing explicit body opens an unavailable card")
+		check(panel.detail.text.contains("Information unavailable") and panel.detail.text.contains("labelled-missing-body") and panel.map_button.disabled, "unavailable identity is retained without a map fallback")
 		panel.close_panel()
 		check(not panel.visible and not panel.cache.active, "closed panel stops tile decode lifecycle")
 	panel.queue_free()

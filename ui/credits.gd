@@ -14,7 +14,7 @@ const LINES := [
 	MOON_LINE,
 	"Milky Way panorama: NOIRLab noirlab2430b (E. Slawik / NOIRLab / NSF / AURA), CC BY 4.0",
 	"Stars: CNS5 (VizieR), Gaia GCNS (ESA/Gaia/DPAC), Hipparcos (ESA)",
-	"Euclid science: ESA/Euclid Consortium/NASA/DR1-2026, CC BY-NC 3.0 IGO",
+	"Euclid science: Data from ESA Euclid/Euclid Consortium/NASA/DR1-2026. CC BY-NC 3.0 IGO",
 	"Euclid colour: ESA/Euclid/Euclid Consortium/NASA; J.-C. Cuillandre and E. Bertin, CC BY-SA 3.0 IGO",
 	"Euclid sources, processing and credits: Telescope → Sources",
 	"Godot Engine (MIT) · AILANG and sunholo/relativity, sunholo/celestial (Sunholo)",

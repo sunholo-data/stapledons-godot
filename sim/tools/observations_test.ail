@@ -122,3 +122,10 @@ test "fact source must be explicit" {
     Ok(_) => false
   }
 }
+
+test "ICRS coordinates do not acquire an unprovided J2000 position epoch" {
+  match build("${header()}${realRow()}", "source", "fixture-plate") {
+    Ok(s) => not contains(s, "coordinate_equinox") && not contains(s, "J2000") && contains(s, "\"coordinate_frame\":\"ICRS\"") && contains(s, "\"epoch\":null"),
+    Err(_) => false
+  }
+}
