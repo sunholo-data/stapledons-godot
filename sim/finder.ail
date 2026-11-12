@@ -1,0 +1,83 @@
+module stapledons/sim/finder
+
+-- R3-REASONS RT3b (design r3/reasons-to-travel.md §RT3; AC6): what is probably at a world when
+-- the ship ARRIVES, and what going costs. Pure; no wire format here (the evidence section and
+-- its protocol minor are RT2b's and RT4b's).
+--
+-- THE PREDICTION. A belief describes a world at the moment its light left. The ship arrives
+-- `lightAge + T` years after that moment, T being the planned leg's galaxy-frame duration. The
+-- belief at arrival is ONE call to sunholo/worlds `propagateExact` over that whole interval:
+-- the conditional law of the same sampler that drew every world's history (sim/worlds_model),
+-- for a world known only by its label. It is never chained (the labels carry no ages; a
+-- second call would restart every clock) and it knows nothing of an earlier look.
+--
+-- WHAT THE GAME SHOWS WHEN THERE IS NO PREDICTION. `NoPrediction(why)`: the arrival bars are
+-- not drawn and the reason is stated. The belief at last light is never shown in their place,
+-- and the constant-rate chain (`propagate`) is NOT offered as a fallback: at baseline it is
+-- off by up to 0.52 in one probability (the package's AGENT.md). If the chain is ever wanted
+-- it is a new constructor of `Prediction`, labelled as the approximation, never an `ExactLaw`.
+-- With the shipped window (5 Gyr) the exact domain reaches 2.4999e9 years, far beyond any
+-- light age plus leg in the play area, so `Refused(OutsideExactDomain)` is not expected in play.
+--
+-- THE COST. Time is the expensive currency (Mark, 2026-11-12): Earth years and ship years
+-- lead, mass is the lesser third, and the records below keep that order. All three are read
+-- from the journey core's own view of the same Plan (core.planView), never recomputed here:
+-- Earth years = the plan's galaxy time, ship years = its proper time, and the mass is the
+-- trip's energy ledger over c^2 (D-69: the drive turns mass into light), the uniform medium's
+-- or, under lism-1, the route's column.
+import ./core (Params as ShipParams, Plan, PlanView, planView)
+import pkg/sunholo/worlds/dial (Params as WorldParams)
+import pkg/sunholo/worlds/propagate (Belief, PredictionError, propagateExact)
+import std/result (Result, Ok, Err)
+
+-- Why no prediction was computed. BadLightAge and BadTravelTime are this module's: a negative
+-- or non-finite part (tested before the two are summed, so -5 and 10 never pass as 5).
+-- Refused carries the package's own reason unchanged (InvalidParams, InvalidBelief,
+-- InvalidYears, OutsideExactDomain, SeenImpossible).
+export type NoReason = BadLightAge | BadTravelTime | Refused(PredictionError)
+-- ExactLaw: the belief at arrival under the sampler's exact conditional law, from one call.
+export type Prediction = ExactLaw(Belief) | NoPrediction(NoReason)
+
+-- What a leg costs. Time before mass, here and everywhere it is shown.
+export type LegCost = { earthYears: float, shipYears: float, massKg: float }
+
+-- One candidate destination for one planned leg: how old the picture is now, how old it will
+-- be on arrival, the belief at last light, the prediction at arrival, and the cost.
+-- staleYearsAtArrival is the sum of the two inputs as given; when atArrival is
+-- NoPrediction(BadLightAge) it is not a duration and must not be shown.
+export type Candidate = { lightAgeYears: float, staleYearsAtArrival: float, atLastLight: Belief, atArrival: Prediction, cost: LegCost }
+
+pure func isYears(x: float) -> bool = x >= 0.0 && x - x == 0.0
+
+-- The interval the prediction spans: from the moment the light left to the moment the ship
+-- arrives, in galaxy-frame years.
+export pure func predictionIntervalYears(lightAgeYears: float, legEarthYears: float) -> float = lightAgeYears + legEarthYears
+
+-- How out of date the picture will be on arrival: the same interval, by construction.
+export pure func staleYearsAtArrival(lightAgeYears: float, legEarthYears: float) -> float = predictionIntervalYears(lightAgeYears, legEarthYears)
+
+-- The belief at arrival. `belief` is the belief at last light, `universe` the parameters the
+-- prediction is made under (the preset's, through applyDial), `lightAgeYears` the age of that
+-- light now, `legEarthYears` the planned leg's galaxy-frame duration (LegCost.earthYears).
+export pure func predictionAtArrival(belief: Belief, universe: WorldParams, lightAgeYears: float, legEarthYears: float) -> Prediction =
+  if !isYears(lightAgeYears) then NoPrediction(BadLightAge)
+  else if !isYears(legEarthYears) then NoPrediction(BadTravelTime)
+  else match propagateExact(belief, universe, predictionIntervalYears(lightAgeYears, legEarthYears)) {
+    Ok(b) => ExactLaw(b),
+    Err(e) => NoPrediction(Refused(e))
+  }
+
+-- The cost of a leg from the journey core's view of its plan.
+export pure func legCostOfView(v: PlanView) -> LegCost = { earthYears: v.earthYears, shipYears: v.shipYears, massKg: v.energy.totalKg }
+
+-- The cost of a planned leg. The three fields do not depend on when the plan is viewed
+-- (planView's tau and t move only its arrival dates), so the view is taken at 0, 0.
+export pure func legCost(p: ShipParams, pl: Plan) -> LegCost = legCostOfView(planView(p, pl, 0.0, 0.0))
+
+-- Prediction and cost for one candidate, from one plan: the interval uses the same Earth
+-- years the cost reports.
+export pure func candidate(belief: Belief, universe: WorldParams, lightAgeYears: float, p: ShipParams, pl: Plan) -> Candidate {
+  let cost = legCost(p, pl);
+  { lightAgeYears: lightAgeYears, staleYearsAtArrival: staleYearsAtArrival(lightAgeYears, cost.earthYears), atLastLight: belief,
+    atArrival: predictionAtArrival(belief, universe, lightAgeYears, cost.earthYears), cost: cost }
+}

@@ -1,0 +1,215 @@
+module stapledons/sim/finder_test
+
+-- R3-REASONS RT3b (design r3/reasons-to-travel.md §RT3, AC6): the finder's maths.
+-- Two real legs the repo already tests: Sol -> alpha Centauri at 0.99c in the uniform medium
+-- (core_test's plAcen) and Sol -> Aldebaran at 0.999c under lism-1 (core_ism_test). Expected
+-- values come from the journey core's own Plan, from the packages called directly, or from
+-- the package's reference table; never from this module's output.
+import ./finder (Prediction, ExactLaw, NoPrediction, NoReason, BadLightAge, BadTravelTime, Refused, LegCost, Candidate,
+  predictionIntervalYears, staleYearsAtArrival, predictionAtArrival, legCost, legCostOfView, candidate)
+import ./core (World, Params as ShipParams, Target, Intent, IPlan, Plan, PlanView, Planned, newWorld, defaultParams, tick, planView, journeyView)
+import ./data/presets (presetOf)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Params as WorldParams, applyDial)
+import pkg/sunholo/worlds/history (Technological, Remnant, PreTech)
+import pkg/sunholo/worlds/propagate (Belief, PredictionError, InvalidParams, InvalidBelief, InvalidYears, OutsideExactDomain, SeenImpossible,
+  certain, exactDomain, propagateExact, validBelief)
+import pkg/sunholo/relativity/journey (planBurnCoastBurn)
+import pkg/sunholo/relativity/kinematics (standardGravity, rapidityOfOneMinusBeta)
+import pkg/sunholo/relativity/medium (cSI, tripEnergy, tripEnergyColumn)
+import pkg/sunholo/relativity/optics (Vec3)
+import pkg/sunholo/relativity/hyper (absf)
+import pkg/sunholo/celestial/frames (unitFromAngles)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/list (foldl)
+import std/json (Json, encode, jo, kv, js, jnum, ja)
+
+pure func fAll(xs: [bool]) -> bool = foldl(\acc x. acc && x, true, xs)
+pure func fNear(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol
+pure func fRel(a: float, b: float, tol: float) -> bool = absf(a - b) <= tol * absf(b)
+
+-- ------------------------------------------------------------ fixtures: the two legs
+pure func phi099() -> float = 2.6466524123622457
+pure func phi0999() -> float = rapidityOfOneMinusBeta(0.001)
+pure func acen() -> Target = { index: 1, id: "Gl 559", pos: { x: 0.0, y: 0.0, z: 0.0 - 4.37 } }
+pure func lyPerPc() -> float = 3.0856775814913673e16 / 9460730472580800.0
+pure func rad(d: float) -> float = d * 3.141592653589793 / 180.0
+pure func galactic(l: float, b: float, dPc: float) -> Vec3 { let u = unitFromAngles(rad(l), rad(b)); let s = dPc * lyPerPc(); { x: u.x * s, y: u.y * s, z: u.z * s } }
+pure func aldebaran() -> Target = { index: 2, id: "CNS5:1142", pos: galactic(180.97, 0.0 - 20.25, 20.43) }
+pure func lism() -> ShipParams = {defaultParams() | ismModel: 1.0}
+pure func plannedTo(p: ShipParams, t: Target, phi: float) -> World =
+  (tick(newWorld(3, false, p), { dtau: 0.0, intents: [IPlan({ target: t, cruisePhi: phi, flipG: None, star: None })] })).world
+pure func planOf(w: World) -> Option[Plan] = match w.journey { Planned(p) => Some(p), _ => None }
+pure func acenWorld() -> World = plannedTo(defaultParams(), acen(), phi099())
+pure func aldWorld() -> World = plannedTo(lism(), aldebaran(), phi0999())
+
+-- ------------------------------------------------------------ fixtures: beliefs and universes
+-- The Lonely preset is the zero-offset baseline (data/presets.ail); the package's reference
+-- table calls the same numbers `base` (propagate_reference_test.ail).
+pure func lonely() -> WorldParams = applyDial(baseline(), (presetOf("lonely")).dial)
+pure func stapledon() -> WorldParams = applyDial(baseline(), (presetOf("stapledon")).dial)
+pure func mixed() -> Belief = { sterile: 0.1, microbial: 0.2, complex: 0.3, preTech: 0.05, technological: 0.25, remnant: 0.1, transcended: 0.0, ecocide: 0.0 }
+pure func notABelief() -> Belief = { sterile: 0.5, microbial: 0.2, complex: 0.3, preTech: 0.05, technological: 0.25, remnant: 0.1, transcended: 0.0, ecocide: 0.0 }
+pure func noRemnants() -> WorldParams = { fLife: 1.0, fComplex: 1.0, fMinds: 1.0, fTech: 1.0, lifetimeYr: 600000.0, windowYr: 1000000.0, remnantLoYr: 50000.0, remnantHiYr: 500000.0 }
+pure func nan() -> float = 0.0 / 0.0
+
+pure func sameBelief(a: Belief, b: Belief) -> bool =
+  a.sterile == b.sterile && a.microbial == b.microbial && a.complex == b.complex && a.preTech == b.preTech &&
+  a.technological == b.technological && a.remnant == b.remnant && a.transcended == b.transcended && a.ecocide == b.ecocide
+-- A prediction is the package's answer, bit for bit, and its refusal, case for case.
+pure func sameAsPackage(got: Prediction, want: Result[Belief, PredictionError]) -> bool =
+  match got {
+    ExactLaw(b) => (match want { Ok(w) => sameBelief(b, w), Err(_) => false }),
+    NoPrediction(why) => (match why { Refused(e) => (match want { Err(w) => e == w, Ok(_) => false }), _ => false })
+  }
+pure func refusedAs(got: Prediction, want: PredictionError) -> bool =
+  match got { NoPrediction(why) => (match why { Refused(e) => e == want, _ => false }), ExactLaw(_) => false }
+pure func isBadLightAge(got: Prediction) -> bool = match got { NoPrediction(why) => (match why { BadLightAge => true, _ => false }), ExactLaw(_) => false }
+pure func isBadTravelTime(got: Prediction) -> bool = match got { NoPrediction(why) => (match why { BadTravelTime => true, _ => false }), ExactLaw(_) => false }
+
+-- ------------------------------------------------------------ AC6: the costs are the plan's
+-- Exact equality with the journey core's Plan for the same leg, then the plan itself held to
+-- the package called directly (so a cost read from the wrong plan field cannot pass).
+pure func costIsPlans(w: World) -> bool =
+  match planOf(w) {
+    Some(pl) => {
+      let c = legCost(w.params, pl);
+      let v = planView(w.params, pl, w.ship.motion.tau, w.ship.motion.t);
+      c.earthYears == pl.trip.trip.galaxyTime && c.shipYears == pl.trip.trip.shipTime &&
+      c.earthYears == v.earthYears && c.shipYears == v.shipYears && c.massKg == v.energy.totalKg &&
+      c.earthYears > c.shipYears && c.shipYears > 0.0 && c.massKg > 0.0 &&
+      (match (journeyView(w)).plan { Some(jv) => { let d = legCostOfView(jv); d.earthYears == c.earthYears && d.shipYears == c.shipYears && d.massKg == c.massKg }, None => false })
+    },
+    None => false
+  }
+pure func checkAcenCost() -> bool =
+  costIsPlans(acenWorld()) &&
+  (match planOf(acenWorld()) {
+    Some(pl) => {
+      let c = legCost(defaultParams(), pl);
+      let p = defaultParams();
+      let direct = planBurnCoastBurn(pl.trip.trip.distance, p.boostG * standardGravity(), phi099());
+      let e = tripEnergy(direct, p.mEffKg, p.ismNCm3 * 1000000.0, p.bubbleRadiusM);
+      c.earthYears == direct.trip.galaxyTime && c.shipYears == direct.trip.shipTime &&
+      -- core_test's panel row for this leg: 4.414 Earth years, 0.623 ship years, 6.818 kg
+      fRel(c.earthYears, 4.414143655383168, 0.000000001) && fRel(c.shipYears, 0.6226958707592057, 0.000000001) &&
+      fRel(c.massKg, e.total / (cSI() * cSI()), 0.000000000001) && fNear(c.massKg, 6.818, 0.0005) &&
+      -- bubble-resources RES-36: the drag burns 0.349 kg per light-year coasted at 0.99c
+      fNear(e.drag / (cSI() * cSI()) / direct.dCoast, 0.349, 0.0005)
+    },
+    None => false
+  })
+pure func checkAldebaranCost() -> bool =
+  costIsPlans(aldWorld()) &&
+  (match planOf(aldWorld()) {
+    Some(pl) => {
+      let c = legCost(lism(), pl);
+      let p = lism();
+      let direct = planBurnCoastBurn(pl.trip.trip.distance, p.boostG * standardGravity(), phi0999());
+      c.earthYears == direct.trip.galaxyTime && c.shipYears == direct.trip.shipTime &&
+      fRel(pl.trip.trip.distance, 20.43 * lyPerPc(), 0.000000001) && c.earthYears > 66.0 && c.earthYears < 67.0 &&
+      -- under lism-1 the bill is the route's column, not the uniform medium's
+      (match pl.ism { Some(pis) => fRel(c.massKg, (tripEnergyColumn(direct, p.mEffKg, pis.coastCol, p.bubbleRadiusM)).total / (cSI() * cSI()), 0.000000000001), None => false })
+    },
+    None => false
+  })
+test "AC6: Sol -> alpha Centauri at 0.99c: Earth years, ship years and mass equal the journey core's plan exactly; 4.414 yr, 0.623 yr, 6.818 kg" { checkAcenCost() }
+test "AC6: Sol -> Aldebaran at 0.999c under lism-1: the costs equal the plan exactly; the mass is the route's column bill" { checkAldebaranCost() }
+
+-- ------------------------------------------------------------ the prediction at arrival
+pure func checkOneCall() -> bool =
+  fAll([
+    -- the package's own example: a picture 212 years old, arrival 655 years away, one call over 867
+    sameAsPackage(predictionAtArrival(certain(Technological), lonely(), 212.0, 655.0), propagateExact(certain(Technological), lonely(), 867.0)),
+    sameAsPackage(predictionAtArrival(mixed(), lonely(), 212.0, 655.0), propagateExact(mixed(), lonely(), 212.0 + 655.0)),
+    sameAsPackage(predictionAtArrival(mixed(), stapledon(), 65.3, 66.7), propagateExact(mixed(), stapledon(), 65.3 + 66.7)),
+    predictionIntervalYears(212.0, 655.0) == 867.0, staleYearsAtArrival(212.0, 655.0) == 867.0,
+    -- one call, never chained: light age then travel time as two steps would restart every clock
+    (match predictionAtArrival(certain(Technological), lonely(), 50000.0, 50000.0) {
+      ExactLaw(b) => b.technological == 0.0,
+      NoPrediction(_) => false })
+  ])
+test "the prediction is ONE propagateExact call over light age + travel time, bit for bit" { checkOneCall() }
+
+pure func checkZero() -> bool =
+  (match predictionAtArrival(mixed(), lonely(), 0.0, 0.0) { ExactLaw(b) => sameBelief(b, mixed()), NoPrediction(_) => false }) &&
+  (match predictionAtArrival(certain(PreTech), stapledon(), 0.0, 0.0) { ExactLaw(b) => sameBelief(b, certain(PreTech)), NoPrediction(_) => false })
+test "an interval of 0 returns the belief itself" { checkZero() }
+
+-- Seen Technological 50,000 years before arrival at the baseline lifetime (1e5 yr): the
+-- package's reference row (propagate_reference_test.ail, base, Technological, 50000).
+pure func checkHalfLife() -> bool =
+  (lonely()).lifetimeYr == 100000.0 &&
+  (match predictionAtArrival(certain(Technological), lonely(), 4.37, 50000.0 - 4.37) {
+    ExactLaw(b) => fAll([fNear(b.technological, 0.5, 0.000000001), fNear(b.complex, 0.1193776323816408, 0.000000001),
+      fNear(b.remnant, 0.2556223676183594, 0.000000001), fNear(b.transcended, 0.05, 0.000000001), fNear(b.ecocide, 0.075, 0.000000001),
+      b.sterile == 0.0, b.microbial == 0.0, b.preTech == 0.0, validBelief(b)]),
+    NoPrediction(_) => false })
+test "certain of Technological, seen 50,000 years before arrival at baseline: half are still there (the package's reference row)" { checkHalfLife() }
+
+pure func checkRefusals() -> bool =
+  fAll([
+    -- outside the exact domain (window/2 - 1e5 years): refused as such, no chain, no old belief
+    !exactDomain(lonely(), 2499900001.0),
+    refusedAs(predictionAtArrival(certain(Technological), lonely(), 2499900000.0, 1.0), OutsideExactDomain),
+    refusedAs(predictionAtArrival(certain(Technological), noRemnants(), 0.0, 400001.0), OutsideExactDomain),
+    -- the package's other refusals stay themselves
+    refusedAs(predictionAtArrival(notABelief(), lonely(), 10.0, 10.0), InvalidBelief),
+    refusedAs(predictionAtArrival(mixed(), {lonely() | fTech: 2.0}, 10.0, 10.0), InvalidParams),
+    refusedAs(predictionAtArrival(certain(Remnant), noRemnants(), 10.0, 10.0), SeenImpossible),
+    refusedAs(predictionAtArrival(mixed(), lonely(), 1.0e100, 1.0e100), InvalidYears),
+    -- a negative or non-finite part is refused by name, never summed into a valid interval
+    isBadLightAge(predictionAtArrival(mixed(), lonely(), 0.0 - 5.0, 10.0)), isBadLightAge(predictionAtArrival(mixed(), lonely(), nan(), 10.0)),
+    isBadLightAge(predictionAtArrival(mixed(), lonely(), 1.0 / 0.0, 10.0)),
+    isBadTravelTime(predictionAtArrival(mixed(), lonely(), 10.0, 0.0 - 5.0)), isBadTravelTime(predictionAtArrival(mixed(), lonely(), 10.0, nan())),
+    isBadLightAge(predictionAtArrival(mixed(), lonely(), 0.0 - 1.0, 0.0 - 1.0))
+  ])
+test "outside the exact domain and every other refusal: a named NoPrediction, never a belief" { checkRefusals() }
+
+-- ------------------------------------------------------------ the candidate: prediction + cost for one leg
+pure func checkCandidate() -> bool =
+  match planOf(acenWorld()) {
+    Some(pl) => {
+      let c = candidate(mixed(), stapledon(), 4.37, defaultParams(), pl);
+      let cost = legCost(defaultParams(), pl);
+      fAll([c.lightAgeYears == 4.37, c.staleYearsAtArrival == 4.37 + pl.trip.trip.galaxyTime, sameBelief(c.atLastLight, mixed()),
+        c.cost.earthYears == cost.earthYears, c.cost.shipYears == cost.shipYears, c.cost.massKg == cost.massKg,
+        sameAsPackage(c.atArrival, propagateExact(mixed(), stapledon(), 4.37 + pl.trip.trip.galaxyTime)),
+        -- a refused prediction leaves the cost standing
+        refusedAs((candidate(notABelief(), stapledon(), 4.37, defaultParams(), pl)).atArrival, InvalidBelief),
+        (candidate(notABelief(), stapledon(), 4.37, defaultParams(), pl)).cost.earthYears == cost.earthYears])
+    },
+    None => false
+  }
+test "a candidate bundles the prediction and the cost of the same leg: the interval is the light age plus the plan's Earth years" { checkCandidate() }
+
+-- ------------------------------------------------------------ determinism, VM = interpreter
+pure func beliefJson(b: Belief) -> Json =
+  jo([kv("sterile", jnum(b.sterile)), kv("microbial", jnum(b.microbial)), kv("complex", jnum(b.complex)), kv("pre_tech", jnum(b.preTech)),
+    kv("technological", jnum(b.technological)), kv("remnant", jnum(b.remnant)), kv("transcended", jnum(b.transcended)), kv("ecocide", jnum(b.ecocide))])
+pure func errName(e: PredictionError) -> string = if e == InvalidParams then "invalid_params" else if e == InvalidBelief then "invalid_belief"
+  else if e == InvalidYears then "invalid_years" else if e == OutsideExactDomain then "outside_exact_domain" else if e == SeenImpossible then "seen_impossible" else "invalid_rates"
+pure func predictionJson(p: Prediction) -> Json =
+  match p {
+    ExactLaw(b) => jo([kv("law", js("exact")), kv("belief", beliefJson(b))]),
+    NoPrediction(why) => jo([kv("law", js("none")), kv("why", js(match why { BadLightAge => "bad_light_age", BadTravelTime => "bad_travel_time", Refused(e) => errName(e) }))])
+  }
+-- Test-only rendering (not a wire format): time before mass, as everywhere a cost is shown.
+pure func candidateJson(c: Candidate) -> Json =
+  jo([kv("light_age_years", jnum(c.lightAgeYears)), kv("stale_years_at_arrival", jnum(c.staleYearsAtArrival)),
+    kv("earth_years", jnum(c.cost.earthYears)), kv("ship_years", jnum(c.cost.shipYears)), kv("mass_kg", jnum(c.cost.massKg)),
+    kv("at_last_light", beliefJson(c.atLastLight)), kv("at_arrival", predictionJson(c.atArrival))])
+pure func probeOf(w: World, b: Belief, u: WorldParams, lightAge: float) -> Json =
+  match planOf(w) { Some(pl) => candidateJson(candidate(b, u, lightAge, w.params, pl)), None => js("no plan") }
+-- Every float the finder produces, on both legs, plus two refusals. `make finder-test` compares
+-- this text from the strict VM and from the interpreter byte for byte.
+export pure func finderProbe(n: int) -> string =
+  encode(ja([probeOf(acenWorld(), mixed(), stapledon(), 4.37), probeOf(acenWorld(), certain(Technological), lonely(), 4.37),
+    probeOf(aldWorld(), mixed(), lonely(), 66.6), probeOf(aldWorld(), certain(PreTech), stapledon(), 66.6),
+    probeOf(aldWorld(), notABelief(), lonely(), 66.6), probeOf(acenWorld(), mixed(), lonely(), 2499900000.0)]))
+test "determinism: the same inputs give the same bytes" { finderProbe(0) == finderProbe(1) }
+
+export pure func finderVm(n: int) -> string =
+  if checkAcenCost() && checkAldebaranCost() && checkOneCall() && checkZero() && checkHalfLife() && checkRefusals() && checkCandidate() && finderProbe(0) == finderProbe(1)
+  then "finder-ok" else "finder-BAD"
