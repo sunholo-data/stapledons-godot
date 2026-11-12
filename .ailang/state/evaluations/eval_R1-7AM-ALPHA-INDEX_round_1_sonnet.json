@@ -1,0 +1,63 @@
+{
+ "sprint_id": "R1-7AM-ALPHA-INDEX",
+ "evaluator_model": "Sonnet 5.5",
+ "reviewed_commit": "77c5b7b5",
+ "score": 90,
+ "verdict": "PASS",
+ "rubric": {"acceptance_criteria": 38, "tests_and_guards": 17, "scope_and_behaviour_identity": 14, "robustness_and_mutation_resistance": 12, "docs_changelog_evidence": 9, "note": "AC13 skipped (controller); 7 guard-mutation survivors, none making an AC false; AC12 'diff-check silent' literally false on design-doc whitespace"},
+ "ac_results": {
+  "AC1": "PASS at 93e82d29: Ran 9 tests, FAILED (failures=1) test_source_literals_match_the_map, 'First list contains 14 additional elements.'",
+  "AC2": "PASS make replay-map-index Ran 9 tests OK",
+  "AC3": "PASS 16 ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2']",
+  "AC4": "PASS tests/test_earth_beams.gd:15 reported, make Error 1",
+  "AC5": "PASS ['tools/earth_link_capture.gd:16'] != [], make Error 1; file restored",
+  "AC6": "PASS 5 pairs ok; edge removed -> 'ci-fast lost its prerequisite replay-map-index', Error 1; Makefile restored",
+  "AC7": "PASS earth-beams 29/0, comms-log-bridge 9/0, comms-history 37/0, bridge-monitors 19/0",
+  "AC8": "PASS earth-rate-fixture 2 rows, git diff --exit-code rc 0",
+  "AC9": "PASS 0 .ail, 9 .gd",
+  "AC10": "PASS rc=0; ism-service-bench passes:true; worlds-leak four presets x two engines byte-identical, sha256 f466c843... on all 8 (383.7s)",
+  "AC11": "PASS orig rc=1 'AssertionError: 0 not greater than 0' Ran 2 FAILED; new rc=0 Ran 2 OK",
+  "AC12": "PARTIAL: python-guard, uid-guard, script-gate-lint ok; file list as specified; git diff --check c35efb57 is NOT silent: trailing whitespace at design doc lines 326,327,459,460 (executor noted it in the commit message)",
+  "AC13": "SKIPPED (controller)"
+ },
+ "mutants": {
+  "killed": [
+   "G1 drop id-first alternative: 4 tests",
+   "G3 never pop frames: 4 tests",
+   "G4 no nested frames: 3 tests",
+   "G7 index compare disabled: 4 tests",
+   "G8 unsupported escape skipped: test_the_7am_escaped_ids_fail",
+   "G9 unknown id fails: 2 tests",
+   "G12 pending list broadened (comms_golden:23 added): test_source_literals_match_the_map (stale entry)",
+   "G14 ls-files only *.gd: test_source_scan_covers_gd_and_py_in_subdirectories",
+   "G15 exempt emptied: 2 tests",
+   "G16 \\u decode off: test_the_7am_escaped_ids_fail",
+   "G17 derived 7ai control wrong==good: test_the_7ai_index_fails",
+   "G18 line number off by one: 4 tests",
+   "G20 pending line moved to :17: test_source_literals_match_the_map",
+   "All 14 literal reversions (each site, each of ALPHA/OFF_RAY/destination/bench): test_source_literals_match_the_map each",
+   "mk: pair dropped from SG_PREREQS, pin 4, pin 6, pair target renamed, fixture line dropped, Makefile edge renamed: script-gate-lint red each"
+  ],
+  "survived": [
+   "G2 min->max pair start (only affects the reported line of a multi-line pair; ~equivalent)",
+   "G5 unclosed-brace frames ignored: no control for an unbalanced dictionary",
+   "G6 string-literal alternative removed from SOURCE_TOKEN: no control for a string containing braces or index/id text",
+   "G10 index regex without '-?': a negative index literal is silently skipped, no control",
+   "G11 stale-pending assertion deleted from the test: only the manual AC5 drill covers it, no automated control",
+   "G13 positive-control assertIn(transit_harness.gd:10) removed: the pending entry also proves the scan sees pairs",
+   "G19 only first index/id pair per dictionary level: no control with two pairs in one level"
+  ]
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "AC12 says 'git diff --check origin/main silent' but design doc lines 326,327,459,460 carry trailing whitespace",
+  "Guard survivors G5, G6, G10, G19 are lexical blind spots (unbalanced braces, braces inside strings, negative index, several pairs per dictionary); none appears in the tree today",
+  "The stale-pending check (test line asserting each pending entry is still wrong) has no automated mutation control; AC5 is a manual drill",
+  "tools/earth_link_capture.gd:16 stays at index 1 by design (OQ1, Mark's), so one real mismatch remains in the tree, held by the pending list"
+ ],
+ "other_checks": {
+  "scope": "tools/earth_link_capture.gd unchanged; no .ail, no Makefile, no ui/ bridge/ main.gd demos/ change; only .gd literal edits (9 .gd) plus worlds_leak.py; no capture or golden touched; GPU not used",
+  "tree_state": "git status --porcelain empty after all mutations reverted"
+ },
+ "unmeasured": ["AC13 GitHub fast tier (controller's)", "visual identity of captures/goldens (no GPU by rule; Earth-rate fixture and four headless tests identical)"]
+}

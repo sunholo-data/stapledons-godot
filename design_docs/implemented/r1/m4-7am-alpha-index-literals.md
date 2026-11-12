@@ -1,6 +1,6 @@
 # Hand-copied catalogue targets carry their real map index (7am)
 
-**Status:** Planned 2026-11-12 (mission iteration 88, designer Opus 5.5). Revision 2 (controller, narrow-refinement carve-out) answers design-quorum round 2 (BLOCKED 2/3, glm pass) with the reviewers' fixes as written; revision 1 answers design-quorum round 1 (BLOCKED 3/3; every objection carried a fix; see "Quorum log"). Measured at `origin/main` `c35efb57`. **Release:** r1. **Milestone:** none (suite hygiene, queue row **7am**).
+**Status:** Implemented 2026-11-12 (mission iteration 88, PR #427; evaluation Sonnet 5.5 90 PASS, cross-vendor MiniMax M3 96 PASS; designer Opus 5.5). At landing the controller stripped trailing whitespace from the blank context lines of Appendix A's diff fence (AC12's `git diff --check`, the one finding both judges shared). The shipped code is `tools/test_replay.py`; the fence is now a record. Revision 2 (controller, narrow-refinement carve-out) answers design-quorum round 2 (BLOCKED 2/3, glm pass) with the reviewers' fixes as written; revision 1 answers design-quorum round 1 (BLOCKED 3/3; every objection carried a fix; see "Quorum log"). Measured at `origin/main` `c35efb57`. **Release:** r1. **Milestone:** none (suite hygiene, queue row **7am**).
 **Priority:** low (clause 5 hygiene). Nothing is red today. One review capture is affected (`tools/earth_link_capture.gd`); its change is Mark's (OQ1). The rest is test and tool data, and the loop can land it.
 **Implements:** row 7am of the charter (`design_docs/stapledon-mission.md`, Queue). The row comes from 7ai's follow-up F1 and two non-blocking judge findings ([`design_docs/implemented/r1/m4-7ai-earth-log-map-index.md`](../../implemented/r1/m4-7ai-earth-log-map-index.md), "Follow-ups"). It extends 7ai's map-index rule from recorded replay logs to hand-written targets in GDScript and Python. That rule says a plan target's `index` is the `data/starmap/stars.json` index of its `id`. No design-repo feature or physics-spec section applies: the sim never reads the index (V7).
 **Depends on:** nothing. It builds on 7ai's `replay-map-index` (in `ci-fast`) and on 7x's `tools/script_gate_prereqs.sh` (in `script-gate-lint`, also in `ci-fast`).
@@ -323,8 +323,8 @@ Re-run on revision 1: the full MapIndex suite (`Ran 8 tests`, `OK`) and M1–M11
  import tempfile
 @@ -324,6 +325,67 @@ def plan_index_mismatches(log_texts, stars):
      return bad
- 
- 
+
+
 +# 7am: a catalogue target written by hand in GDScript or Python carries its stars.json index, as a
 +# recorded log's must (GalaxyMap.target_name()/subtitle_text() trust the index only when
 +# catalogue[index].id == id). Both key orders, JSON spacing or none. Ids not in stars.json (Sol, the
@@ -456,8 +456,8 @@ Re-run on revision 1: the full MapIndex suite (`Ran 8 tests`, `OK`) and M1–M11
 +        self.assertEqual(checked, ["e.gd:1", "q.py:1"])
 +        self.assertEqual(bad, ["e.gd:1 CNS5:3627 index %d, stars.json %d" % (b, a),
 +                               'u.gd:1 unsupported escape in id literal "CNS5\\x3a3627"'])
- 
- 
+
+
  class AiSession(unittest.TestCase):
 ```
 
