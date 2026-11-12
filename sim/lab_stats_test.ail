@@ -452,6 +452,5 @@ test "determinism: the same inputs give the same bytes" { statsProbe(0) == stats
 export pure func statsNotStrict(n: int) -> string = "lab_stats_test.checkQuantiles (ailang#2311), lab_stats_test.checkVerdict (ailang#2310)"
 export pure func statsVm(n: int) -> string =
   if checkSummary() && checkSummaryRefusals() && checkT() && checkMeanInterval() && checkRanks() && checkCoverage() && checkNoInterval() &&
-     checkVerdictRefusals() && checkLooks() && checkLookRefusals() && checkEdge() && checkTraps() && checkSequential() && checkBatchRule() && checkPaired() &&
-     statsProbe(0) == statsProbe(1)
+     checkVerdictRefusals() && checkLooks() && checkLookRefusals() && checkEdge() && checkTraps() && checkSequential() && checkBatchRule() && checkPaired()
   then "stats-ok" else "stats-BAD"
