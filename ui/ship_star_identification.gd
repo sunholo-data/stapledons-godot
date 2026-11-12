@@ -237,12 +237,22 @@ func click_at(point: Vector2) -> bool:
 		var close := Button.new();close.text = "Close";close.pressed.connect(close_card);content.add_child(close)
 		_show_card()
 	return true # I-click never propagates to walking, even on empty sky
+## A text field has keyboard focus: on the main screen, or on the captain's chair display, whose
+## controls live in their own SubViewport (D-150), so the main viewport reports no focus there.
+func typing() -> bool:
+	if not is_inside_tree():return false
+	if _is_text(get_viewport().gui_get_focus_owner()):return true
+	var consoles: Variant = demo.get("consoles") if demo != null else null
+	var command: Variant = consoles.command if consoles != null else null
+	return command != null and command.visible and _is_text(command.screen_host.viewport.gui_get_focus_owner())
+static func _is_text(c: Control) -> bool:
+	return c is LineEdit or c is TextEdit
 func handle_input(event: InputEvent) -> bool:
 	# A text field gaining focus during a hold must still let the release clear it.
 	if event is InputEventKey and event.physical_keycode==KEY_I and not event.pressed:
 		set_held(false);return true
 	# R1-ARCHIVE-VOICE: typing a question at the Archive terminal is text, not the I key.
-	if event is InputEventKey and is_inside_tree() and (get_viewport().gui_get_focus_owner() is LineEdit or get_viewport().gui_get_focus_owner() is TextEdit):return false
+	if event is InputEventKey and typing():return false
 	if event is InputEventKey and event.physical_keycode == KEY_I:
 		set_held(event.pressed)
 		if held and not event.echo:

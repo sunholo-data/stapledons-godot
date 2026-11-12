@@ -1,0 +1,143 @@
+{
+  "sprint_id": "R2-CAPTAIN-COMMAND",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended 2026-11-09: yep go (local implementation)",
+  "created": "2026-11-09",
+  "started": "2026-11-09",
+  "design_doc": "design_docs/planned/r2/captain-command.md",
+  "sprint_plan": "design_docs/planned/r2/captain-command-sprint.md",
+  "github_issues": [
+    392
+  ],
+  "decision_refs": [
+    "D-150",
+    "D-151",
+    "D-152"
+  ],
+  "external_dependencies": [
+    {
+      "what": "Mark approves this concrete sprint under CLAUDE.md step 2",
+      "blocks": [
+        "C1_CHAIR_CONTACT",
+        "C2_COMMAND_SCREEN",
+        "C3_SEATED_PLAYTHROUGH"
+      ],
+      "status": "approved"
+    },
+    {
+      "what": "Stage pinned AILANG v0.56.1 before real-sim gates; current local runtime is stale",
+      "blocks": [
+        "C1_CHAIR_CONTACT",
+        "C2_COMMAND_SCREEN",
+        "C3_SEATED_PLAYTHROUGH"
+      ],
+      "status": "pinned release staged at /tmp/stapledon-ailang-v0561/ailang"
+    },
+    {
+      "what": "D-148 desk contact is an inherited nightly failure, independent of chair repair",
+      "blocks": [],
+      "status": "open; not resolved by D-150"
+    }
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "C1_CHAIR_CONTACT",
+      "package": "none",
+      "action": "none",
+      "reason": "Godot chair/painted-pose contact. Registry crew/relativity searches and crew_core info/docs inspected 2026-11-09; no new package capability."
+    },
+    {
+      "milestone": "C2_COMMAND_SCREEN",
+      "package": "none",
+      "action": "none",
+      "reason": "Compose existing Godot system panels and sim intent queues; no new simulation/package implementation."
+    },
+    {
+      "milestone": "C3_SEATED_PLAYTHROUGH",
+      "package": "sunholo/crew_core@0.6.0",
+      "action": "depend",
+      "reason": "Exercise the existing locked crew host through the real game sim for decision parity; keep all production pins."
+    }
+  ],
+  "velocity": {
+    "target_loc_per_day": 300,
+    "estimated_total_loc": 850,
+    "estimated_days": 3,
+    "notes": "Planning allowance, not measured sustained velocity. Three focused implementation sessions; evaluation/visual review and replacement art excluded."
+  },
+  "features": [
+    {
+      "id": "C1_CHAIR_CONTACT",
+      "description": "Measured chair contact, safe sit/stand and seated close/reopen lifecycle",
+      "estimated_loc": 200,
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC1: captain-chair-test and new captain-command-contact-test pass with displaced-anchor negative control",
+        "Before/after Bow and Astern chair pose frames inspected; intended furniture occlusion retained"
+      ],
+      "passes": null,
+      "started": "2026-11-09",
+      "completed": null,
+      "notes": "15/0 contact checks, measured cushion/root and real chair facing installed. Rendered Bow/Astern baseline/candidate contact review remains pending; no final clipping-fix claim."
+    },
+    {
+      "id": "C2_COMMAND_SCREEN",
+      "description": "First-person seated cockpit with five physical displays and existing system controls",
+      "estimated_loc": 450,
+      "dependencies": [
+        "C1_CHAIR_CONTACT"
+      ],
+      "acceptance_criteria": [
+        "AC2/4/5: all five systems work seated without relocation or desk dolly; access denied standing/off-bridge",
+        "Tab/close/stand disarm confirmations, preserve pending replies and avoid duplicate signal connections/intents",
+        "Mouse, keyboard, controller, nested Esc and responsive overview pass targeted UI gates"
+      ],
+      "passes": true,
+      "started": "2026-11-09",
+      "completed": "2026-11-09",
+      "notes": "Cockpit refinement: 39/0 command checks including seated eye position, target camera poses, hidden own billboard, actual projected Control click once and viewport restoration; 101/0 physical arc/ray checks. 18/0 display/window layout cases; 10/0 guided review/Brake; 52/0 real-sim parity. Mark visual acceptance pending, no GPU checks run. Combined with finalized AI-panel main 28d0ee23; cockpit command now 44/0 with drag reset and Esc chain regression; AI settings 105/0."
+    },
+    {
+      "id": "C3_SEATED_PLAYTHROUGH",
+      "description": "Real seated gameplay parity, responsive capture and review handoff",
+      "estimated_loc": 200,
+      "dependencies": [
+        "C2_COMMAND_SCREEN"
+      ],
+      "acceptance_criteria": [
+        "AC3/6: same seed and logical tick inputs produce identical ordered intents and authoritative outcomes for chair/station routes",
+        "AC7/8: all panels, attention state and chair poses captured/inspected; targeted regressions and theme/uid checks pass",
+        "AC9: fast CI green, cross-family evaluation passes and Mark accepts published dev build before landing"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "52/0 real-sim parity/hold tests; 1202 flight ticks per route, 1207 NDJSON inputs, byte-identical inputs and worlds. 18/0 layout, 14/0 reading viewport, 10/0 guided review/Brake. Independent Claude checkpoint PASS86; rendered chair/UI review, Mark acceptance and fast CI/publication pending. Cockpit refinement reran 52/0 real-sim parity and 10/0 guided review; 39/0 command, 101/0 screen geometry/picking and 18/0 layout cases. Private first-person candidate preparing; no visual acceptance claim. Combined build46c5e9e3 published: cockpit44/0, AI settings105/0, title111/0, guided10/0; theme/UID green. Fast CI and correct combined-app visual acceptance remain pending."
+    }
+  ],
+  "implementation_complete": true,
+  "acceptance_complete": false,
+  "publication_authorized": true,
+  "cross_family_review_authorized": true,
+  "evaluation": {
+    "path": ".ailang/state/evaluations/eval_R2-CAPTAIN-COMMAND_round_2.json",
+    "reviewer": "claude-sonnet-4-6",
+    "score": 92,
+    "result": "pass",
+    "scope": "first-person cockpit checkpoint",
+    "landing_ready": false
+  },
+  "publication_approved_by": "Mark, attended 2026-11-09: yep let me play it (draft PR and private macOS dev build)",
+  "publication": {
+    "commit": "46c5e9e34d688c695cc58431f6757a8e97272f3f",
+    "version": "v0.4.0-dev.37-living-bridge-474-g46c5e9e3",
+    "channel": "normal combined macOS dev",
+    "sha256": "51313152223d9924a66cec14c77408f7fdacc7b98cfca06afe783a348d21cf0a",
+    "gpu_checks_run": false,
+    "visual_acceptance": "pending Mark laptop playtest",
+    "review": "Cockpit Claude 92 PASS; AI-panel Codex 80 PASS; drag reset finding resolved and regression-tested",
+    "install_command": "tools/install_review_build.sh --dev",
+    "delivery_note": "Mark requests one combined app; origin/main including final AI-panel PR414 merged cleanly. Normal installer updates one existing app in place. Published and manifest read back; two obsolete local chair ZIP archives removed. One existing app is replaced."
+  }
+}

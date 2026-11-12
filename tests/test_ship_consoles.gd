@@ -507,7 +507,7 @@ func test_walk_to() -> void:
 	var c: ShipConsoles = demo.consoles
 	var hud: ShipHud = demo.ship_hud
 	demo.toggle_controls()
-	check("AC14a Tab shows the Walk to list", hud.tab_panel.visible and hud.walk_box.visible and hud.walk_buttons.size() == 4 and hud.walk_buttons.has("comms")) # R3-EARTH-LINK EL3: the Comms station
+	check("AC14a Tab shows the Walk to list, including the command chair", hud.tab_panel.visible and hud.walk_box.visible and hud.walk_buttons.size() == 5 and hud.walk_buttons.has("comms") and hud.walk_buttons.has("chair"))
 	var first: Button = hud.walk_buttons["navigation"]
 	first.grab_focus()
 	var down := InputEventAction.new()
@@ -566,7 +566,7 @@ func test_onboarding() -> void:
 	DirAccess.make_dir_recursive_absolute("user://test_ship_consoles")
 	var demo: Node = await new_demo({"from_menu": true, "settings_dir": "user://test_ship_consoles"})
 	var c: ShipConsoles = demo.consoles
-	check("menu launch: the consoles glow and the hint shows", c.glowing() and demo.ship_hud.hint.visible and demo.ship_hud.hint_label.text.contains("Voyage console"))
+	check("menu launch: the consoles glow and the hint names the command chair", c.glowing() and demo.ship_hud.hint.visible and demo.ship_hud.hint_label.text.contains("captain's chair"))
 	step(demo, 120.0, 1.0)
 	check("the glow and hint do not end on a timer", c.glowing() and demo.ship_hud.hint.visible)
 	c.go_to("voyage")

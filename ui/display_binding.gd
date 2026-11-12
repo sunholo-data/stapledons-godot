@@ -54,6 +54,8 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 		return "-" if raw == null else "+" + ShipHud.duration_text(float(raw))
 	if format == "text": # a sim-derived line formatted upstream (the strip's distance, where and speed)
 		return "" if raw == null else str(raw)
+	if format.begins_with("command_"):
+		return CaptainCommand.format(format, raw)
 	# R2-INTERLUDE I3 (the crossing review): formatting only, every input a sim field.
 	if format == "words": # a small count in words (CrewPage.words; D-21 crew text has no digits)
 		return "-" if raw == null else CrewPage.words(int(raw))

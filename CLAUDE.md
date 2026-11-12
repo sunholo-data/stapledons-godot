@@ -31,6 +31,8 @@ them. `make sky-publish` (maintainers, gcloud) uploads new pins. Dev builds:
 Mark installs with `tools/install_review_build.sh --dev`. Releases use GitHub. All
 infrastructure is recorded in `infra/gcp/setup.sh` (Terraform-portable).
 
+**One playable dev build (Mark, 2026-11-09).** Combine the active cockpit and AI-panel work before publishing the normal `--dev` update. Mark wants one installed app, updated in place, rather than separate feature builds or branch-specific installation commands. Incorporate current `main` before publication; do not replace the shared channel with a feature build that drops previously delivered work. Keep visual acceptance distinct from publishing a combined review candidate.
+
 **Tags (Mark, 2026-10-15).** A dev tag (`v*-dev.*`, e.g. `v0.4.0-dev.30-crew-replies`)
 builds the macOS zip straight away; tag it only after a green local `make test`
 (use the pinned runtime: `PATH=$PWD/runtime/bin:$PATH make test`). Any other `v*` tag
