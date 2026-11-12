@@ -1,0 +1,134 @@
+module stapledons/sim/tools/observations
+
+-- R3-TELESCOPE TS2. The pinned DR1 query is a numeric, nine-column CSV
+-- projection. Parse it strictly; no numeric ID coercion, guessed associations,
+-- inferred morphology, distance or light age. All pure work is VM-parity gated.
+import std/string (split, trim, replace, join, contains, chars, substring, length, stringToFloat, stringToInt, compare)
+import std/list (map, filter, any, sortBy, nth_or, length as size)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/json (Json, JNull, encode, jo, kv, js, ja, jnum, jint)
+import std/math (PI)
+import std/crypto (sha256Hex)
+import std/fs (readFile, writeFile)
+import std/io (println, exit)
+import pkg/sunholo/celestial/frames (unitFromAngles, equatorialToGalactic)
+
+export type Observation = { id: string, sourceId: string, tileId: string, ra: float, dec: float, visDet: Option[int], extendedFlag: Option[int], spuriousFlag: Option[int], detQualityFlag: Option[int], pointLikeProbability: Option[float] }
+
+export pure func release() -> string = "DR1_R2"
+
+export pure func sourceTable() -> string = "dr1.mer_catalogue_wide_survey"
+
+export pure func csvHeader() -> string =
+  "object_id,right_ascension,declination,tile_index,vis_det,point_like_prob,extended_flag,spurious_flag,det_quality_flag"
+
+export pure func compositeId(tile: string, source: string) -> string = "${release()}:${sourceTable()}:${tile}:${source}"
+
+pure func at(xs: [string], i: int) -> string = nth_or(xs, i, "")
+
+pure func digit(c: string) -> bool =
+  c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" || c == "6" || c == "7" || c == "8" || c == "9"
+
+pure func digits(s: string) -> bool = s != "" && not any(\c. not digit(c), chars(s))
+
+pure func signedId(s: string) -> bool =
+  digits(s) || length(s) > 1 && substring(s, 0, 1) == "-" && digits(substring(s, 1, length(s)))
+
+pure func finite(v: float) -> bool = v == v && v >= -1.7976931348623157e+308 && v <= 1.7976931348623157e+308
+
+pure func coordinate(s: string, lo: float, hi: float, inclusiveHi: bool) -> bool = match stringToFloat(s) {
+  Some(v) => finite(v) && v >= lo && (if inclusiveHi then v <= hi else v < hi),
+  None => false
+}
+
+pure func validInt(s: string) -> bool = s == "" || digits(s) && (match stringToInt(s) {
+  Some(v) => v >= 0 && v <= 2147483647,
+  None => false
+})
+
+pure func validProb(s: string) -> bool = s == "" || coordinate(s, 0.0, 1.0, true)
+
+pure func optInt(s: string) -> Option[int] = if s == "" then None else stringToInt(s)
+
+pure func optFloat(s: string) -> Option[float] = if s == "" then None else stringToFloat(s)
+
+pure func number(s: string) -> float = match stringToFloat(s) {
+  Some(v) => v,
+  None => 0.0
+}
+
+pure func parseRow(line: string, n: int) -> Result[Observation, string] {
+  let cols = split(line, ",")
+  if contains(line, "\"") || size(cols) != 9 || any(\c. c != trim(c), cols) then Err("observation row ${n}: expected nine unquoted numeric fields without padding") else if not signedId(at(cols, 0)) || not digits(at(cols, 3)) then Err("observation row ${n}: invalid source/tile identifier") else if not coordinate(at(cols, 1), 0.0, 360.0, false) || not coordinate(at(cols, 2), -90.0, 90.0, true) then Err("observation row ${n}: non-finite or out-of-range coordinates") else if not validInt(at(cols, 4)) || at(cols, 4) != "" && at(cols, 4) != "0" && at(cols, 4) != "1" || not validProb(at(cols, 5)) || not validInt(at(cols, 6)) || not validInt(at(cols, 7)) || not validInt(at(cols, 8)) then Err("observation row ${n}: invalid optional probability/flag") else Ok({ id: compositeId(at(cols, 3), at(cols, 0)), sourceId: at(cols, 0), tileId: at(cols, 3), ra: number(at(cols, 1)), dec: number(at(cols, 2)), visDet: optInt(at(cols, 4)), pointLikeProbability: optFloat(at(cols, 5)), extendedFlag: optInt(at(cols, 6)), spuriousFlag: optInt(at(cols, 7)), detQualityFlag: optInt(at(cols, 8)) })
+}
+
+pure func parseLines(lines: [string], rowNumber: int, seen: [string], acc: [Observation]) -> Result[[Observation], string] =
+  match lines {
+    [] => Ok(sortBy(\a b. compare(a.id, b.id), acc)),
+    line :: rest => if trim(line) == "" then parseLines(rest, rowNumber + 1, seen, acc) else match parseRow(line, rowNumber) {
+      Err(e) => Err(e),
+      Ok(o) => if any(\id. id == o.id, seen) then Err("observation row ${rowNumber}: duplicate composite identifier ${o.id}") else parseLines(rest, rowNumber + 1, seen ++ [o.id], acc ++ [o])
+    }
+  }
+
+export pure func parseObservations(text: string) -> Result[[Observation], string] {
+  let normalized = replace(text, "\r\n", "\n")
+  if contains(normalized, "\r") then Err("observation CSV has an embedded carriage return") else match split(normalized, "\n") {
+    [] => Err("observation CSV header missing"),
+    header :: lines => if header != csvHeader() then Err("observation CSV header does not match the pinned DR1 projection") else if not any(\s. trim(s) != "", lines) then Err("observation CSV has no source rows") else parseLines(lines, 2, [], [])
+  }
+}
+
+pure func intJson(x: Option[int]) -> Json = match x {
+  Some(v) => jint(v),
+  None => JNull
+}
+
+pure func floatJson(x: Option[float]) -> Json = match x {
+  Some(v) => jnum(v),
+  None => JNull
+}
+
+pure func objectJson(o: Observation, sourceUrl: string) -> Json {
+  let u = equatorialToGalactic(unitFromAngles(o.ra * PI() / 180.0, o.dec * PI() / 180.0))
+  jo([kv("id", js(o.id)), kv("namespace", js("euclid")), kv("source_id", js(o.sourceId)), kv("tile_id", js(o.tileId)), kv("kind", js("survey_source")), kv("name", js("Euclid ${o.sourceId}")), kv("ra_deg", jnum(o.ra)), kv("dec_deg", jnum(o.dec)), kv("coordinate_frame", js("ICRS")), kv("coordinate_equinox", js("J2000")), kv("galactic", jo([kv("x", jnum(u.x)), kv("y", jnum(u.y)), kv("z", jnum(u.z))])), kv("plate_id", js("abell3128-vis")), kv("source_url", js(sourceUrl)), kv("flags", jo([kv("vis_det", intJson(o.visDet)), kv("extended_flag", intJson(o.extendedFlag)), kv("spurious_flag", intJson(o.spuriousFlag)), kv("det_quality_flag", intJson(o.detQualityFlag))])), kv("point_like_probability", floatJson(o.pointLikeProbability)), kv("distance_ly", JNull), kv("redshift", JNull), kv("provenance", js("measured")), kv("aliases", ja([]))])
+}
+
+export pure func jsonText(objects: [Observation], sourceUrl: string) -> string =
+  "${encode(jo([kv("format_version", jint(1)), kv("release", js(release())), kv("table", js(sourceTable())), kv("objects", ja(map(\o. objectJson(o, sourceUrl), objects)))]))}\n"
+
+export pure func build(text: string, sourceUrl: string) -> Result[string, string] = match parseObservations(text) {
+  Err(e) => Err(e),
+  Ok(xs) => Ok(jsonText(xs, sourceUrl))
+}
+
+-- Deterministic pure showcase, including a real DR1 row and a labelled
+-- synthetic missingness/long-positive-ID fixture. No hidden filesystem state.
+export pure func observationProbe(n: int) -> string
+requires { n >= 0 && n <= 1000000 }
+ensures { length(result) > 0 } {
+  let real = "-524917322525922548,52.49173224571941,-52.59225486229888,102017310,1,1.075479417522729E-6,,0,512\n"
+  let synthetic = "999999999999999999999999999999,0,90,10,,,,,\n"
+  match build("${csvHeader()}\n${real}${synthetic}", "probe:labelled-real-and-synthetic") {
+    Err(e) => "observation-probe-error:${e}",
+    Ok(s) => "observation-probe ${n} ${sha256Hex(s)}"
+  }
+}
+
+-- Structured arguments avoid hidden defaults and a superfluous Env effect.
+-- All parsing and encoding above are pure; FS/IO exist only at this boundary.
+export func main(a: { input: string, output: string, sourceUrl: string }) -> () ! {FS, IO} {
+  let raw = readFile(a.input)
+  match parseObservations(raw) {
+    Err(e) => {
+      println("observation-import: FAILED ${e}")
+      exit(1)
+    },
+    Ok(xs) => {
+      let out = jsonText(xs, a.sourceUrl)
+      writeFile(a.output, out)
+      println("observation-import: ${size(xs)} sources; sha256=${sha256Hex(out)}")
+    }
+  }
+}

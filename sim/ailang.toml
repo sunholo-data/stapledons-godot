@@ -14,6 +14,7 @@ modules = [
   "stapledons/sim/exoplanets_snapshot",
   "stapledons/sim/worlds_registry", "stapledons/sim/data/world_hosts", "stapledons/sim/tools/world_hosts_main",
   "stapledons/sim/tools/exoplanets",
+  "stapledons/sim/tools/observations", "stapledons/sim/tools/observations_test",
   "stapledons/sim/tools/exoplanets_test",
   "stapledons/sim/tools/exoplanets_verify",
   "stapledons/sim/data/exoplanets",
