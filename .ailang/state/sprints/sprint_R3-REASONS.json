@@ -192,9 +192,9 @@
     "time fields precede mass in the wire section"
    ],
    "passes": null,
-   "started": null,
+   "started": "2026-11-12",
    "completed": null,
-   "notes": null
+   "notes": "Built, draft PR (branch feat/r3-reasons-rt3b): sunholo/worlds pinned at 0.2.0 with the lock; census (25 pc, 64 seeds), calibVm and calib-smoke hashes identical before and after. sim/finder.ail (pure, strict VM): predictionAtArrival = one propagateExact call over light age + the leg's Earth years, returning ExactLaw(Belief) or NoPrediction(BadLightAge | BadTravelTime | Refused(PredictionError)); no chain fallback. legCost reads Earth years, ship years and mass from core.planView of the same Plan (AC6 exact; mass = the trip energy ledger / c^2, already in core as energy.totalKg, so no new physics and no package change). Takes a belief as a value; does not depend on sim/evidence.ail. No wire section yet (the criterion 'time fields precede mass in the wire section' is met in the record types only; the wire is RT2b/RT4b). make finder-test (in make test), finder-parity (in make strict and make parity)."
   },
   {
    "id": "RT4a",
