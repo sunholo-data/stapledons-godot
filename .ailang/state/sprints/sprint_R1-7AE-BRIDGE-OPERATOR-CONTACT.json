@@ -31,10 +31,10 @@
         "make bridge-operator-test; echo rc=$? -> gate FAIL against the 56 pin (shape per V14), log summary 'bridge-operator-contact: 54 passed, 2 failures'; grep '^FAIL' .godot/tmp/bridge-operator-test.log -> exactly 'FAIL voyage full 1.8m capsule clear at corrected point' and 'FAIL crew full 1.8m capsule clear at corrected point'; layout agreement ok (V28, AC10)",
         "commit the three named files only; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>; git status --porcelain empty afterwards"
       ],
-      "passes": null,
-      "started": null,
+      "passes": false,
+      "started": "2026-11-12",
       "completed": null,
-      "notes": "Test-first: this RED run is the demonstration that the two capsule checks can fail. Anchor asserts first (mk line 11 regex, record schema 1 / advance_bow_m 0.775, test line 34 capsule label); any mismatch -> stop, tree drift vs b6c93c11."
+      "notes": "RED measured iteration 90: make bridge-operator-test (rc 2, script-gate FAIL, no 56 pin match) -> bridge-operator-contact: 52 passed, 4 failures. FAIL labels: voyage installed working point matches physical target; voyage panel and contact pose wait for real working point; crew installed working point matches physical target; crew panel and contact pose wait for real working point. Plan expected 54/2 from V28 (revision-1 record); controller ruling iteration 90: the A record (corrected_use_ship_m voyage (-12.708, 11.442) / crew (12.708, 11.442)) with the unchanged manifest gives 52/4; the capsule check passes at the record A point. Correct MS1 RED."
     },
     {
       "id": "MS2",
@@ -46,7 +46,9 @@
         "art/deck-layout-v2/asset-pins.json"
       ],
       "estimated_loc": "manifest +4/-4, bow_a +4/-4, budgets +1/-1, asset-pins +1/-1 (18 changed lines)",
-      "dependencies": ["MS1"],
+      "dependencies": [
+        "MS1"
+      ],
       "acceptance_criteria": [
         "AC1: make bridge-operator-test, run twice -> both times 'script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, ...)' (V34)",
         "AC6: git diff --name-only origin/main -- assets art mk tests tools -> exactly the seven files so far (runner joins at MS3); git diff --numstat origin/main shows asset-pins +1/-1, bow_a +4/-4, budgets +1/-1, record +37/-20, manifest +4/-4, mk +1/-1 so far, test +38/-8; git diff -U0 origin/main -- assets art/deck-layout-v2 shows only the D9 number lines and hashes (V33, V42)",
@@ -67,7 +69,9 @@
         "mk/captain-anim.mk"
       ],
       "estimated_loc": "runner +178/-0, mk +5 (183 changed lines)",
-      "dependencies": ["MS2"],
+      "dependencies": [
+        "MS2"
+      ],
       "acceptance_criteria": [
         "install: sed -n '/^## Appendix C/,$p' design_docs/planned/r1/m4-7ae-bridge-operator-contact.md | sed -n '/^```sh$/,/^```$/p' | sed '1d;$d' > tools/bridge_operator_drills.sh; wc -l -> 178 (V52)",
         "AC2: make bridge-operator-drills; echo rc=$? on the clean tree, then git status --porcelain -> 'bridge-operator-drills selftest: ok (...)'; 16 MATCH rows (d0 x2, k1a, k1b, k2, k3a, k3b, k3c, k4a, k4b, k5a-k5e, k6) with the design drill table's counts; 'bridge-operator-drills: 16 rows: 16 match, 0 mismatch, 0 harness (pin ^bridge-operator-contact: 56 passed, 0 failures$)'; rc=0; then empty porcelain (V51, revision-3 runner, 233 s; revision 2: V42, 99 s)",
@@ -88,7 +92,9 @@
         ".ailang/state/sprints/sprint_R1-7AE-BRIDGE-OPERATOR-CONTACT.json"
       ],
       "estimated_loc": "~8 lines + JSON evidence",
-      "dependencies": ["MS3"],
+      "dependencies": [
+        "MS3"
+      ],
       "acceptance_criteria": [
         "AC3: make script-gate-lint -> 'script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; ...)' and 'script-gate-prereqs: ok (5 pairs ...)' (V36, V42; counts move only if main adds gates first)",
         "AC4: git diff --check origin/main -> silent; make uid-guard -> 'uid-guard: ok (... .uid files)' (no new .gd, V42); make python-guard -> ok (no *.py touched)",
