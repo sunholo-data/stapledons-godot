@@ -127,7 +127,7 @@ pure func ly(x:float) -> string = if x>1e98 then "none" else formatFixed(x,1)
 pure func table(title:string,presets:[Preset],perPreset:[[[int]]]) -> string =
  join("\n",["**${title}**","","| stage | ${join(" | ",map(\p. p.id,presets))} |","|---|${join("",map(\p. "---|",presets))}"]
   ++zipWith(\n name. "| ${name} | ${join(" | ",map(\vs. cell(vs,n),perPreset))} |",ints(0,length(rowNames())),rowNames()))
-export func funnel(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:float,y:float,z:float,year:float,apertureM:float,shellLy:float}) -> () ! {FS,IO} =
+func run(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:float,y:float,z:float,year:float,apertureM:float,shellLy:float},presets:[Preset]) -> () ! {FS,IO} =
  match snapshotFromJson(readFile(a.planets)) {
   None=>{println("evidence-probe: FAIL malformed measured-planet JSON");exit(1)},
   Some(snapshot)=>{
@@ -138,7 +138,6 @@ export func funnel(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:f
    let whatIf=a.apertureM!=base.telescope.optics.apertureM;
    let suite=if whatIf then {base | telescope:{base.telescope | id:"WHAT-IF-coronagraph-${show(a.apertureM)}m",optics:{base.telescope.optics | apertureM:a.apertureM}}} else base;
    let obs={x:a.x,y:a.y,z:a.z};
-   let presets=allPresets();
    let seeds=ints(a.firstSeed,a.firstSeed+a.seeds);
    -- per seed: the physical population once, then one tally per preset
    let runs=map(\seed. {
@@ -162,3 +161,9 @@ export func funnel(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:f
    println(join("\n",zipWith(\p ts. "| ${p.id} | ${join(", ",map(\t. ly(t.nearestLiving),ts))} | ${join(", ",map(\t. ly(t.nearestOxygen),ts))} | ${join(", ",map(\t. ly(t.nearestTech),ts))} | ${join(", ",map(\t. show(t.inSystem),ts))} |",presets,tallies)))
   }
  }
+export func funnel(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:float,y:float,z:float,year:float,apertureM:float,shellLy:float}) -> () ! {FS,IO} = run(a,allPresets())
+-- The same funnel at candidate dials (offsets in orders of magnitude), for the preset calibration proposal.
+export func funnelAt(a:{registry:string,planets:string,firstSeed:int,seeds:int,x:float,y:float,z:float,year:float,apertureM:float,shellLy:float,
+ dials:[{id:string,life:float,minds:float,tech:float,lifetime:float}]}) -> () ! {FS,IO} =
+ run({registry:a.registry,planets:a.planets,firstSeed:a.firstSeed,seeds:a.seeds,x:a.x,y:a.y,z:a.z,year:a.year,apertureM:a.apertureM,shellLy:a.shellLy},
+  map(\d. {id:d.id,name:d.id,dial:{life:d.life,minds:d.minds,tech:d.tech,lifetime:d.lifetime},calibrated:false},a.dials))

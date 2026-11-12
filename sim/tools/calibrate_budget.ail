@@ -1,0 +1,70 @@
+module stapledons/sim/tools/calibrate_budget
+-- R3-WORLDS W1.4 measurement with the photon-budget detector (R3-REASONS RT2a).
+-- One dial cell per call: the calibration's own Monte Carlo (calibrate.simulate)
+-- with data/detect.configuredDetector(), per strategy and seed, the search's own
+-- score for the Stapledon bands (calibrate_search.assessRows), and the expected
+-- numbers of technological and remnant worlds at year 0 from the worlds package's
+-- closed forms. A measurement for an attended ruling: it writes no preset.
+--   ailang run --quiet --bytecode --caps IO --package-dir sim --entry cell --args-json \
+--     '{"life":0,"minds":1.5,"tech":1,"lifetime":2.5,"firstSeed":0,"seeds":8,"doom":16000,"all":false}' sim/tools/calibrate_budget.ail
+import stapledons/sim/calibrate (Row, Strategy, cautious, wanderer, pilgrim, waiter, simulate, rowJson)
+import stapledons/sim/calibrate_search (assessRows)
+import stapledons/sim/data/detect (Detect, configuredDetector, noDetector)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Dial, Params, applyDial, luckDex)
+import pkg/sunholo/worlds/disc (starsWithin)
+import pkg/sunholo/worlds/epoch_statistics (historyProbabilities)
+import std/list (map, flatMap, filter, foldl, length, sortBy, nth_or)
+import std/math (intToFloat)
+import std/json (Json, jo, kv, ja, js, jnum, jint, jb, encode)
+import std/option (Some, None)
+import std/io (println)
+
+pure func ints(lo:int,hi:int) -> [int] = if lo>=hi then [] else lo::ints(lo+1,hi)
+pure func detector() -> Detect = match configuredDetector() {Some(d)=>d,None=>noDetector()}
+pure func stat(xs:[int]) -> Json {
+ let sorted=sortBy(\a b. if a<b then -1 else if a>b then 1 else 0,xs);
+ let n=length(xs);
+ jo([kv("mean",jnum(intToFloat(foldl(\a x. a+x,0,xs))/intToFloat(n))),kv("min",jint(nth_or(sorted,0,0))),
+  kv("median",jint(nth_or(sorted,(n-1)/2,0))),kv("max",jint(nth_or(sorted,n-1,0)))])
+}
+pure func meanF(xs:[float]) -> float = foldl(\a x. a+x,0.0,xs)/intToFloat(length(xs))
+pure func strategyJson(rows:[Row],s:Strategy) -> Json {
+ let rs=filter(\r. r.strategy==s.id,rows);
+ jo([kv("strategy",js(s.id)),kv("detected",stat(map(\r. r.detected,rs))),kv("visited",stat(map(\r. r.visited,rs))),
+  kv("remnants",stat(map(\r. r.remnants,rs))),kv("signals",stat(map(\r. r.signals,rs))),kv("contacts",stat(map(\r. r.contacts,rs))),
+  kv("ship_years",jnum(meanF(map(\r. r.shipYears,rs)))),kv("earth_years",jnum(meanF(map(\r. r.earthYears,rs))))])
+}
+-- Expected worlds within r light-years at year 0: stars x the occurrence the
+-- calibration uses (0.20 x 0.4 + 0.75 x 0.16) x the per-habitable-world probability.
+pure func within(p:Params,r:float) -> Json {
+ let stars=starsWithin({rho0Pc3:0.079,scaleHeightPc:300.0},r)*(0.20*0.4+0.75*0.16);
+ let q=historyProbabilities(p,0.0);
+ jo([kv("ly",jnum(r)),kv("living",jnum(stars*q.life)),kv("technological",jnum(stars*q.tech)),kv("remnant",jnum(stars*q.remnant))])
+}
+export func cell(a:{life:float,minds:float,tech:float,lifetime:float,firstSeed:int,seeds:int,doom:float,all:bool}) -> () ! {IO} {
+ let dial={life:a.life,minds:a.minds,tech:a.tech,lifetime:a.lifetime};
+ let preset={id:"candidate",name:"candidate",dial:dial,calibrated:false};
+ let p=applyDial(baseline(),dial);
+ let d=detector();
+ let strategies=[cautious(),wanderer()]++(if a.all then [pilgrim(),waiter()] else []);
+ let rows=flatMap(\s. map(\seed. simulate(seed,preset,s,a.doom,d),ints(a.firstSeed,a.firstSeed+a.seeds)),strategies);
+ let score=assessRows("stapledon",dial,filter(\r. r.strategy=="cautious" || r.strategy=="wanderer",rows));
+ println(encode(jo([kv("detector",js(d.id)),kv("photon_budget",jb(d.photonBudget)),kv("support_ly",jnum(d.supportLy)),kv("bio_support_ly",jnum(d.bioSupportLy)),
+  kv("dial",jo([kv("life",jnum(a.life)),kv("minds",jnum(a.minds)),kv("tech",jnum(a.tech)),kv("lifetime",jnum(a.lifetime))])),
+  kv("luck_dex",jnum(luckDex(baseline(),dial))),
+  kv("params",jo([kv("fLife",jnum(p.fLife)),kv("fComplex",jnum(p.fComplex)),kv("fMinds",jnum(p.fMinds)),kv("fTech",jnum(p.fTech)),kv("lifetimeYr",jnum(p.lifetimeYr))])),
+  kv("first_seed",jint(a.firstSeed)),kv("seeds",jint(a.seeds)),kv("doom_years",jnum(a.doom)),
+  kv("fits_stapledon_bands",jb(score.fits)),kv("loss",jnum(score.loss)),kv("conflicts",ja(map(js,score.conflicts))),
+  kv("strategies",ja(map(\s. strategyJson(rows,s),strategies))),
+  kv("expected_at_year_0",ja(map(\r. within(p,r),[81.5,500.0,1000.0,3000.0])))])))
+}
+-- The bioSupportLy optimisation changes no row: the same voyages with the
+-- background biospheres populated out to the full radio support.
+export func equivalence(a:{life:float,minds:float,tech:float,lifetime:float,seed:int,doom:float}) -> () ! {IO} {
+ let preset={id:"candidate",name:"candidate",dial:{life:a.life,minds:a.minds,tech:a.tech,lifetime:a.lifetime},calibrated:false};
+ let d=detector();
+ let wide={d | bioSupportLy:d.supportLy};
+ let same=\s. rowJson(simulate(a.seed,preset,s,a.doom,d))==rowJson(simulate(a.seed,preset,s,a.doom,wide));
+ println("calibrate-budget equivalence (seed ${show(a.seed)}): cautious ${show(same(cautious()))}, wanderer ${show(same(wanderer()))}")
+}

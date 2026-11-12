@@ -84,9 +84,12 @@ export pure func leakReachLy(r:Receiver,k:Leak,targetSnr:float) -> float =
 -- response(kind, distanceLy, rank) is the strength a world of that kind gives:
 -- the SNR when it clears the hint threshold, else 0. supportLy is the largest
 -- distance at which any response can be non-zero; with photonBudget it is an
--- output of the budgets, not a chosen radius.
-export type Detect = {id:string,supportLy:float,photonBudget:bool,response:(string,float,float)->float ! {}}
-export pure func noDetector() -> Detect = {id:"no-detector",supportLy:0.0,photonBudget:false,response:\kind distance rank. 0.0}
+-- output of the budgets, not a chosen radius. bioSupportLy is the largest
+-- distance at which the "biosphere" response can be non-zero (never above
+-- supportLy): the calibration populates its background biospheres only that
+-- far, which changes no result and spares it the radio reach's volume.
+export type Detect = {id:string,supportLy:float,bioSupportLy:float,photonBudget:bool,response:(string,float,float)->float ! {}}
+export pure func noDetector() -> Detect = {id:"no-detector",supportLy:0.0,bioSupportLy:0.0,photonBudget:false,response:\kind distance rank. 0.0}
 pure func hintOrZero(x:float) -> float = if x>=snrHint() then x else 0.0
 pure func positive(x:float) -> float = if x>0.000001 then x else 0.000001
 -- The calibration's model worlds carry no host or orbit, so a biosphere is
@@ -102,12 +105,12 @@ export pure func twinResponse(s:Suite,distanceLy:float) -> float {
 export pure func techResponse(s:Suite,distanceLy:float,rank:float) -> float =
  hintOrZero(leakSnr(s.receiver,if rank<radarShare() then s.radar else s.tv,positive(distanceLy)))
 pure func maxf(a:float,b:float) -> float = if a>b then a else b
+pure func twinReachLy(s:Suite) -> float = iwaLimitDistanceM(auM(),s.telescope.optics.iwaScales,s.telescope.lambda0M,s.telescope.optics.apertureM)/lightYearM()
 export pure func budgetDetector(s:Suite) -> Detect = {id:"observe-0.2.0:${s.telescope.id}+${s.receiver.id}",
- supportLy:maxf(iwaLimitDistanceM(auM(),s.telescope.optics.iwaScales,s.telescope.lambda0M,s.telescope.optics.apertureM)/lightYearM(),
-  maxf(leakReachLy(s.receiver,s.radar,snrHint()),leakReachLy(s.receiver,s.tv,snrHint()))),
- photonBudget:true,response:\kind distance rank. if kind=="biosphere" then twinResponse(s,distance) else if kind=="technology" then techResponse(s,distance,rank) else 0.0}
+ supportLy:maxf(twinReachLy(s),maxf(leakReachLy(s.receiver,s.radar,snrHint()),leakReachLy(s.receiver,s.tv,snrHint()))),
+ bioSupportLy:twinReachLy(s),photonBudget:true,response:\kind distance rank. if kind=="biosphere" then twinResponse(s,distance) else if kind=="technology" then techResponse(s,distance,rank) else 0.0}
 export pure func configuredDetector() -> Option[Detect] = Some(budgetDetector(shipSuite()))
 -- Labelled development diagnostics only. Caller-supplied spatial support is a
 -- selection, not a telescope reach: every state inside it is detected at unit strength.
 export pure func idealDetector(supportLy:float) -> Detect =
- {id:"ideal-diagnostic-only",supportLy:supportLy,photonBudget:false,response:\kind distance rank. if distance<=supportLy then 1.0 else 0.0}
+ {id:"ideal-diagnostic-only",supportLy:supportLy,bioSupportLy:supportLy,photonBudget:false,response:\kind distance rank. if distance<=supportLy then 1.0 else 0.0}
