@@ -23,8 +23,8 @@ extends SceneTree
 var OUT := "res://renders/comms_station"
 const LOGICAL := Vector2i(960, 540)
 const RES := Vector2i(1280, 720)
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
-const OFF_RAY := {"index": 2, "id": "CNS5:1676", "pos": {"x": -5.770603, "y": -6.237832, "z": -1.328845}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const OFF_RAY := {"index": 9, "id": "CNS5:1676", "pos": {"x": -5.770603, "y": -6.237832, "z": -1.328845}}
 const SOL := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
 const PHI := 2.6466524123622457 # 0.99c
 const STEP := 0.02 # ship years per tick

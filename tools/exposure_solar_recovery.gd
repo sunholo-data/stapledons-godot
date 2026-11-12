@@ -19,7 +19,7 @@ func run()->void:
  await capture(sim.world,"earth_start","earth")
  var catalogue:Array=JSON.parse_string(FileAccess.get_file_as_string("res://data/starmap/stars.json")).get("stars",[])
  # Destination is needed only by the controller's eventual outbound leg.
- var destination:Dictionary={"id":"CNS5:3627","index":0,"x":0.,"y":0.,"z":0.}
+ var destination:Dictionary={"id":"CNS5:3627","index":2,"x":0.,"y":0.,"z":0.}
  for i in catalogue.size():
   if catalogue[i].id=="CNS5:3627":destination=catalogue[i].duplicate();destination.index=i
  var tour:=SolarDeparture.new()

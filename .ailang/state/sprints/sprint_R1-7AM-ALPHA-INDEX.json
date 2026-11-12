@@ -188,10 +188,26 @@
         "cleanliness: git status --porcelain   # exactly the ten M1 files + the three MS1 files (plus controller files); no .bak; git diff --name-only $B -- '*.ail' | wc -l -> 0 already holds"
       ],
       "expectations": "V23 shortstat ' 10 files changed, 14 insertions(+), 14 deletions(-)', one token per hunk. AC2: Ran 9 tests (sprint-measured), OK, rc=0. AC3: 16 ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2']. AC4: 'tests/test_earth_beams.gd:15 CNS5:3627 index 1, stars.json 2', make rc 2, restored. AC5: ['tools/earth_link_capture.gd:16'] != [], make rc 2, oq1-byte-identical. M2: rc 1, 1 failing (test_the_7am_literals_fail), the z.gd entry missing. M3: rc 1, 3 failing as listed. M4: rc 1, 2 failing ('ui/transit_harness.gd' not found in ['main.gd'], stale pending). M7: rc 1, 2 failing (the file's own control pair flagged + unexpectedly found). M8: rc 1, the earth_link mismatch listed. AC2 re-asserted after every revert.",
-      "notes": null,
-      "status": "pending",
-      "passes": false,
-      "measured": null
+      "notes": " MS2 executed. Deviation: M3 expected 3 failing, got 1 (see measured.M3_whitespace); flagged for the controller, not edited.",
+      "status": "executed",
+      "passes": true,
+      "measured": {
+        "anchor": "all 14 planner-verified literals matched before editing",
+        "V23_shortstat": "10 files changed, 14 insertions(+), 14 deletions(-)",
+        "AC2": "make replay-map-index: Ran 9 tests in 0.221s / OK / rc=0",
+        "AC3": "16 ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2']",
+        "AC4": "M1 test_earth_beams.gd ALPHA->1: tests/test_earth_beams.gd:15 CNS5:3627 index 1, stars.json 2, make rc 2; mv restored; AC2 Ran 9 OK",
+        "AC5": "M5 earth_link_capture.gd ALPHA->2: ['tools/earth_link_capture.gd:16'] != [], make rc 2; mv restored; oq1-byte-identical; AC2 Ran 9 OK",
+        "M2_key_order": "rc=1, FAILED (failures=2): test_the_7am_literals_fail (z.gd:1 CNS5:3627 index 3 missing) AND test_the_7am_intervening_fields_fail (reverse-order q.gd missing). Plan expected 1; the r2 control also covers reverse order, so 2 is the stronger kill",
+        "M3_whitespace": "rc=1, FAILED (failures=1): only test_the_7am_literals_fail (compact y.py and z.gd literals missed). Plan expected 3 failing (pending entry unseen, escaped control, literals). DEVIATION: spaced pending and escaped literals still match the one-space matcher, so those two controls stay green. Mutant is killed by a named control; expectation not met; flagged for controller",
+        "M4_enumeration": "rc=1, FAILED (failures=2): test_source_literals_match_the_map AssertionError ['tools/earth_link_capture.gd:16'] != []; test_source_scan_covers... \"'ui/transit_harness.gd' not found in ['main.gd']\"",
+        "M7_exempt": "rc=1, FAILED (failures=2): tools/test_replay.py:432 CNS5:3627 index ... flagged; 'tools/test_replay.py' unexpectedly found (line numbers are the r2 form's actuals)",
+        "M8_pending": "rc=1, FAILED (failures=1): ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2'] != []",
+        "M10_green": "rc=1, FAILED (failures=1): test_the_7am_escaped_ids_fail, Lists differ: [] != ['e.gd:1', 'q.py:1']",
+        "M11_green": "rc=1, FAILED (failures=1): test_the_7am_escaped_ids_fail, u.gd:1 unsupported escape entry missing",
+        "AC2_reassert_after_mutations": "Ran 9 tests / OK / rc=0",
+        "cleanliness": "git status --porcelain: the 10 M1 files only; no .bak; git diff --name-only c35efb57 -- *.ail: 0; Makefile and earth_link_capture.gd byte-identical"
+      }
     },
     {
       "id": "MS3",
