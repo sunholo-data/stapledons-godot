@@ -7,9 +7,17 @@
 # a gate. Values that differ between runs, or between the strict VM and the interpreter, fail
 # it; a missed budget is printed and recorded, and is a stop for the owner (sprint plan,
 # pause 1), not a failure of this command.
-.PHONY: lab-probe lab-probe-parity
+.PHONY: lab-probe lab-probe-parity lab-probe-check
 lab-probe: ## R3-UNIVERSE-LAB UL0a: draw loop, quadrature, order-statistic intervals, a 500,000-row filter and 1/4/8/12 processes, three runs each with the host load -> data/lab/probe.json
 	@AILANG="$(AILANG)" python3 -I tools/lab_probe.py --out data/lab/probe.json
+
+# The committed measurements say what their own runs say: each file's budgets are re-derived
+# from its recorded runs under the harness's rules (every budget on its worst run, never the
+# mean) and must equal what is stored, and each records the host's core layout. Measures
+# nothing; in make test.
+lab-probe-check: ## R3-UNIVERSE-LAB UL0a: data/lab/probe*.json carry the budgets their recorded runs give, each judged on its worst run
+	@AILANG="$(AILANG)" python3 -I tools/lab_probe.py --verify $(sort $(wildcard data/lab/probe*.json))
+test: lab-probe-check
 
 # Every probe entry on the strict VM and on the interpreter, byte for byte, at small sizes.
 # In make strict and make parity (so ci-fast): the probes stay strict-VM clean.
@@ -27,20 +35,27 @@ strict parity: lab-probe-parity
 
 # UL3a: the scenario format (sim/lab_scenario.ail). lab-test is the lab's unit gate: the named
 # checks, then the strict VM against the interpreter, then the committed scenario files. In
-# make test. Later lab modules add their test file and their parity entries to the two lists.
+# make test. Later lab modules add their test file, their parity entries and, if any of their
+# checks cannot run on the strict VM, the entry that names them.
 LAB_TESTS := lab_scenario_test.ail lab_stats_test.ail
 LAB_PARITY := lab_scenario_test:scenarioVm:scenario-ok lab_scenario_test:scenarioProbe: lab_stats_test:statsVm:stats-ok lab_stats_test:statsProbe:
+LAB_NOT_STRICT := lab_scenario_test:scenarioNotStrict lab_stats_test:statsNotStrict
 LAB_SCENARIOS := $(sort $(wildcard data/lab/scenarios/*.json))
+LAB_DEPARTURES := data/lab/baseline_departures.json
 LAB_RUN = $(AILANG) run --quiet --package-dir sim
 .PHONY: lab-test lab-parity lab-scenarios lab-stats-oracle
 lab-test: lab-parity lab-scenarios lab-stats-oracle ## R3-UNIVERSE-LAB UL3: the lab's named checks (scenario format; statistics), strict VM = interpreter, the committed scenario files (AC5) and the statistics oracle
 	@mkdir -p $(SCRATCH)
 	@cd sim && $(AILANG) test $(LAB_TESTS) > ../$(SCRATCH)/lab-test.log 2>&1; rc=$$?; cd ..; grep -E 'tests:' $(SCRATCH)/lab-test.log; test $$rc = 0 || { grep -B1 -A3 'expected' $(SCRATCH)/lab-test.log; exit 1; }
+	@# The gap below is a test that passes today and fails at the bump; this line keeps it in sight.
+	@grep -q 'KNOWN GAP (v0.56.1' $(SCRATCH)/lab-test.log && echo "lab-test: KNOWN GAP on the pinned AILANG v0.56.1: a scenario file with text after its closing brace is accepted and shares a digest (std/json decode; fixed upstream by v0.60.0; not worked around). Re-check at the next runtime bump: the KNOWN GAP test fails then and is flipped."
 test: lab-test
 
 # Each entry on the strict VM and on the interpreter, byte for byte; an entry with a third
-# field must print exactly that. In make strict and make parity (so ci-fast).
-lab-parity: ## R3-UNIVERSE-LAB UL3: the lab's pure modules run wholly on the strict VM and agree with the interpreter byte for byte
+# field must print exactly that. The last line names every check that is NOT in a strict-VM
+# entry, with its upstream issue, read from the test modules. In make strict and make parity
+# (so ci-fast).
+lab-parity: ## R3-UNIVERSE-LAB UL3: the lab's pure modules run wholly on the strict VM and agree with the interpreter byte for byte; names the checks that cannot yet
 	@mkdir -p $(SCRATCH)
 	@for spec in $(LAB_PARITY); do \
 	  f=$${spec%%:*}; rest=$${spec#*:}; e=$${rest%%:*}; want=$${rest#*:}; \
@@ -51,21 +66,33 @@ lab-parity: ## R3-UNIVERSE-LAB UL3: the lab's pure modules run wholly on the str
 	  if [ -n "$$want" ]; then test "$$(cat $(SCRATCH)/lab-$$e-vm.txt)" = "$$want" || { echo "lab-parity: FAIL $$e: $$(cat $(SCRATCH)/lab-$$e-vm.txt)"; exit 1; }; fi; \
 	  echo "lab-parity: $$e $${want:-$$(wc -c < $(SCRATCH)/lab-$$e-vm.txt | tr -d ' ') bytes} (strict VM = interpreter)"; \
 	done
+	@: > $(SCRATCH)/lab-not-strict.txt; for spec in $(LAB_NOT_STRICT); do \
+	  $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} --args-json 0 sim/$${spec%%:*}.ail >> $(SCRATCH)/lab-not-strict.txt || { echo "lab-parity: FAIL $${spec#*:}"; exit 1; }; \
+	done; \
+	n=$$(tr ',' '\n' < $(SCRATCH)/lab-not-strict.txt | grep -c 'ailang#'); \
+	echo "lab-parity: $$n checks NOT on the strict VM (they run under ailang test only; add them back at the fix): $$(paste -sd';' $(SCRATCH)/lab-not-strict.txt | sed 's/;/; /g')"
 strict parity: lab-parity
 
-# The committed scenario files through the tool shell (sim/tools/lab_scenarios.ail): every one
-# is accepted, the file name is the id, and `literature` has no departures (AC5). Then the
-# failing control: a file with a departure and no reason must be refused, by that sentence, with
-# exit 1. A tool that accepted everything would pass the first half and fail here.
-lab-scenarios: ## R3-UNIVERSE-LAB UL3a: every data/lab/scenarios/*.json is accepted and literature has no departures; a departure with no reason is refused (control)
+# The committed scenario files through the tool shell (sim/tools/lab_scenarios.ail). It prints
+# the registry baseline's own departures from the literature first (the mirror in
+# $(LAB_DEPARTURES)), then every scenario: each is accepted, the file name is the id, each names
+# the mirror's departures table, and `baseline` has no departures of its own (AC5). Then two
+# failing controls, each refused by its own sentence with exit 1: a departure with no reason,
+# and a scenario that names another departures table. A tool that accepted everything would
+# pass the first half and fail here.
+lab-scenarios: ## R3-UNIVERSE-LAB UL3a: the registry baseline's departures, then every data/lab/scenarios/*.json accepted, baseline with none of its own; two refused controls
 	@mkdir -p $(SCRATCH)
-	@args=$$(printf '"%s",' $(LAB_SCENARIOS)); $(LAB_RUN) --caps IO,FS --entry main --args-json "[$${args%,}]" sim/tools/lab_scenarios.ail > $(SCRATCH)/lab-scenarios.txt \
-	  || { cat $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: FAIL a committed scenario is refused"; exit 1; }
-	@grep -qE '^literature@[0-9]+ sha256=[0-9a-f]{64} departures=0 \[\]$$' $(SCRATCH)/lab-scenarios.txt || { cat $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: FAIL literature is missing or has departures"; exit 1; }
-	@test "$$(wc -l < $(SCRATCH)/lab-scenarios.txt | tr -d ' ')" = "$(words $(LAB_SCENARIOS))" || { echo "lab-scenarios: FAIL one line per file expected"; exit 1; }
-	@if $(LAB_RUN) --caps IO,FS --entry main --args-json '["tests/fixtures/lab/refused/no-reason.json"]' sim/tools/lab_scenarios.ail > $(SCRATCH)/lab-scenarios-control.txt; then echo "lab-scenarios: FAIL the control was accepted"; exit 1; fi
-	@grep -qF 'REFUSED tests/fixtures/lab/refused/no-reason.json: switch "lifetime_prior" departs from the literature and has no reason' $(SCRATCH)/lab-scenarios-control.txt || { cat $(SCRATCH)/lab-scenarios-control.txt; echo "lab-scenarios: FAIL the control was refused for another reason"; exit 1; }
-	@sed 's/^/lab-scenarios: /' $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: $(words $(LAB_SCENARIOS)) scenarios accepted, literature has no departures; the control (a departure with no reason) is refused"
+	@args=$$(printf '"%s",' $(LAB_DEPARTURES) $(LAB_SCENARIOS)); $(LAB_RUN) --caps IO,FS --entry main --args-json "[$${args%,}]" sim/tools/lab_scenarios.ail > $(SCRATCH)/lab-scenarios.txt \
+	  || { cat $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: FAIL a committed scenario or the departures mirror is refused"; exit 1; }
+	@grep -qE '^baseline@[0-9]+ sha256=[0-9a-f]{64} departures=0 \[\]$$' $(SCRATCH)/lab-scenarios.txt || { cat $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: FAIL baseline is missing or has departures of its own"; exit 1; }
+	@grep -qE '^registry baseline-[0-9.]+: [1-9][0-9]* deliberate departures from the literature' $(SCRATCH)/lab-scenarios.txt || { echo "lab-scenarios: FAIL the registry's departures were not printed"; exit 1; }
+	@test "$$(grep -c 'sha256=' $(SCRATCH)/lab-scenarios.txt)" = "$(words $(LAB_SCENARIOS))" || { echo "lab-scenarios: FAIL one line per scenario file expected"; exit 1; }
+	@for c in 'no-reason:switch "lifetime_prior" departs from the registry baseline and has no reason' 'other-table:it names the departures table'; do \
+	  f=tests/fixtures/lab/refused/$${c%%:*}.json; \
+	  if $(LAB_RUN) --caps IO,FS --entry main --args-json "[\"$(LAB_DEPARTURES)\",\"$$f\"]" sim/tools/lab_scenarios.ail > $(SCRATCH)/lab-scenarios-control.txt; then echo "lab-scenarios: FAIL the control $$f was accepted"; exit 1; fi; \
+	  grep -qF "REFUSED $$f: $${c#*:}" $(SCRATCH)/lab-scenarios-control.txt || { cat $(SCRATCH)/lab-scenarios-control.txt; echo "lab-scenarios: FAIL the control $$f was refused for another reason"; exit 1; }; \
+	done
+	@sed 's/^/lab-scenarios: /' $(SCRATCH)/lab-scenarios.txt | cut -c1-200; echo "lab-scenarios: $(words $(LAB_SCENARIOS)) scenarios accepted against the registry baseline's $$(grep -c '^registry departure' $(SCRATCH)/lab-scenarios.txt) listed departures; baseline has none of its own; 2 controls refused (a departure with no reason; another departures table)"
 
 # UL3c: sim/lab_stats.ail against an independent reference in a second language
 # (tools/lab_stats_ref.py, role oracle, standard library only): order-statistic ranks for every

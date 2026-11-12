@@ -1,8 +1,9 @@
 {
-  "format": "lab-scenario-1",
+  "format": "lab-scenario-2",
   "id": "pure",
   "version": 1,
-  "summary": "Pure physics, the hardcore mode. The universe is the first draw from the published ranges and nothing is tested or re-drawn, so most of these universes are empty within reach. It states the same values as the literature baseline; it is kept as its own scenario because it is a setting a player can choose.",
+  "baseline": { "registry": "baseline-2026.11", "departures": "stapledons-design physics/life-and-worlds.md §7 @ 0038428f1eed" },
+  "summary": "Pure physics, the hardcore mode a player can choose. The universe is the first draw from the pinned ranges and nothing is tested or re-drawn, so most of these universes are empty within reach. ON PURPOSE it states exactly the same switches as `baseline`: the baseline is already one unselected draw, so the two differ in name and summary only, and their digests differ only for that reason. It is kept as its own scenario because it is a named setting; if the baseline's universe rule ever changes, this file must not follow it.",
   "switches": [
     { "switch": "earth_clock_yr", "value": 100000 },
     { "switch": "reach_ly", "value": 3000 },
