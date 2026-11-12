@@ -1,3 +1,20 @@
+# worlds 0.2.0 pin (R3-REASONS RT3b) — 2026-11-12, AILANG v0.56.1
+
+The sim now pins `sunholo/worlds` 0.2.0 (lock content hash
+`sha256:59b019bb…caae`, was 0.1.0 `sha256:74251652…5a02`). 0.2.0 adds the `propagate`
+module and exports five constants from `history`; no 0.1.0 output changes. Measured
+on the same clone before and after the pin, pinned runtime on `PATH`:
+
+```text
+make census                 -> census.json sha256 1a96191c…d688 before and after (= DEVELOPMENT.SHA256, census-25pc)
+make worlds-parity (calibVm)-> calib-vm.jsonl sha256 58770e4e…0853 before and after
+make calib-smoke            -> rows sha256 238415da…e2e0 before and after
+```
+
+The 100-pc report and the calibration-development report were not regenerated.
+
+---
+
 # Evaluation correction census — 2026-11-03, AILANG v0.56.1
 
 The 25-pc development report has been regenerated against the normal registry

@@ -1,0 +1,6 @@
+{"sprint_id":"R3-REASONS_RT5a","round":1,"pr":433,"score":74,"result":"pass","gate_source":"local",
+"breakdown":{"tests_pass":20,"lint_clean":10,"acceptance_criteria":21,"code_quality":11,"documentation":5,"design_fidelity":7},
+"hard_fails":[],
+"commands":{"make reason-card-test":"reason-card: 43 passed, 0 failures","make uid-guard":"uid-guard: ok (438 .uid files)","make python-guard":"python-guard: ok (21 allowlisted, 0 awaiting AILANG port)","make export-filter-audit":"130 literals, 67R 14F 29D 20X, 0 failures","make capture-reason-card":"reason-card-capture: 8 frames"},
+"mutants":{"killed":["fill field","glyph wrong field","planet inside IWA (data)","bar height","mind field"],"survived":["ring drawn on non-need (draw layer)","'Best' literal in draw_string","True mode draws planet-glare","digit literal in draw_string","dial fraction ignores snr","model line drawn in True","'Best view' replacing hidden-planet caption"]},
+"findings":["no plain-language review page (RT5a deliverable)","draw layer, dial and picture untested","unexplained dashed ring / crew glyph","orbit caption touches pane bottom","image.planet null when sep>=IMAGE_SPAN shows 'planet inside the glare'","no CHANGELOG / sprint JSON / status update","finder.json not in export include_filter (RT5b)"]}

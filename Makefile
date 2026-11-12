@@ -43,6 +43,7 @@ include mk/observation-assets.mk
 include mk/survey-map.mk
 include mk/levels.mk
 include mk/commons-civic.mk
+include mk/finder.mk
 include mk/npc-painted.mk
 include mk/worlds.mk
 

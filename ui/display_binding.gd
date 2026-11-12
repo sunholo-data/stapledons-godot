@@ -67,6 +67,8 @@ static func format_field(view: Dictionary, f: String, format: String) -> String:
 	# beam words and port names, formatting only.
 	if format.begins_with("comms_"):
 		return CommsPanel.format(format, raw)
+	if format.begins_with("finder_"): # R3-REASONS RT5: the reason card's years, light-years, kilograms and sureness words
+		return ReasonCard.format(format, raw)
 	if format.begins_with("feed_"): # R3-EARTH-LINK EL3b: the feed's words for sim booleans and kinds
 		return EarthFeed.format(format, raw)
 	if format == "days": # a whole number of days, singular at one ("1 day", "70 days")
