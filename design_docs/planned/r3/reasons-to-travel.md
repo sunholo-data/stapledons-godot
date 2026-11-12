@@ -157,6 +157,7 @@ A candidate's offer is the belief-weighted sum of these rows, propagated to arri
 
 - On arrival a card shows three columns: what the light said and its age, what was predicted (byte-identical to the distribution stored at commit, finder AC 6), and what is there.
 - The offer resolves the same way: the glyphs that were lit as chances become what this world can in fact teach. Delivering it is track K.
+- **Kept current with research** (Mark, attended 2026-11-12: "really educational as well, nice archive entries etc. and we can keep it up to date with current research"). Each Archive entry names the registry version it was written against (`physics/observation.md`'s version line) and the year of each source it leans on. A new measurement or mission result changes the registry's version and its OB rows first; `make lore-check` then fails any entry whose numbers no longer match, so the entry is revised with it. A running voyage keeps the version it started with.
 - Four Archive entries (the real-physics standing order), check values first: why an Earth twin is ten billion times fainter than its star; oxygen without life; why most civilisations are invisible; why every reason is out of date.
 
 ### RT0 as drafted, and Mark's rulings on it (attended 2026-11-12)
