@@ -1,4 +1,4 @@
-# Sprint plan: R1-7AN-FREE-NAV-GUARD-EDGES — free-nav-stop's I checks: the guard's edges (row 7an)
+# Sprint plan: R1-7AN-FREE-NAV-GUARD-EDGES (landed 2026-11-12, PR #429) — free-nav-stop's I checks: the guard's edges (row 7an)
 
 **Design doc:** [m4-7an-free-nav-stop-guard-edges.md](m4-7an-free-nav-stop-guard-edges.md) (revision 2;
 quorum round 1 BLOCKED at 2 seats, sol REJECT on the unbounded mutation runner → designer revision 1
