@@ -107,7 +107,7 @@
    "passes": null,
    "started": "2026-11-12",
    "completed": null,
-   "notes": "Taken attended (Mark: 'lets build it'); fresh ailang-packages clone."
+   "notes": "Built, not published: ailang-packages draft PR #196 (head f6534401), modules constants/photon/link/wasteheat. All 52 OB rows have a test at the registry's printed significant figures; 110 tests pass on the interpreter and the strict VM; smoke probes byte-identical. SI units (metres), not light-years. Publish blocked by ailang#2277 (verify encodes float division as integer div; PUB006 falsely refutes photon.bandOf). No workaround taken."
   },
   {
    "id": "RT1b",
@@ -125,7 +125,7 @@
    "passes": null,
    "started": "2026-11-12",
    "completed": null,
-   "notes": "Taken attended (Mark: 'lets build it'); fresh ailang-packages clone."
+   "notes": "Built, not published (same PR #196): belief module with the likelihood table (a game model, every number a design value awaiting Mark's review), confidence(snr), posterior(prior, host, observations), pLifeCeiling for AC3. Open for review: abiotic O2 on M dwarfs 0.20; leakage 0.10 and beacon 0.05; the confidence curve (strong O2+CH4 on a K dwarf gives P(life) 0.54 from a 0.10 prior). lore_values.ail not yet taught to read observation.md (game repo; moves to RT2a). RT2a may develop against a local overlay of PR #196 until the publish."
   },
   {
    "id": "RT2a",
@@ -301,5 +301,9 @@
    "completed": null,
    "notes": null
   }
+ ],
+ "external_dependencies": [
+  "ailang#2277: verify encodes float division as integer div; blocks publishing sunholo/observe 0.2.0 (and R2-KERR's relativity publish, PR #373)",
+  "ailang-packages PR #196 (observe 0.2.0), draft"
  ]
 }
