@@ -1,0 +1,40 @@
+{
+ "score": 92,
+ "verdict": "PASS",
+ "blocking": [],
+ "non_blocking": [
+  "Mutant M5: a stale layout_sha256 in art/deck-layout-v2/asset-pins.json survives deck-assets-check, deck-layout-eval(-test) and levels-regress; no gate reads that field (only AC6a's manual shasum compares it). The re-pin the design demands is therefore unenforced; budgets.json's pin is enforced (M5b killed).",
+  "tools/bridge_operator_drills.sh (and its selftest) needs a Godot class-cache import first: run standalone in a fresh clone it exits 3/1 with parse errors (ShipConsoles not declared). 'make bridge-operator-drills' depends on import so the AC2 command is fine; the failure is loud, not silent.",
+  "AC6 numstat for mk/captain-anim.mk is +5/-1, the design says +6/-1 (cosmetic).",
+  "M4 (weakened count pin) is killed by script_gate's own zero-count lint, not by the drill table; the drill table does not cover the pin or the stale pins at all."
+ ],
+ "mutants": [
+  {"id":"M1","mutation":"manifest crew use_m x 12.708 -> 13.0","gate":"make bridge-operator-test","result":"killed (consistency check DRIFT:crew, installed point, panel-wait FAIL)","restored":true},
+  {"id":"M2","mutation":"bow_a.json console_decision_1 use_m x -> 12.718 (layout drift)","gate":"make bridge-operator-test","result":"killed (1 FAIL, DRIFT:crew)","restored":true},
+  {"id":"M3","mutation":"delete the manifest-equals-layout check line","gate":"make bridge-operator-test","result":"killed (no summary / count pin)","restored":true},
+  {"id":"M4","mutation":"count pin 56 -> [0-9]*","gate":"make bridge-operator-test","result":"killed by script_gate zero-count lint","restored":true},
+  {"id":"M5","mutation":"asset-pins.json layout_sha256 0b433ca7 -> 0b433ca8 (stale re-pin)","gate":"deck-assets-check, deck-layout-eval-test, deck-layout-eval","result":"SURVIVED (no gate reads the field)","restored":true},
+  {"id":"M5b","mutation":"budgets.json manifest sha ff14f59f -> ff14f59e","gate":"make deck-assets-check","result":"killed (pin sha256 FAIL)","restored":true},
+  {"id":"M6","mutation":"runner restore() check disabled (return 0)","gate":"sh tools/bridge_operator_drills.sh --selftest","result":"killed (restore fault 'noop' rc 0, want 3; selftest FAIL)","restored":true},
+  {"id":"M7","mutation":"record advance_m 0.775->0.8","gate":"make bridge-operator-test","result":"killed (4 FAIL)","restored":true},
+  {"id":"M8","mutation":"manifest+layout+budgets+pins reverted to origin/main (MS1 RED check)","gate":"make bridge-operator-test","result":"killed: 4 FAIL (installed point and panel-wait, voyage and crew) = 52/4 confirmed","restored":true}
+ ],
+ "commands_run": [
+  "make bridge-operator-test x2: script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, 32 s of 600 s) / (..., 9 s of 600 s)",
+  "make bridge-operator-drills: selftest ok; 16 rows: 16 match, 0 mismatch, 0 harness; rc=0; porcelain empty",
+  "sh tools/bridge_operator_drills.sh --selftest: bridge-operator-drills selftest: ok (...); rc=0 (first attempt before make import: FAIL from missing class cache)",
+  "make script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; ...) and script-gate-prereqs ok (5 pairs)",
+  "git diff --check origin/main: silent; make uid-guard: ok (438 .uid files)",
+  "AC5 interior demos ui audio sim: empty",
+  "AC6 numstat: 8 files as designed (mk +5/-1 vs design +6/-1); AC6a: manifest ff14f59f..., layout 0b433ca7... both pairs equal",
+  "AC7 check-only bridge_operator_review.gd: rc=0",
+  "AC8: deck-assets-check ok (12 pins) + negative controls; deck-layout-eval-test 26 passed, 0 failures; deck-layout: bridge ok; comms-walk 11 passed, 0 failures; levels-regress ok (1 levels: bridge) + both negative controls; captain-chair 15 passed, 0 failures"
+ ],
+ "deviations_adjudicated": [
+  "MS1 RED 52/4 vs 54/2: accepted. Reproduced 52/4 with origin/main data under the new test; the A-point record makes installed-point and panel-wait the correct failures. 54/2 was the old-record number (AC10 historical).",
+  "Changelog 10 lines vs ~8: accepted, trivial.",
+  "MS3 extra evidence commit: accepted, no scope impact.",
+  "Whitespace fix in the plan: accepted, AC4 git diff --check is silent.",
+  "Scope: nothing under interior/demos/ui/audio/sim; no GPU use; no expected-failure; runner writes only to mktemp dirs plus tracked drill files, restored fail-closed (verified by M6 and clean porcelain)."
+ ]
+}

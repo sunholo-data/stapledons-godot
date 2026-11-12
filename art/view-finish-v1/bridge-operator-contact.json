@@ -1,39 +1,55 @@
 {
-  "schema": "stapledons.bridge-operator-contact/1",
-  "status": "placement correction for review; original furniture only; not installed in runtime",
-  "reason": "Original operator feet are two metres stern of the console centre; the held palms float above empty space. Correct the actual working/Walk-to point, not the furniture.",
-  "advance_bow_m": 0.775,
+  "schema": "stapledons.bridge-operator-contact/2",
+  "status": "installed D-132 working points on the R3-COMMS-V2 desks (consoles under the screens, Mark 2026-11-03); original furniture only",
+  "reason": "Original operator feet are two metres from the desk origin along the desk's facing; the held palms float above empty space. Correct the actual working/Walk-to point, not the furniture.",
+  "facing_source": "the desk node's global basis in the loaded scene: operator facing = -(basis.x), flattened (yaw -90 gives the old world bow)",
+  "advance_m": 0.5,
+  "original_from_desk_m": 2.0,
   "capsule": {
     "radius_m": 0.35,
     "height_m": 1.8,
     "centre_above_foot_m": 0.91
   },
-  "measured_safe_limit_m": 0.8,
-  "first_collision_advance_m": 0.825,
+  "measured_7ae": "R3-COMMS-V2 desks, 25 mm walk grid from the original point along the facing: first capsule collision 0.55 m (voyage, crew), 0.575 m (comms); walk-only limit 1.006 m. The pre-#379 values were 0.825 m and 0.925/0.975 m.",
+  "first_collision_advance_m": 0.55,
   "walk_only_limits_m": {
-    "voyage": 0.925,
-    "crew": 0.975
+    "voyage": 1.006,
+    "crew": 1.006
   },
   "stations": {
     "voyage": {
+      "desk": "console_decision_0",
       "original_use_ship_m": [
-        -7.829,
-        10.207
+        -12.336,
+        11.107
       ],
       "corrected_use_ship_m": [
-        -7.829,
-        10.982
-      ]
+        -12.708,
+        11.442
+      ],
+      "screen_ship_m": [
+        -13.049,
+        11.75,
+        82.854
+      ],
+      "lean_off_desk_deg": 48.0
     },
     "crew": {
+      "desk": "console_decision_1",
       "original_use_ship_m": [
-        8.479,
-        12.169
+        12.336,
+        11.107
       ],
       "corrected_use_ship_m": [
-        8.479,
-        12.944
-      ]
+        12.708,
+        11.442
+      ],
+      "screen_ship_m": [
+        13.049,
+        11.75,
+        82.854
+      ],
+      "lean_off_desk_deg": 48.0
     }
   },
   "furniture": "Unchanged shipped console_decision_0/1; no support extensions loaded",
@@ -42,7 +58,7 @@
     0,
     0
   ],
-  "pose": "Accepted use_low front/back textures unchanged, with a bounded 15-degree world-bow work lean about the physical foot anchor. No whole-sprite translation.",
+  "pose": "Accepted use_low front/back textures unchanged, with a bounded 15-degree world-bow work lean about the physical foot anchor. No whole-sprite translation. Since R3-COMMS-V2 the desks are turned, so the world-bow lean is 48 degrees off each desk (7ae OQ-2).",
   "remaining": "Parent to review/apply actual operator targets and bounded held-pose material to runtime. Navigation and Archive remain outside this slice.",
   "work_lean_deg": 15.0,
   "work_direction_gltf": [
@@ -50,5 +66,6 @@
     0,
     -1
   ],
-  "max_head_reach_m": 0.455
+  "max_head_reach_m": 0.455,
+  "measured_safe_limit_m": 0.525
 }
