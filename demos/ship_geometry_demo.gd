@@ -980,7 +980,13 @@ func _identification_smoke() -> void:
 		ok=ok and not star_identification.held and star_identification.card.visible
 		print("ship-identification-smoke-stage release: ",ok)
 		star_identification.open_map.emit(candidate.id)
-		ok=ok and journey_map!=null and journey_map.catalogue[journey_map.selected_index].id==candidate.id and not live_journey
+		ok=ok and journey_map!=null and not live_journey
+		if journey_map!=null:
+			var inspected := {"kind":"catalogue", "id":str(candidate.id)}
+			var plan: Variant = journey_sim.world.get("journey", {}).get("plan")
+			ok=ok and journey_map.mode=="chart" and journey_map.observation_selection==inspected
+			ok=ok and journey_map._pending.is_empty() and journey_map._queue.is_empty()
+			ok=ok and (plan==null or (plan is Dictionary and plan.is_empty()))
 		print("ship-identification-smoke-stage map: ",ok)
 	print("ship-star-identification-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	var tree := get_tree()

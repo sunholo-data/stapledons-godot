@@ -53,4 +53,6 @@ The read-only-first behaviour is deliberate: it starts with the simulation's def
 
 The package's initial scalar oracle maximum (6.86e-10 pixel) and the tracked game-mirror oracle maximum (6.36e-10) are separate measurements. The empirical source registration maximum is 0.368168 pixel. The export audit subsequently classified the probe's extensionless runtime binary and canonical directory spelling; 152 literals pass, with no export-filter widening.
 
+The normal publication exposed a stale assertion in the existing finder export probe: it expected Open in map to mutate the plotted destination. The actual pick/card/release stages passed, while that old plan-selection assertion failed. The probe now asserts the exact read-only observation reference, chart mode, empty navigation queues and no simulation plan. This changes diagnostic expectations to the approved behaviour; player code is unchanged by the probe correction.
+
 Final-head CI, current combined review-build publication and Mark's visual acceptance remain separate gates. The GPU was busy at the final source freeze, so new composed-UI cases defer to nightly/dev-build review under CLAUDE.md. No landing or completion is claimed here.
