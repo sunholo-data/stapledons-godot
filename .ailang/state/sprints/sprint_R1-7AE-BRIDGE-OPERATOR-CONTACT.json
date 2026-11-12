@@ -31,10 +31,10 @@
         "make bridge-operator-test; echo rc=$? -> gate FAIL against the 56 pin (shape per V14), log summary 'bridge-operator-contact: 54 passed, 2 failures'; grep '^FAIL' .godot/tmp/bridge-operator-test.log -> exactly 'FAIL voyage full 1.8m capsule clear at corrected point' and 'FAIL crew full 1.8m capsule clear at corrected point'; layout agreement ok (V28, AC10)",
         "commit the three named files only; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>; git status --porcelain empty afterwards"
       ],
-      "passes": false,
+      "passes": true,
       "started": "2026-11-12",
-      "completed": null,
-      "notes": "RED measured iteration 90: make bridge-operator-test (rc 2, script-gate FAIL, no 56 pin match) -> bridge-operator-contact: 52 passed, 4 failures. FAIL labels: voyage installed working point matches physical target; voyage panel and contact pose wait for real working point; crew installed working point matches physical target; crew panel and contact pose wait for real working point. Plan expected 54/2 from V28 (revision-1 record); controller ruling iteration 90: the A record (corrected_use_ship_m voyage (-12.708, 11.442) / crew (12.708, 11.442)) with the unchanged manifest gives 52/4; the capsule check passes at the record A point. Correct MS1 RED."
+      "completed": "2026-11-12",
+      "notes": "RED measured iteration 90: make bridge-operator-test (rc 2, script-gate FAIL, no 56 pin match) -> bridge-operator-contact: 52 passed, 4 failures. FAIL labels: voyage installed working point matches physical target; voyage panel and contact pose wait for real working point; crew installed working point matches physical target; crew panel and contact pose wait for real working point. Plan expected 54/2 from V28 (revision-1 record); controller ruling iteration 90: the A record (corrected_use_ship_m voyage (-12.708, 11.442) / crew (12.708, 11.442)) with the unchanged manifest gives 52/4; the capsule check passes at the record A point. Correct MS1 RED. Controller ruling iteration 90: 52/4 is the correct RED (A record with unchanged manifest); MS1 accepted as RED demonstration."
     },
     {
       "id": "MS2",
@@ -104,10 +104,11 @@
         "AC7: godot --headless --path . --check-only --script tools/bridge_operator_review.gd; echo rc=$? -> rc=0 (V39; headless, no GPU)",
         "fragment in place; JSON measured fields filled, passes true, started/completed dates set; commit the fragment and the JSON, named files only, trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Fragment content per the plan (### Fixed: schema-2 contact test/record on the R3-COMMS-V2 desks, 56 checks count-pinned, closing the nightly red; the D-148 A 0.275 m step-back with manifest/layout/pins moving together. ### Added: make bridge-operator-drills, not in make test)."
+      "passes": true,
+      "started": "2026-11-12",
+      "completed": "2026-11-12",
+      "notes": "Changelog fragment written from the plan block; line count 10 (plan said ~8).",
+      "measured": "AC3: script-gate-lint: ok (262 --script invocations: 144 through $(SCRIPT_GATE), 118 on the baseline; 24 includes, all in mk/*.mk; 25 makefiles scanned); script-gate-prereqs: ok (5 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline ci-fast:replay-map-index). AC4: git diff --check origin/main silent (rc 0, after controller commit 5dd7f99c); uid-guard: ok (438 .uid files); python-guard: ok (21 allowlisted, 0 awaiting AILANG port). AC5: git diff --name-only origin/main -- interior demos ui audio sim empty. AC7: godot --headless --path . --check-only --script tools/bridge_operator_review.gd rc=0, no error lines. Changelog fragment changelogs/unreleased/2026-11-12-7ae-bridge-operator-contact.md (10 lines, ### Fixed and ### Added)."
     }
   ],
   "controller_steps": {
