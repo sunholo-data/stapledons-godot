@@ -56,10 +56,11 @@
         "AC8: make deck-assets-check deck-layout-eval-test deck-layout-eval comms-walk-test levels-regress captain-chair-test -> 'deck-assets-check: ok (12 pins, ...)' plus 'negative controls (wrong pin, emissive prop) fail as they must'; 'deck-layout-eval-test: 26 passed, 0 failures'; 'deck-layout: bridge ok'; 'comms-walk: 11 passed, 0 failures'; 'levels-regress: ok (1 levels: bridge)' plus both negative controls; 'captain-chair: 15 passed, 0 failures' (all V36)",
         "commit the four named files only; trailer Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Order per D9: edit manifest and bow_a.json, compute both hashes, then re-pin. A hash other than ff14f59f.../0b433ca7... -> stop; never re-pin a drifted file."
+      "passes": true,
+      "started": "2026-11-12",
+      "completed": "2026-11-12",
+      "notes": "Order per D9: edit manifest and bow_a.json, compute both hashes, then re-pin. A hash other than ff14f59f.../0b433ca7... -> stop; never re-pin a drifted file.",
+      "measured": "AC1 run1: script-gate: bridge-operator-test ok: bridge-operator-contact: 56 passed, 0 failures (rc 0, no SCRIPT ERROR, 4 s of 600 s), wall 8s, load 21; run2: same line, wall 7s, load 20. AC6 names: the seven files (asset-pins, bow_a, budgets, view-finish record, manifest, mk/captain-anim.mk, tests); numstat 1/1, 4/4, 1/1, 37/20, 4/4, 1/1, 38/8. AC6a: manifest ff14f59f97834c51a17d010d83d1af5c83f3b73a0dd353091ada442823b605a7 = budgets pin; bow_a 0b433ca735848bf47d93027be04e8d6e057b1134fa596d8245710c36d84253c0 = asset-pins layout_sha256. AC8: deck-assets-check: ok (12 pins, ...) + negative controls (wrong pin, emissive prop) fail as they must; deck-layout-eval-test: 26 passed, 0 failures; deck-layout: bridge ok; comms-walk: 11 passed, 0 failures (19 s); levels-regress: ok (1 levels: bridge) + both negative controls (split run, 22 s with captain-chair); captain-chair: 15 passed, 0 failures. Load 17-20 during runs. Notes: budgets bytes stays 12794; asset-pins line 364 untouched. Note: the first budgets sed targeted line 18 (bytes), no change; re-applied on line 19 (the sha256 line) before commit."
     },
     {
       "id": "MS3",
@@ -154,5 +155,6 @@
     "AC4's uid-guard count is elided in the design (7an pinned 422); the executor records the actual count - the assertion is no change, not the number.",
     "The changelog date: the design writes <date>-7ae-bridge-operator-contact.md; this plan fixes 2026-11-12 (the revision-3 date); the slug does not change if landing slips a day.",
     "MS1's exact script-gate FAIL wording at the 56 pin is inferred from V14's shape at other pins; V28 quotes the 54/2 summary and that the run FAILs."
-  ]
+  ],
+  "notes": "D-148 A number edits (design D9) and the two re-pins, hash gate ff14f59f/0b433ca7 matched before re-pin."
 }
