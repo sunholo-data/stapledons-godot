@@ -29,3 +29,4 @@ tools/ism_bright_ref.py	oracle
 tools/similar_oracle.py	oracle
 tools/kerr_ref.py	oracle
 tools/worlds_leak.py	harness
+tools/reach_probe.py	harness

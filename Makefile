@@ -40,6 +40,7 @@ include mk/commons-civic.mk
 include mk/finder.mk
 include mk/npc-painted.mk
 include mk/worlds.mk
+include mk/reach.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
