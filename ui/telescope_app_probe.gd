@@ -69,9 +69,13 @@ func run(tree: SceneTree, args: PackedStringArray) -> int:
 	var credits := FileAccess.get_file_as_string("res://data/observations/euclid_dr1/credits.md")
 	check(credits.contains("ESA") and credits.contains("Euclid"),"packaged observation credits available")
 	if failures: return _finish(report)
+	# Headless templates default to a 64² window. Use an ordinary player-sized
+	# viewport so the unchanged production LOD can resolve the actual Sun.
+	evidence["initial_window_size"] = [tree.root.size.x,tree.root.size.y]
+	tree.root.size = Vector2i(1280,720)
 	var scene: PackedScene = load("res://demos/ship_geometry_demo.tscn")
 	var demo = scene.instantiate()
-	demo.setup_options = {"stars":false,"background":false,"live_start":true,"sky_state":"rest","seed":1,"ai":false,"crew":""}
+	demo.setup_options = {"stars":false,"background":false,"live_start":true,"sky_state":"rest","seed":1,"ai":false,"crew":"","size":Vector2i(1280,720)}
 	tree.root.add_child(demo); await tree.process_frame
 	demo.auto = false; demo.journey_auto_tick = false
 	check(demo.ready_ok and demo.journey_sim != null and not demo.journey_sim.world.is_empty(),"actual packaged AILANG simulation starts and supplies Sol world")
@@ -79,7 +83,9 @@ func run(tree: SceneTree, args: PackedStringArray) -> int:
 		demo.queue_free(); await tree.process_frame; return _finish(report)
 	check(demo.journey_sim.child_pid > 0 and demo.journey_sim.launch_override.is_empty() and not demo.journey_sim.hello_reply.is_empty(),"actual bundled child handshake without fixture override")
 	var launch: Dictionary = demo.journey_sim._launch_plan()
-	check(launch.get("bin") == "/usr/bin/env" and str(launch.get("args",[])).contains(runtime + "/runtime/bin/ailang") and str(launch.get("args",[])).contains(runtime + "/home"),"actual sim launch uses extracted bundled binary and cache HOME")
+	var launch_args: PackedStringArray = launch.get("args",PackedStringArray())
+	evidence["launch"] = {"bin":launch.get("bin"),"args":Array(launch_args),"expected_binary":runtime + "/runtime/bin/ailang","expected_home_assignment":"HOME=" + runtime + "/home"}
+	check(launch.get("bin") == "/usr/bin/env" and launch_args.has(runtime + "/runtime/bin/ailang") and launch_args.has("HOME=" + runtime + "/home"),"actual sim launch uses extracted bundled binary and cache HOME")
 	demo.open_navigation()
 	var map = demo.journey_map; var panel = map.observation_panel
 	var pin: Dictionary = map.observation_index.pin()
@@ -107,8 +113,10 @@ func run(tree: SceneTree, args: PackedStringArray) -> int:
 	panel.close_panel()
 	check(not panel.cache.active and panel.cache.cpu_bytes == 0 and panel.cache.gpu_bytes == 0,"archive close releases cached image/texture payload")
 	check(map.open_observation({"kind":"body","id":"sun"},"live"),"shared Navigation panel opens exact live Sun")
-	panel.live_view.refresh(demo.sky_world)
-	check(panel.live_view.requested_star_id == "sun" and panel.live_view.star_id == "sun" and panel.live_view._disc.visible,"real finite-star material honours exact Sun target")
+	var live_refreshed: bool = panel.live_view.refresh(demo.sky_world)
+	var source_sun: MeshInstance3D = demo.sky.system_view.discs.get("sun")
+	evidence["live_state"] = {"requested_id":panel.live_view.requested_star_id,"selected_id":panel.live_view.star_id,"refreshed":live_refreshed,"telescope_disc_visible":panel.live_view._disc.visible,"source_sun_present":source_sun != null,"source_sun_visible":source_sun.visible if source_sun != null else false,"source_material_present":source_sun.material_override != null if source_sun != null else false,"source_disc_ids":demo.sky.system_view.discs.keys(),"window_size":[tree.root.size.x,tree.root.size.y],"geometry_size":[demo.geometry_view.size.x,demo.geometry_view.size.y],"sky_size":[demo.sky.size.x,demo.sky.size.y],"source_pixel_rad":demo.sky.system_view.px_rad}
+	check(live_refreshed and panel.live_view.requested_star_id == "sun" and panel.live_view.star_id == "sun" and panel.live_view._disc.visible,"real finite-star material honours exact Sun target")
 	panel.close_panel()
 	check(panel.live_view._vp.render_target_update_mode == SubViewport.UPDATE_DISABLED and not panel.visible,"closing live panel disables render updates")
 	demo.journey_sim.stop(); demo.queue_free(); await tree.process_frame
