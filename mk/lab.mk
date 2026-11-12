@@ -28,12 +28,12 @@ strict parity: lab-probe-parity
 # UL3a: the scenario format (sim/lab_scenario.ail). lab-test is the lab's unit gate: the named
 # checks, then the strict VM against the interpreter, then the committed scenario files. In
 # make test. Later lab modules add their test file and their parity entries to the two lists.
-LAB_TESTS := lab_scenario_test.ail
-LAB_PARITY := lab_scenario_test:scenarioVm:scenario-ok lab_scenario_test:scenarioProbe:
+LAB_TESTS := lab_scenario_test.ail lab_stats_test.ail
+LAB_PARITY := lab_scenario_test:scenarioVm:scenario-ok lab_scenario_test:scenarioProbe: lab_stats_test:statsVm:stats-ok lab_stats_test:statsProbe:
 LAB_SCENARIOS := $(sort $(wildcard data/lab/scenarios/*.json))
 LAB_RUN = $(AILANG) run --quiet --package-dir sim
-.PHONY: lab-test lab-parity lab-scenarios
-lab-test: lab-parity lab-scenarios ## R3-UNIVERSE-LAB UL3: the lab's named checks (scenario format: refusals, round trip, digest), strict VM = interpreter, and the committed scenario files (AC5)
+.PHONY: lab-test lab-parity lab-scenarios lab-stats-oracle
+lab-test: lab-parity lab-scenarios lab-stats-oracle ## R3-UNIVERSE-LAB UL3: the lab's named checks (scenario format; statistics), strict VM = interpreter, the committed scenario files (AC5) and the statistics oracle
 	@mkdir -p $(SCRATCH)
 	@cd sim && $(AILANG) test $(LAB_TESTS) > ../$(SCRATCH)/lab-test.log 2>&1; rc=$$?; cd ..; grep -E 'tests:' $(SCRATCH)/lab-test.log; test $$rc = 0 || { grep -B1 -A3 'expected' $(SCRATCH)/lab-test.log; exit 1; }
 test: lab-test
@@ -66,3 +66,14 @@ lab-scenarios: ## R3-UNIVERSE-LAB UL3a: every data/lab/scenarios/*.json is accep
 	@if $(LAB_RUN) --caps IO,FS --entry main --args-json '["tests/fixtures/lab/refused/no-reason.json"]' sim/tools/lab_scenarios.ail > $(SCRATCH)/lab-scenarios-control.txt; then echo "lab-scenarios: FAIL the control was accepted"; exit 1; fi
 	@grep -qF 'REFUSED tests/fixtures/lab/refused/no-reason.json: switch "lifetime_prior" departs from the literature and has no reason' $(SCRATCH)/lab-scenarios-control.txt || { cat $(SCRATCH)/lab-scenarios-control.txt; echo "lab-scenarios: FAIL the control was refused for another reason"; exit 1; }
 	@sed 's/^/lab-scenarios: /' $(SCRATCH)/lab-scenarios.txt; echo "lab-scenarios: $(words $(LAB_SCENARIOS)) scenarios accepted, literature has no departures; the control (a departure with no reason) is refused"
+
+# UL3c: sim/lab_stats.ail against an independent reference in a second language
+# (tools/lab_stats_ref.py, role oracle, standard library only): order-statistic ranks for every
+# n from 1 to 1,024 at the 10th percentile, the median and the 90th by exact rational binomial
+# tails; Student t by the incomplete beta function; mean, spread, standard error, intervals and
+# the met / missed / unsettled verdicts on shared samples (n = 0, 1, 2, 5, 8, ties, all equal,
+# 64, 128, 1,024). It also fails if the committed reference is not what the oracle computes.
+lab-stats-oracle: ## R3-UNIVERSE-LAB UL3c: the lab's statistics equal the Python oracle's committed reference (exact binomial ranks, Student t, verdicts)
+	@mkdir -p $(SCRATCH)
+	@$(LAB_RUN) --bytecode --strict-bytecode --entry statsOracle --args-json 0 sim/lab_stats_test.ail > $(SCRATCH)/lab-stats-oracle.json || { echo "lab-stats-oracle: FAIL statsOracle (strict VM)"; exit 1; }
+	@python3 -I tools/lab_stats_ref.py --check tests/fixtures/lab/stats_reference.json $(SCRATCH)/lab-stats-oracle.json
