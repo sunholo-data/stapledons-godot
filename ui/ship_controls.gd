@@ -115,7 +115,8 @@ static func help_text(dev: bool, context: Dictionary = {}) -> String:
 		if not items.is_empty():
 			lines.append("%s: %s" % [g, " · ".join(items)])
 	if str(context.get("id", "bridge")) == "bridge":
-		lines.append("Decisions: at the bridge consoles (navigation station, Voyage console, Archive terminal). Tab · Walk to.")
+		lines.append("Decisions: from the captain's chair (all systems) or individual bridge consoles. Tab · Walk to.")
+		lines.append("Captain's chair: E sit or reopen command; Ctrl+Tab or shoulder buttons switch systems; Esc closes; Stand up returns to walking.")
 	else:
 		lines.insert(0, str(context.get("name", "Commons")) + ": " + route_hint(context))
 		lines.append("Decisions: at the bridge consoles. " + ("Tab · Walk to lift." if context.get("can_walk_to_lift", true) else "Return to the court, then take the lift."))

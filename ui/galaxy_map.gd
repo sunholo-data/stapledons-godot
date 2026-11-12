@@ -736,7 +736,7 @@ func planning() -> bool:
 	return mode == "helm" and not guided_read_only
 
 
-func set_mode(m: String) -> void:
+func set_mode(m: String, carry_selection := true) -> void:
 	mode = "chart" if m == "chart" else "helm"
 	var helm := mode == "helm"
 	for c: Control in [slider, commit_button, cancel_button, home_button, system_box, _speed]:
@@ -746,7 +746,7 @@ func set_mode(m: String) -> void:
 	if not helm:
 		close_commit_dialog()
 		_pending = {}
-	elif selected_index >= 0 and planning() and str(field_value(sim.world, "journey.plan.target.id") if sim != null else "") != str(catalogue[selected_index]["id"]):
+	elif carry_selection and selected_index >= 0 and planning() and str(field_value(sim.world, "journey.plan.target.id") if sim != null else "") != str(catalogue[selected_index]["id"]):
 		_pending = plan_intent(selected_index) # the chart's selection carries over (unless already the plan)
 	refresh()
 
