@@ -1,0 +1,315 @@
+module stapledons/sim/lab_stats
+
+-- R3-UNIVERSE-LAB UL3c (design r3/universe-lab.md, "The run plan"; sprint row UL3c): the lab's
+-- statistics. Pure; no I/O. Reference: tools/lab_stats_ref.py (exact rational arithmetic and
+-- a different method for Student t), `make lab-stats-oracle`.
+--
+-- WHAT IS COMPUTED, AND THE CHOICES MADE
+--   mean            the sum over n.
+--   spread          the SAMPLE standard deviation: squares about the mean over n - 1.
+--   standard error  spread / sqrt(n).
+--   mean interval   mean +- t * standard error, t the two-sided point of Student's t with
+--                   n - 1 degrees of freedom at the level asked for (at 95 %: 12.71 at n = 2,
+--                   2.00 at n = 64, 1.96 only in the limit). The normal 1.96 is NOT used.
+--   quantile        the estimate is Hyndman and Fan's type 7 (the usual median at q = 0.5).
+--   quantile interval  distribution-free and exact, from order statistics. With B ~ Binomial(n, q)
+--                   and a = 1 - level: lower rank l = the largest with P(B <= l - 1) <= a/2,
+--                   upper rank u = the smallest with P(B >= u) <= a/2; the interval is
+--                   [x(l), x(u)]. Its coverage is P(l <= B <= u - 1), which is AT LEAST the
+--                   level (the conservative choice: each tail is at most a/2, never "about"),
+--                   and with ties it can only be larger. No interpolation, no resampling.
+--   verdict         a band is CLOSED: its ends belong to it. MET when the whole interval lies
+--                   within [lo, hi], ends included; MISSED when it lies wholly outside
+--                   (strictly); UNSETTLED otherwise, that is, when it straddles an end. A count
+--                   that is always exactly 5 is met against "5 to 10", and all zeros are met
+--                   against "at most 0". A band may be open at one end.
+--   batches         seeds run 64 at a time to a cap of 1,024 (`standardRule`). After each batch:
+--                   stop when no target is unsettled, or at the cap; otherwise the next 64.
+--   paired          differences seed by seed (same index, same seed), then the same summary.
+--
+-- TWO DIFFERENT INTERVALS, KEPT APART
+--   REPORTING  `meanInterval`, `quantileInterval` and friends: a plain 95 % interval, right for
+--              ONE look at a finished sample. Use it to print a final estimate.
+--   STOPPING   `lookAt`, `stoppingInterval`, `judgeAtLook`: the interval the batch rule decides
+--              on. A rule that looks after every batch looks up to cap / batch times (16), and
+--              sixteen 95 % looks are not a 95 % procedure: with the truth on a band's edge a
+--              95 %-per-look rule called the target met in 11.7 % of runs and missed in 11.4 %
+--              (the reviewer's simulation; ours is in tools/lab_stats_ref.py). So the 5 % is
+--              SPLIT ACROSS THE LOOKS THE RULE ALLOWS (Bonferroni): each look uses the level
+--              1 - 0.05 / looks, with looks = cap / batch READ FROM THE RULE, never a constant.
+--              Whatever the dependence between looks, the chance that ANY look's interval
+--              misses the truth is then at most 5 %, and a wrong "met" or a wrong "missed" at
+--              most 2.5 % each.
+--              Why Bonferroni and not a Pocock or O'Brien-Fleming boundary: those need the
+--              joint law of the sixteen looks (a recursive numerical integration) and are
+--              derived for a normal statistic with known variance; here the variance is
+--              estimated at every look (Student t) and the order-statistic intervals have no
+--              such boundary at all. Bonferroni needs only a t point and binomial tails at
+--              another level, both already exact here, and it can be checked by simulation.
+--              Its price is width: at 64 seeds the stopping t is 3.07 against 2.00.
+--              This AMENDS the design's wording ("the 95 % interval of its mean" after each
+--              batch): 95 % is the level of the whole rule, not of each look.
+--
+-- NOTHING IS GUESSED. Each of these is a named `StatRefusal`, never a number: an empty sample;
+-- one value where a spread needs two; a value that is not finite; a quantile outside (0, 1); a
+-- level outside (0, 1) or too fine for the method; a sample too small for a two-sided
+-- interval to exist at the level (at 95 % the median needs n >= 6, the 10th and 90th
+-- percentiles n >= 36); a band with no bound, with lo > hi or with a non-finite bound; an
+-- interval with low > high; paired samples of different lengths; a seed count that is not a
+-- whole number of batches or is over the cap; a sample that is not the look's size; a rule
+-- with no batch size; and a stopping question with no targets.
+import std/list (foldl, map, length, sortBy, nth, zipWith, any, range)
+import std/math (sqrt, exp, log, floor, atan, intToFloat, floatToInt)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+
+export type StatRefusal =
+    EmptySample
+  | TooFewValues(int, int)      -- have, need
+  | NonFinite
+  | BadQuantile
+  | NoInterval(int)             -- n: no two-sided 95 % order-statistic interval exists at this n
+  | BadDegrees(int)             -- degrees of freedom below 1
+  | BadLevel                    -- an error level outside (0, 1), or too fine for the t search
+  | BadBand
+  | BadInterval
+  | UnpairedLengths(int, int)
+  | BadRule
+  | NotABatch(int)              -- seeds run: not a positive multiple of the batch, or over the cap
+  | NoTargets
+  deriving (Eq)
+
+export pure func refusalName(r: StatRefusal) -> string =
+  match r {
+    EmptySample => "empty_sample", TooFewValues(_, _) => "too_few_values", NonFinite => "non_finite", BadQuantile => "bad_quantile",
+    NoInterval(_) => "no_interval", BadDegrees(_) => "bad_degrees", BadLevel => "bad_level", BadBand => "bad_band", BadInterval => "bad_interval",
+    UnpairedLengths(_, _) => "unpaired_lengths", BadRule => "bad_rule", NotABatch(_) => "not_a_batch", NoTargets => "no_targets"
+  }
+
+-- The confidence level of a REPORTING interval (one look), and its error level.
+export pure func confidence() -> float = 0.95
+export pure func reportAlpha() -> float = 0.05
+-- The error the STOPPING rule may spend over all the looks it allows.
+export pure func familyAlpha() -> float = 0.05
+pure func levelOk(alpha: float) -> bool = finite(alpha) && alpha > 0.0 && alpha < 1.0
+
+pure func finite(x: float) -> bool = x - x == 0.0
+pure func allFinite(xs: [float]) -> bool = !any(\x. !finite(x), xs)
+pure func total(xs: [float]) -> float = foldl(\acc x. acc + x, 0.0, xs)
+
+-- ------------------------------------------------------------ mean, spread, standard error
+export pure func mean(xs: [float]) -> Result[float, StatRefusal] =
+  if length(xs) == 0 then Err(EmptySample) else if !allFinite(xs) then Err(NonFinite) else {
+    let m = total(xs) / intToFloat(length(xs));
+    -- finite values can still sum past the largest float
+    if finite(m) then Ok(m) else Err(NonFinite)
+  }
+
+export type Summary = { n: int, mean: float, spread: float, standardError: float }
+export pure func summary(xs: [float]) -> Result[Summary, StatRefusal] {
+  let n = length(xs);
+  if n == 0 then Err(EmptySample) else if n < 2 then Err(TooFewValues(n, 2)) else if !allFinite(xs) then Err(NonFinite) else {
+    let m = total(xs) / intToFloat(n);
+    let sd = sqrt(foldl(\acc x. acc + (x - m) * (x - m), 0.0, xs) / intToFloat(n - 1));
+    if finite(m) && finite(sd) then Ok({ n: n, mean: m, spread: sd, standardError: sd / sqrt(intToFloat(n)) }) else Err(NonFinite)
+  }
+}
+
+-- ------------------------------------------------------------ Student's t, two-sided 95 %
+-- P(|T| <= t) for integer degrees of freedom, by the finite series of Abramowitz and Stegun
+-- 26.7.3 (odd) and 26.7.4 (even): every term is positive, so nothing cancels.
+pure func series(cos2: float, j: int, last: int, odd: bool, term: float, acc: float) -> float =
+  if j > last then acc else {
+    let next = term * cos2 * (if odd then intToFloat(2 * j) / intToFloat(2 * j + 1) else intToFloat(2 * j - 1) / intToFloat(2 * j));
+    series(cos2, j + 1, last, odd, next, acc + next)
+  }
+pure func tWithin(t: float, df: int) -> float {
+  let v = intToFloat(df);
+  let r = sqrt(v + t * t);
+  let sinT = t / r;
+  let cosT = sqrt(v) / r;
+  if df == 1 then 2.0 * atan(t) / 3.141592653589793
+  else if df % 2 == 1 then 2.0 / 3.141592653589793 * (atan(t / sqrt(v)) + sinT * cosT * series(cosT * cosT, 1, (df - 3) / 2, true, 1.0, 1.0))
+  else sinT * series(cosT * cosT, 1, (df - 2) / 2, false, 1.0, 1.0)
+}
+-- Bisection to the last bit: tWithin rises with t.
+pure func bisect(df: int, target: float, lo: float, hi: float, steps: int) -> float {
+  let mid = lo + (hi - lo) / 2.0;
+  if steps == 0 || mid <= lo || mid >= hi then mid
+  else if tWithin(mid, df) < target then bisect(df, target, mid, hi, steps - 1) else bisect(df, target, lo, mid, steps - 1)
+}
+pure func tSearchTop() -> float = 1.0e6
+-- t such that P(|T| <= t) = 1 - alpha with df degrees of freedom. A level so fine that the
+-- point lies beyond the search range is refused, never clipped to the range's end.
+export pure func tCritical(df: int, alpha: float) -> Result[float, StatRefusal] =
+  if df < 1 then Err(BadDegrees(df))
+  else if !levelOk(alpha) then Err(BadLevel)
+  else if tWithin(tSearchTop(), df) < 1.0 - alpha then Err(BadLevel)
+  else Ok(bisect(df, 1.0 - alpha, 0.0, tSearchTop(), 400))
+-- The reporting point: P(|T| <= t) = 0.95.
+export pure func tCritical95(df: int) -> Result[float, StatRefusal] = tCritical(df, reportAlpha())
+
+export type Interval = { low: float, high: float }
+-- centre +- half, half never negative: the low end is never above the high end.
+pure func around(centre: float, half: float) -> Interval
+requires { half >= 0.0 }
+ensures { result.low <= result.high }
+{
+  { low: centre - half, high: centre + half }
+}
+-- The interval of the mean at error level alpha: mean +- t(n - 1, alpha) * standard error.
+export pure func meanIntervalAt(xs: [float], alpha: float) -> Result[Interval, StatRefusal] =
+  match summary(xs) {
+    Err(r) => Err(r),
+    Ok(s) => (match tCritical(s.n - 1, alpha) {
+      Err(r) => Err(r),
+      Ok(t) => Ok(around(s.mean, t * s.standardError))
+    })
+  }
+-- REPORTING: the plain 95 % interval of the mean, for one look at a finished sample. Not the
+-- interval the batch rule decides on; that is `stoppingInterval`.
+export pure func meanInterval(xs: [float]) -> Result[Interval, StatRefusal] = meanIntervalAt(xs, reportAlpha())
+
+-- ------------------------------------------------------------ exact order-statistic intervals
+-- The binomial pmf by its log recurrence, summed from each end until a tail passes tailMax
+-- (half the error level). Returns the last rank whose tail is still within it, or 0 when even
+-- the first is not.
+pure func lowerWalk(n: int, q: float, tailMax: float, k: int, logPmf: float, cum: float, best: int, bestTail: float) -> (int, float) {
+  let next = cum + exp(logPmf);
+  if k >= n || next > tailMax then (best, bestTail)
+  else lowerWalk(n, q, tailMax, k + 1, logPmf + log(intToFloat(n - k) / intToFloat(k + 1)) + log(q / (1.0 - q)), next, k + 1, next)
+}
+pure func upperWalk(n: int, q: float, tailMax: float, k: int, logPmf: float, cum: float, best: int, bestTail: float) -> (int, float) {
+  let next = cum + exp(logPmf);
+  if k <= 0 || next > tailMax then (best, bestTail)
+  else upperWalk(n, q, tailMax, k - 1, logPmf + log(intToFloat(k) / intToFloat(n - k + 1)) + log((1.0 - q) / q), next, k, next)
+}
+
+-- 1-based ranks into the sorted sample, and the exact coverage P(lower <= B <= upper - 1).
+export type Ranks = { lower: int, upper: int, coverage: float }
+-- At error level alpha: each tail at most alpha / 2.
+export pure func quantileRanksAt(n: int, q: float, alpha: float) -> Result[Ranks, StatRefusal] =
+  if !(finite(q) && q > 0.0 && q < 1.0) then Err(BadQuantile)
+  else if !levelOk(alpha) then Err(BadLevel)
+  else if n < 1 then Err(EmptySample)
+  else match (lowerWalk(n, q, alpha / 2.0, 0, intToFloat(n) * log(1.0 - q), 0.0, 0, 0.0), upperWalk(n, q, alpha / 2.0, n, intToFloat(n) * log(q), 0.0, 0, 0.0)) {
+    ((l, lowTail), (u, highTail)) => if l < 1 || u < 1 then Err(NoInterval(n)) else Ok({ lower: l, upper: u, coverage: 1.0 - lowTail - highTail })
+  }
+-- REPORTING: the ranks of a 95 % interval.
+export pure func quantileRanks(n: int, q: float) -> Result[Ranks, StatRefusal] = quantileRanksAt(n, q, reportAlpha())
+
+pure func cmpFloat(a: float, b: float) -> int = if a < b then 0 - 1 else if a > b then 1 else 0
+pure func at(sorted: [float], rank: int) -> float = match nth(sorted, rank - 1) { Some(x) => x, None => 0.0 / 0.0 }
+-- Hyndman and Fan type 7 on a sorted sample of n >= 1.
+pure func estimate7(sorted: [float], n: int, q: float) -> float {
+  let h = intToFloat(n - 1) * q;
+  let i = floatToInt(floor(h));
+  if i + 2 > n then at(sorted, n) else at(sorted, i + 1) + (h - intToFloat(i)) * (at(sorted, i + 2) - at(sorted, i + 1))
+}
+
+export type QuantileInterval = { estimate: float, interval: Interval, ranks: Ranks }
+-- The quantile q of a sample with its exact interval at error level alpha.
+export pure func quantileIntervalAt(xs: [float], q: float, alpha: float) -> Result[QuantileInterval, StatRefusal] {
+  let n = length(xs);
+  if n == 0 then Err(EmptySample) else if !allFinite(xs) then Err(NonFinite)
+  else match quantileRanksAt(n, q, alpha) {
+    Err(r) => Err(r),
+    Ok(r) => {
+      let sorted = sortBy(cmpFloat, xs);
+      Ok({ estimate: estimate7(sorted, n, q), interval: { low: at(sorted, r.lower), high: at(sorted, r.upper) }, ranks: r })
+    }
+  }
+}
+-- REPORTING: the quantile with its exact 95 % interval.
+export pure func quantileInterval(xs: [float], q: float) -> Result[QuantileInterval, StatRefusal] = quantileIntervalAt(xs, q, reportAlpha())
+export pure func medianInterval(xs: [float]) -> Result[QuantileInterval, StatRefusal] = quantileInterval(xs, 0.5)
+export pure func p10Interval(xs: [float]) -> Result[QuantileInterval, StatRefusal] = quantileInterval(xs, 0.1)
+export pure func p90Interval(xs: [float]) -> Result[QuantileInterval, StatRefusal] = quantileInterval(xs, 0.9)
+
+-- ------------------------------------------------------------ met, missed, unsettled
+-- A target band; None is an open end. At least one end is given. The band is CLOSED: a given
+-- end belongs to it.
+export type TargetBand = { lo: Option[float], hi: Option[float] }
+export type Verdict = Met | Missed | Unsettled deriving (Eq)
+export pure func verdictName(v: Verdict) -> string = match v { Met => "met", Missed => "missed", Unsettled => "unsettled" }
+
+pure func bandOk(b: TargetBand) -> bool =
+  match b.lo {
+    Some(l) => finite(l) && (match b.hi { Some(h) => finite(h) && l <= h, None => true }),
+    None => (match b.hi { Some(h) => finite(h), None => false })
+  }
+export pure func verdict(i: Interval, b: TargetBand) -> Result[Verdict, StatRefusal] =
+  if !bandOk(b) then Err(BadBand)
+  else if !(finite(i.low) && finite(i.high) && i.low <= i.high) then Err(BadInterval)
+  else {
+    let inside = (match b.lo { Some(l) => l <= i.low, None => true }) && (match b.hi { Some(h) => i.high <= h, None => true });
+    let outside = (match b.lo { Some(l) => i.high < l, None => false }) || (match b.hi { Some(h) => i.low > h, None => false });
+    Ok(if inside then Met else if outside then Missed else Unsettled)
+  }
+
+-- ------------------------------------------------------------ sequential batches
+export type BatchRule = { batch: int, cap: int }
+export pure func standardRule() -> BatchRule
+ensures { result.batch > 0, result.cap >= result.batch }
+{
+  { batch: 64, cap: 1024 }
+}
+-- What to do after `seedsRun` seeds: run seeds [from, to) next, or stop.
+export type Step = RunNext(int, int) | StopSettled | StopAtCap deriving (Eq)
+
+pure func ruleOk(r: BatchRule) -> bool = r.batch > 0 && r.cap >= r.batch && r.cap % r.batch == 0
+-- A seed count the rule can have produced: a positive whole number of batches, at most the cap.
+export pure func checkBatches(r: BatchRule, seedsRun: int) -> Result[int, StatRefusal] =
+  if !ruleOk(r) then Err(BadRule)
+  else if seedsRun < r.batch || seedsRun > r.cap || seedsRun % r.batch != 0 then Err(NotABatch(seedsRun))
+  else Ok(seedsRun / r.batch)
+-- The first batch of a scenario.
+export pure func firstStep(r: BatchRule) -> Result[Step, StatRefusal] = if !ruleOk(r) then Err(BadRule) else Ok(RunNext(0, r.batch))
+-- After a batch: settled (nothing unsettled) stops; the cap stops; otherwise the next batch.
+export pure func nextStep(r: BatchRule, seedsRun: int, verdicts: [Verdict]) -> Result[Step, StatRefusal] =
+  match checkBatches(r, seedsRun) {
+    Err(e) => Err(e),
+    Ok(_) =>
+      if length(verdicts) == 0 then Err(NoTargets)
+      else if !any(\v. v == Unsettled, verdicts) then Ok(StopSettled)
+      else if seedsRun >= r.cap then Ok(StopAtCap)
+      else Ok(RunNext(seedsRun, seedsRun + r.batch))
+  }
+
+-- ------------------------------------------------------------ the stopping decision
+-- How many times the rule can look: cap / batch (16 for the standard rule).
+export pure func looksOf(r: BatchRule) -> Result[int, StatRefusal] = if !ruleOk(r) then Err(BadRule) else Ok(r.cap / r.batch)
+-- The error level of ONE look: the family's 5 % split across every look the rule allows.
+export pure func lookAlpha(r: BatchRule) -> Result[float, StatRefusal] =
+  match looksOf(r) { Err(e) => Err(e), Ok(k) => Ok(familyAlpha() / intToFloat(k)) }
+
+-- One look of a rule: how many seeds it sees, its error level and its t point. Build it with
+-- `lookAt` only (once per look; every target judged at that look shares it).
+export type Look = { seeds: int, alpha: float, tCritical: float }
+export pure func lookAt(r: BatchRule, seedsRun: int) -> Result[Look, StatRefusal] =
+  match checkBatches(r, seedsRun) {
+    Err(e) => Err(e),
+    Ok(_) => (match lookAlpha(r) {
+      Err(e) => Err(e),
+      Ok(a) => (match tCritical(seedsRun - 1, a) { Err(e) => Err(e), Ok(t) => Ok({ seeds: seedsRun, alpha: a, tCritical: t }) })
+    })
+  }
+-- STOPPING: the interval of the mean the batch rule decides on at this look. The sample must
+-- be the look's own size.
+export pure func stoppingInterval(look: Look, xs: [float]) -> Result[Interval, StatRefusal] =
+  if length(xs) != look.seeds then Err(NotABatch(length(xs)))
+  else match summary(xs) { Err(r) => Err(r), Ok(s) => Ok(around(s.mean, look.tCritical * s.standardError)) }
+-- A target judged on its mean (OQ3) at one look of the rule.
+export pure func judgeAtLook(look: Look, xs: [float], b: TargetBand) -> Result[Verdict, StatRefusal] =
+  match stoppingInterval(look, xs) { Err(r) => Err(r), Ok(i) => verdict(i, b) }
+-- STOPPING, for a quantile: its exact order-statistic interval at the look's level.
+export pure func stoppingQuantileInterval(look: Look, xs: [float], q: float) -> Result[QuantileInterval, StatRefusal] =
+  if length(xs) != look.seeds then Err(NotABatch(length(xs))) else quantileIntervalAt(xs, q, look.alpha)
+
+-- ------------------------------------------------------------ paired differences
+-- a[i] - b[i]: the two scenarios' results for the same seed. Summarise with `summary`.
+export pure func pairedDifferences(a: [float], b: [float]) -> Result[[float], StatRefusal] =
+  if length(a) != length(b) then Err(UnpairedLengths(length(a), length(b)))
+  else if length(a) == 0 then Err(EmptySample)
+  else if !(allFinite(a) && allFinite(b)) then Err(NonFinite)
+  else Ok(zipWith(\x y. x - y, a, b))

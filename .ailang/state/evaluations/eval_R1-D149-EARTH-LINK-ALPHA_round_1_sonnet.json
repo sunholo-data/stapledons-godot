@@ -1,0 +1,32 @@
+{
+ "sprint":"R1-D149-EARTH-LINK-ALPHA","judge":"sonnet-5.5 (evaluator, iteration 91)","commit":"97833536","score":93,"verdict":"PASS",
+ "rubric":{"correctness_vs_ruling_and_ACs":30,"test_strength_mutation":22,"evidence_integrity":19,"scope_discipline_safety":15,"clarity_of_record":7},
+ "ac_results":{
+  "AC1":{"command":"grep -c '^const ALPHA := {\"index\": 2, \"id\": \"CNS5:3627\", ' tools/earth_link_capture.gd","observed":"count 1, rc 0"},
+  "AC2":{"command":"git grep -n SOURCE_PENDING -- tools | wc -l","observed":"0"},
+  "AC3":{"command":"make replay-map-index","observed":"Ran 9 tests, OK, rc 0"},
+  "AC4":{"command":"bash d149_drill.sh index ROOT (appendix extracted byte-for-byte; sha256 prefixes ae32d0e1/596b20d6/a2c2693a match; 37/52/35 lines)","observed":"make_rc=2; fail_lines=1 want_hits=3 summary=1; KILLED; tree clean"},
+  "AC5":{"command":"bash d149_drill.sh blind ROOT","observed":"make_rc=2; fail_lines=1 want_hits=1 summary=1; KILLED; tree clean"},
+  "AC6":{"command":"python3 tools/test_replay.py","observed":"Ran 38 tests, OK"},
+  "AC7":{"command":"git diff --check 85ca5470 HEAD","observed":"no output, rc 0"},
+  "AC8":{"command":"name-only scope test","observed":"rc 0 (tools/earth_link_capture.gd, tools/test_replay.py only)"},
+  "AC9":{"command":"make python-guard uid-guard lint-precision","observed":"ok (23 allowlisted) / ok (438 .uid) / ok (6 lines)"},
+  "AC10":{"command":"sh tools/deadline.sh 1200 bash d149_ac10.sh ROOT D","observed":"runtime rc=0 at=3s; import rc=0 at=29s; generator rc=0; probe rc=0 at=100s; subtitle=[CNS5:3627  ·  4.32 ly]; a_outbound_4.32ly=1 summary=1 script_errors=0; PASS; git status empty"}},
+ "mutants":[
+  {"id":"M1","description":"ALPHA index back to 1","command":"perl -pi on capture; make replay-map-index","result":"killed (rc 2)"},
+  {"id":"M2","description":"ALPHA index 3","command":"same","result":"killed"},
+  {"id":"M3","description":"ALPHA id changed to CNS5:3628","command":"same","result":"killed (control assertIn or pair mismatch)"},
+  {"id":"M4","description":"assertEqual(bad, []) -> assertEqual(bad, bad)","command":"make replay-map-index","result":"SURVIVED (meta-mutation: weakening the assertion itself; no test tests the test)"},
+  {"id":"M5","description":"delete the new assertIn earth_link_capture.gd:16 control","command":"make replay-map-index","result":"SURVIVED (expected: the control's liveness is proven by the blind mutation AC5, not by its own absence)"},
+  {"id":"M6","description":"control line number :16 -> :17","command":"make replay-map-index","result":"killed"},
+  {"id":"M7","description":"ui/transit_harness.gd index +5","command":"make replay-map-index","result":"killed"},
+  {"id":"M8","description":"SOURCE_EXEMPT adds earth_link_capture.gd","command":"make replay-map-index","result":"killed (control no longer in checked)"},
+  {"id":"M9","description":"assertEqual(bad[:0], [])","command":"make replay-map-index","result":"SURVIVED (same class as M4)"},
+  {"id":"M10","description":"new tracked tools/zz_probe.py with a wrong CNS5:3627 pair (git add -N)","command":"make replay-map-index","result":"killed: 'tools/zz_probe.py:1 CNS5:3627 index 7, stars.json 2'"}],
+ "blocking":[],
+ "non_blocking":[
+  "M4/M9 survive: nothing tests that the real-source test's final assertion is strict. Inherent to a meta-level; the drill AC4 does cover the effect (a wrong pair fails).",
+  "Guard scans tracked files only: an untracked new file with a wrong pair is not seen until added (same as before the change; git ls-files). Wrong pair with id 'Sol' not flagged because Sol is not a catalogue id (pre-existing behaviour).",
+  "Control pins line number :16 (documented, fails loudly).",
+  "Evaluator clone had no runtime/ initially; AC10 script provisioned it (make runtime 3 s), so it was a cold run."],
+ "notes":"Diff is exactly the one token plus removal of SOURCE_PENDING and two assert lines and one new positive control: matches D-149. Only consumers of earth_link_capture.gd: capture-earth-link (script-gate-baseline, a GPU capture target) and test_replay.py; Makefile earth-link test uses sim/, tests/test_physics.gd uses fixtures, not capture output, so the 'nothing tracked depends on capture output' claim holds. ci-fast runs replay-map-index (Makefile:482), which passes. make test/golden/capture not run (forbidden). AC11 not run (Mark's, not a merge gate). Tree restored clean after every mutant."}

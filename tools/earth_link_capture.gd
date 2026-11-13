@@ -13,7 +13,7 @@ extends SceneTree
 
 const OUT := "res://renders/earth_link"
 const RES := Vector2i(1280, 720)
-const ALPHA := {"index": 1, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
+const ALPHA := {"index": 2, "id": "CNS5:3627", "pos": {"x": 3.094521, "y": -3.015404, "z": -0.051608}}
 const SOL := {"index": 0, "id": "Sol", "pos": {"x": 0.0, "y": 0.0, "z": 0.0}}
 const PORT_A := {"index": 0, "id": "port A (40 ly)", "pos": {"x": 40.0, "y": 0.0, "z": 0.0}}
 const PORT_B := {"index": 0, "id": "port B (a 30 ly turn)", "pos": {"x": 40.0, "y": 30.0, "z": 0.0}}

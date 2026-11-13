@@ -1,21 +1,21 @@
 # Mission dashboard — Stapledon
 
-Updated 2026-11-12, iteration 89. LANDED: row 7an (PR #429, merge `e3e4e5ed`).
-R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 → 7m-d → D-147); clause 5 ongoing; goal unmoved.
+Updated 2026-11-13, iteration 91. LANDED: D-149 (PR #446, merge `dba1c17c`).
+R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, needs a quiet rig); clause 5 ongoing; goal unmoved.
 Latest release: no release tag this iteration; game/runtime pins unchanged (AILANG v0.56.1, Godot 4.7.2).
-Current: the free-navigation stop test's I checks now fail for the right reason. A planet or star drawn over the destination has its own check, the "eye is clear" check refreshes the ship geometry itself, the destination's catalogue dot is checked dark, and the pin path has a real-pin test. Each new check has a mutation that turns it red. Tests only; nothing on screen changed.
-Remaining nightly red on main (expected): `bridge-operator-test` (D-148).
-Housekeeping: three leftover Godot runs from earlier pi judge and planner sessions were stopped (one had run 26 h at 34 % CPU). Fleet ticket `orphan:pi-runner:own-pgid-children-survive-role-exit` asks the pi runner to clean them up itself.
-Watch: Ollama cloud's weekly quota is still empty (429): both Ollama quorum seats were absent and the planner used the OpenRouter twin ($1.74). Inside the pi sandbox `user://` is read-only, so `ship-star-identification-test` hangs there.
-Next: read the nightly on main (expect 1 red); then 7ao, 7ap, 7aq (all low priority); 7ad parked on iteration 80's Next; 7ac after 7ad; 7ab on its nightly-start predicate.
-Critical path: 7m/7m-d parked on D-147 (default A); no routable UNMET-clause row.
-Human gates (all OPEN): D-128 order; D-129 L4 defaults; D-145 sound ownership; D-146 designer rotation; D-147 7m-d S1; D-148 bridge working-point repair (the only nightly red); D-149 earth-link capture index.
-Action for Mark (not a ledger decision): codex login still reads "quota UNREADABLE" in the driver.
-Routing this fire: controller Opus 5.5; designer Opus (Agent); planner kimi-k3 (pi; Ollama dead → OpenRouter); executor Haiku (Agent); judges Sonnet (Agent) + MiniMax M3 (pi, cross-vendor; one wall_timeout, recovered by a bounded second run).
-Quorum: r1 BLOCKED (sol: unbounded test runner; designer revision); r2 BLOCKED (sol: shared scratch path; closed by the carve-out with sol's fix as written). glm and kimi absent both rounds.
-Review: Sonnet 94 PASS, MiniMax M3 97 PASS; non-blocking survivors filed in row 7aq.
-CI: fast tier green on PR heads `ce34f4f8` and `917c744b`; merge `e3e4e5ed` fast tier green; no GPU run waited on.
+Current: the Earth-link review capture now plans alpha Cen A at its real map index (2), so its `a_outbound` map frame reads `CNS5:3627  ·  4.32 ly` like the live map. The source-literal guard has no pending list any more: every wrong hand-written `{index, id}` pair fails `replay-map-index`. 2 files, +3/−6.
+Visible: one developer review frame (`make capture-earth-link`, GPU window); Mark sees it in the next combined dev build. The loop does not publish.
+Nightly: no `rig/full` has run since `b96b2d60`; the next one is the first read of iteration 90's `bridge-operator-test` fix and the 129 targets after it. Expect new reds there.
+Watch: Ollama cloud's weekly quota is empty (429) for the third fire running: two quorum seats absent, the planner on the OpenRouter twin ($0.87).
+Next: read the nightly on main; L11 waits on attended #435 (RT2a, blocked on `sunholo/observe` 0.2.0), then RT2b; 7m AC1 on a quiet rig (D-147); L4 (D-129 A). Guard rows 7ao–7aq after these.
+Critical path: 7m AC1 (clause 4) is routable only on a quiet rig; at this pick the GPU read 100 % with Screen Sharing active.
+Human gates: none OPEN (ledger valid, no row changed this fire).
+Action for Mark (not a ledger decision): codex login still reads "quota UNREADABLE" in the driver; Ollama weekly limit.
+Routing this fire: controller Opus 5.5; designer Opus (Agent, one revision plus one carve-out resume); planner kimi-k3 (pi; Ollama dead → OpenRouter); executor Haiku (Agent); judges Sonnet (Agent) + MiniMax M3 (pi, cross-vendor, one tool_hang retry).
+Quorum: r1 and r2 BLOCKED by sol alone (probe fail-closure, then prerequisite deadlines), gemini passed both; r2 closed by the carve-out with sol's fix verbatim. glm and kimi absent.
+Review: Sonnet 93 PASS, MiniMax M3 88 PASS; non-blocking findings in the charter's iteration-91 backlog line.
+CI: fast tier green on PR heads `97833536` and `cbc3e284`; merge `dba1c17c` fast tier green (run 43373290636); no GPU run.
 Cadence: armed six-hour driver.
-Metered cost: $2.65 of $5 (quorum $0.22, planner $1.74, MiniMax $0.68). Quota: Anthropic subscription (Opus, Haiku, Sonnet); Ollama cloud weekly bucket empty.
-Canonical checkout untouched (attended `feat/captain-command`); record from clone `stapledons-godot-iter89-7an`, branch `mission/stapledon-iter89-record`.
-Full history: stapledon-mission-log.md, entry 89.
+Metered cost: $1.26 of $5 (quorum $0.13, planner $0.87, MiniMax $0.26). Quota: Anthropic subscription (Opus, Haiku, Sonnet); Ollama cloud weekly bucket empty.
+Canonical checkout untouched (attended `feat/captain-command`); record from clone `stapledons-godot-iter91-record`.
+Full history: stapledon-mission-log.md, entry 91.

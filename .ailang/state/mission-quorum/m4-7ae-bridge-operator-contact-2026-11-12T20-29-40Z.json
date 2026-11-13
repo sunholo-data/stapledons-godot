@@ -1,0 +1,77 @@
+{
+  "doc": "design_docs/planned/r1/m4-7ae-bridge-operator-contact.md",
+  "iso_ts": "2026-11-12T20:29:40Z",
+  "reviewers": [
+    {
+      "model": "oc-kimi-k3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: you (marked) have reached your weekly usage limit, upgrade for higher limits: https://ollama.com/upgrade or add usage credits: https://ollama.com/settings (ref: 8cb802ca-9cac-49f8-ba92-027a64ddaa2a)",
+      "landed": null
+    },
+    {
+      "model": "gpt6-1-sol",
+      "cost_usd": 0.060682,
+      "tokens_in": 28896,
+      "tokens_out": 289,
+      "present": true,
+      "result": {
+        "verdict": "reject",
+        "strongest_objection": "Appendix C does not fail closed when restoration fails. restore() runs git checkout without checking its result, and every caller continues regardless. If the checkout after k6 fails, the runner can report 16 MATCH rows and exit 0 while bow_a.json remains mutated. The EXIT trap also does not enforce successful restoration. This contradicts D10's restoration guarantee and the no-silent-fallback axiom.",
+        "catch": "V43 verifies restoration after TERM only when git checkout succeeds. It does not exercise checkout failure, verify restoration after each drill, or establish that a restoration failure overrides an otherwise successful result.",
+        "proposed_fix": "Make restoration an enforced harness operation: check git checkout's exit status and then require git diff --quiet -- $FILES to succeed. On either failure, stop immediately with exit 3, retain the scratch logs, and print the affected paths and recovery command. Make EXIT/INT/TERM cleanup preserve or escalate to that harness failure rather than silently continuing. Add a selftest that injects a checkout failure after a successful mutation and asserts exit 3, no successful overall summary, and retained diagnostic logs; record its command and result in the verification log. Remove AC2a's verbatim requirement until the corrected runner has been remeasured."
+      },
+      "landed": null
+    },
+    {
+      "model": "gemini-4-argon",
+      "cost_usd": 0.135724,
+      "tokens_in": 32481,
+      "tokens_out": 290,
+      "present": true,
+      "result": {
+        "verdict": "pass",
+        "strongest_objection": "Drill k1a in tools/bridge_operator_drills.sh hardcodes `git show e292a860:\"$J\" \u003e \"$J\"`, which will fail with exit code 3 (HARNESS: mutation command failed) on any shallow clone or CI checkout that does not fetch historical commit e292a860.",
+        "catch": "Verify whether executor/evaluator environments ever run in shallow clones (`--depth`), or inline the minimal schema-1 JSON payload (`{\"schema\":\"stapledons.bridge-operator-contact/1\"}`) in k1a instead of shelling out to `git show e292a860`.",
+        "proposed_fix": "If shallow clones are possible, replace `k1a) git show e292a860:\"$J\" \u003e \"$J\" ;;` in Appendix C with `k1a) printf '{\"schema\":\"stapledons.bridge-operator-contact/1\"}\\n' \u003e \"$J\" ;;` (and update V41/AC2a accordingly), since the schema guard in Appendix A returns immediately after checking `doc.get(\"schema\",\"\")`."
+      },
+      "landed": null
+    },
+    {
+      "model": "oc-glm-5-3",
+      "cost_usd": 0,
+      "tokens_in": 0,
+      "tokens_out": 0,
+      "present": false,
+      "absent_reason": "unreachable",
+      "error": "ollama error: 429 Too Many Requests: you (marked) have reached your weekly usage limit, upgrade for higher limits: https://ollama.com/upgrade or add usage credits: https://ollama.com/settings (ref: ecc0758e-a58a-413c-bc12-0fad9ca3ac25)",
+      "landed": null
+    }
+  ],
+  "controller_in_session": {
+    "verdict": "pass",
+    "note": "Controller re-measured the pristine baseline on b6c93c11 (30/14, same 14 labels) and the file-set drift since e292a860 (only ship_consoles.gd chair work and a comment line). Revision 2 implements D-148 A exactly (seven files, no expected-failure), keeps OQ-2 at default, and specifies an enforcing drill runner. AC8a camera-test red with and without the candidate under load 35-86 is a host-load reading, not attributable to A. AC11 (publish-dev) is attended work under CLAUDE.md's combined-dev-build rule; the loop does not publish."
+  },
+  "synthesis": {
+    "verdict": "blocked",
+    "blocking_objections": [
+      "gpt6-1-sol: Appendix C does not fail closed when restoration fails. restore() runs git checkout without checking its result, and every caller continues regardless. If the checkout after k6 fails, the runner can report 16 MATCH rows and exit 0 while bow_a.json remains mutated. The EXIT trap also does not enforce successful restoration. This contradicts D10's restoration guarantee and the no-silent-fallback axiom."
+    ],
+    "absent_reviewers": [
+      {
+        "model": "oc-kimi-k3",
+        "reason": "unreachable"
+      },
+      {
+        "model": "oc-glm-5-3",
+        "reason": "unreachable"
+      }
+    ],
+    "total_cost_usd": 0.19640600000000003,
+    "total_tokens_in": 61377,
+    "total_tokens_out": 579
+  }
+}

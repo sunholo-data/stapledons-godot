@@ -85,10 +85,10 @@
     "counts identical across runs; VM equals interpreter on a 5,000-row subset",
     "the ten-times-density case is measured, not extrapolated"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-12",
+   "completed": "2026-11-12",
+   "notes": "make reach-probe, pinned v0.56.1, 3 runs, CPU time, host load 14-78 (never quiet); run twice, counts identical. Keyed draw 3.80 us. Gate 0.217 s over 43,887 rows, 1.46 s over 302,239 (1.15 s packed). systemFrom over 1,900 rows 1.69 s (budget 2 s, worst run 1.77). Rare query 0.567 s at 1x (29-44 worlds) and 0.580 s at 10x (347-375), budget 1 s: the cost does not depend on the density. VM = interpreter on 5,000 rows. data/reach/probe.json, data/reach/re0-measurements.md."
   },
   {
    "id": "RE0b",
@@ -101,10 +101,10 @@
     "tools/gaia_count.sh output pinned in data/reach/gaia_counts.json with query text and date, at parallax_over_error >= 5 and at G < 14, to 1,000 and 3,000 ly",
     "the leaf size is stated with the numbers behind it"
    ],
-   "passes": null,
-   "started": null,
-   "completed": null,
-   "notes": null
+   "passes": true,
+   "started": "2026-11-12",
+   "completed": "2026-11-12",
+   "notes": "make reach-probe-io: 14.5 MB float64 read and decoded in 0.014 s CPU, +20 MB; row-by-row decode of interleaved fields 0.94 s, +235 MB (no int64/strided decoder; reported upstream inbox_1794513480309_90ad87aa); per-leaf decode 0.04 ms. Gaia DR3 counted at the ESA archive 2026-11-12: 100 pc to 1,000 ly at parallax/error >= 5 is 8,646,330 (380 MB at 44 bytes: over 200 MB, so OQ2 takes the brightness-limited branch; G<14 1,129,417, G<17 2,970,141 = 131 MB); to 3,000 ly 57,486,634 (G<14 6,909,295). Leaf 40 ly confirmed: 1,712 whole leaves inside 100 pc, 86 / 133 / 346 stars (min / median / max). data/reach/gaia_counts.json, probe_io.json."
   },
   {
    "id": "PAUSE1",

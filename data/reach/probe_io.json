@@ -1,0 +1,388 @@
+{
+ "sprint": "R3-REACH RE0b",
+ "machine": {
+  "ailang": "AILANG v0.56.1",
+  "ailang_prompt": "v0.16.11",
+  "cores": 16,
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "date_utc": "2026-11-12T20:26Z",
+  "load_at_start": [
+   69.3,
+   65.0,
+   54.9
+  ]
+ },
+ "runs": 3,
+ "method": "each process alone; cost over start-up = cost of the mode - cost of mode none in the same run; peak RSS is the whole process",
+ "file": {
+  "rows": 302239,
+  "bytes": 14507472,
+  "layout": "float64 x 6 a row (48 bytes; the design's row is 44)",
+  "write": {
+   "wall_s": 0.431,
+   "cpu_s": 0.47,
+   "peak_rss_mb": 453.7,
+   "load1": 77.3
+  }
+ },
+ "startup_only": {
+  "cpu_s": {
+   "mean": 0.287666667,
+   "min": 0.275,
+   "max": 0.296
+  },
+  "peak_rss_mb": {
+   "mean": 224.333333333,
+   "min": 217.7,
+   "max": 231.2
+  }
+ },
+ "read_raw_bytes": {
+  "runs": 3,
+  "cpu_s_over_startup": {
+   "mean": 0.004333333,
+   "min": -0.004,
+   "max": 0.011
+  },
+  "wall_s_over_startup": {
+   "mean": 0.027666667,
+   "min": -0.018,
+   "max": 0.057
+  },
+  "peak_rss_mb": {
+   "mean": 233.266666667,
+   "min": 222.4,
+   "max": 253.3
+  },
+  "load1": [
+   77.3,
+   76.8,
+   76.8
+  ],
+  "raw": [
+   {
+    "wall_s": 0.269,
+    "cpu_s": 0.281,
+    "peak_rss_mb": 224.1,
+    "load1": 77.3
+   },
+   {
+    "wall_s": 0.326,
+    "cpu_s": 0.288,
+    "peak_rss_mb": 222.4,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.339,
+    "cpu_s": 0.307,
+    "peak_rss_mb": 253.3,
+    "load1": 76.8
+   }
+  ],
+  "output": {
+   "mode": "raw",
+   "bytes": 14507472
+  }
+ },
+ "read_and_decode_whole": {
+  "runs": 3,
+  "cpu_s_over_startup": {
+   "mean": 0.014,
+   "min": 0.005,
+   "max": 0.027
+  },
+  "wall_s_over_startup": {
+   "mean": 0.021333333,
+   "min": 0.001,
+   "max": 0.046
+  },
+  "peak_rss_mb": {
+   "mean": 244.3,
+   "min": 238.0,
+   "max": 248.3
+  },
+  "load1": [
+   77.3,
+   76.8,
+   76.8
+  ],
+  "raw": [
+   {
+    "wall_s": 0.304,
+    "cpu_s": 0.302,
+    "peak_rss_mb": 246.6,
+    "load1": 77.3
+   },
+   {
+    "wall_s": 0.283,
+    "cpu_s": 0.297,
+    "peak_rss_mb": 238.0,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.328,
+    "cpu_s": 0.306,
+    "peak_rss_mb": 248.3,
+    "load1": 76.8
+   }
+  ],
+  "output": {
+   "mode": "whole",
+   "bytes": 14507472,
+   "values": 1813434,
+   "sum": 411067632365.25
+  }
+ },
+ "read_then_decode_row_by_row": {
+  "runs": 3,
+  "cpu_s_over_startup": {
+   "mean": 0.936333333,
+   "min": 0.931,
+   "max": 0.94
+  },
+  "wall_s_over_startup": {
+   "mean": 1.200666667,
+   "min": 1.067,
+   "max": 1.363
+  },
+  "peak_rss_mb": {
+   "mean": 459.2,
+   "min": 425.8,
+   "max": 487.6
+  },
+  "load1": [
+   77.3,
+   76.8,
+   76.8
+  ],
+  "raw": [
+   {
+    "wall_s": 1.354,
+    "cpu_s": 1.215,
+    "peak_rss_mb": 464.2,
+    "load1": 77.3
+   },
+   {
+    "wall_s": 1.454,
+    "cpu_s": 1.23,
+    "peak_rss_mb": 487.6,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 1.645,
+    "cpu_s": 1.227,
+    "peak_rss_mb": 425.8,
+    "load1": 76.8
+   }
+  ],
+  "output": {
+   "mode": "mixed",
+   "bytes": 14507472,
+   "rows": 302239,
+   "sum": 342690559717.5
+  }
+ },
+ "read_then_decode_500_leaves": {
+  "runs": 3,
+  "cpu_s_over_startup": {
+   "mean": 0.019666667,
+   "min": 0.008,
+   "max": 0.031
+  },
+  "wall_s_over_startup": {
+   "mean": 0.048333333,
+   "min": 0.019,
+   "max": 0.102
+  },
+  "peak_rss_mb": {
+   "mean": 253.5,
+   "min": 247.9,
+   "max": 257.3
+  },
+  "load1": [
+   76.8,
+   76.8,
+   75.2
+  ],
+  "raw": [
+   {
+    "wall_s": 0.306,
+    "cpu_s": 0.306,
+    "peak_rss_mb": 255.3,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.306,
+    "cpu_s": 0.312,
+    "peak_rss_mb": 247.9,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.384,
+    "cpu_s": 0.304,
+    "peak_rss_mb": 257.3,
+    "load1": 75.2
+   }
+  ],
+  "output": {
+   "mode": "leaves",
+   "bytes": 14507472,
+   "leaves": 500,
+   "leafRows": 146,
+   "sum": 99220413750
+  }
+ },
+ "read_then_decode_1_leaf": {
+  "runs": 3,
+  "cpu_s_over_startup": {
+   "mean": 0.003,
+   "min": 0.0,
+   "max": 0.005
+  },
+  "wall_s_over_startup": {
+   "mean": 0.002333333,
+   "min": -0.014,
+   "max": 0.023
+  },
+  "peak_rss_mb": {
+   "mean": 241.1,
+   "min": 217.6,
+   "max": 253.6
+  },
+  "load1": [
+   76.8,
+   76.8,
+   75.2
+  ],
+  "raw": [
+   {
+    "wall_s": 0.273,
+    "cpu_s": 0.279,
+    "peak_rss_mb": 252.1,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.28,
+    "cpu_s": 0.292,
+    "peak_rss_mb": 253.6,
+    "load1": 76.8
+   },
+   {
+    "wall_s": 0.305,
+    "cpu_s": 0.301,
+    "peak_rss_mb": 217.6,
+    "load1": 75.2
+   }
+  ],
+  "output": {
+   "mode": "leaves",
+   "bytes": 14507472,
+   "leaves": 1,
+   "leafRows": 146,
+   "sum": 95812.5
+  }
+ },
+ "leaves": {
+  "cost": {
+   "wall_s": 47.734,
+   "cpu_s": 33.43,
+   "peak_rss_mb": 1681.9,
+   "load1": 75.2
+  },
+  "rows": 302239,
+  "sizes": [
+   {
+    "sideLy": 20,
+    "sets": [
+     {
+      "set": "touched",
+      "leaves": 19780,
+      "min": 1,
+      "median": 16,
+      "max": 84,
+      "stars": 302239
+     },
+     {
+      "set": "inside",
+      "leaves": 15600,
+      "min": 3,
+      "median": 16,
+      "max": 84,
+      "stars": 260782
+     }
+    ]
+   },
+   {
+    "sideLy": 40,
+    "sets": [
+     {
+      "set": "touched",
+      "leaves": 2825,
+      "min": 1,
+      "median": 124,
+      "max": 346,
+      "stars": 302239
+     },
+     {
+      "set": "inside",
+      "leaves": 1712,
+      "min": 86,
+      "median": 133,
+      "max": 346,
+      "stars": 229815
+     }
+    ]
+   },
+   {
+    "sideLy": 80,
+    "sets": [
+     {
+      "set": "touched",
+      "leaves": 432,
+      "min": 11,
+      "median": 848,
+      "max": 1462,
+      "stars": 302239
+     },
+     {
+      "set": "inside",
+      "leaves": 136,
+      "min": 924,
+      "median": 1080,
+      "max": 1462,
+      "stars": 147475
+     }
+    ]
+   }
+  ]
+ },
+ "gaia": {
+  "source": "data/reach/gaia_counts.json",
+  "date": "2026-11-12",
+  "counts": {
+   "control_100pc_poe5": 541958,
+   "shell_1000ly_any": 17210964,
+   "shell_1000ly_poe5": 8646330,
+   "shell_1000ly_poe5_g14": 1129417,
+   "shell_1000ly_poe5_g15": 1527761,
+   "shell_1000ly_poe5_g16": 2101173,
+   "shell_1000ly_poe5_g17": 2970141,
+   "shell_3000ly_any": 190439224,
+   "shell_3000ly_poe5": 57486634,
+   "shell_3000ly_poe5_g14": 6909295
+  },
+  "size_mb_at_44_bytes_a_row": {
+   "control_100pc_poe5": 23.8,
+   "shell_1000ly_any": 757.3,
+   "shell_1000ly_poe5": 380.4,
+   "shell_1000ly_poe5_g14": 49.7,
+   "shell_1000ly_poe5_g15": 67.2,
+   "shell_1000ly_poe5_g16": 92.5,
+   "shell_1000ly_poe5_g17": 130.7,
+   "shell_3000ly_any": 8379.3,
+   "shell_3000ly_poe5": 2529.4,
+   "shell_3000ly_poe5_g14": 304.0
+  }
+ }
+}

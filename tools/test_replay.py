@@ -337,9 +337,6 @@ def plan_index_mismatches(log_texts, stars):
 # the pair, and a nested dictionary's id is never paired with the outer index (both key orders).
 SOURCE_TOKEN = re.compile(r'"index"\s*:\s*(-?\d+)|"id"\s*:\s*"((?:[^"\\\n]|\\.)*)"|"(?:[^"\\\n]|\\.)*"|([{}])')
 SOURCE_EXEMPT = ("tools/test_replay.py",)
-# Pairs left wrong on purpose until Mark rules (7am OQ1): fixing them moves a review capture. Each must
-# still be wrong (a stale entry fails), so the list only shrinks.
-SOURCE_PENDING = ("tools/earth_link_capture.gd:16",)
 
 
 def source_files():
@@ -459,9 +456,9 @@ class MapIndex(unittest.TestCase):
 
     def test_source_literals_match_the_map(self):  # 7am
         checked, bad = source_index_pairs(self.sources(), self.stars())
-        self.assertEqual([b for b in bad if b.split(" ")[0] not in SOURCE_PENDING], [])
-        self.assertEqual([p for p in SOURCE_PENDING if p not in [b.split(" ")[0] for b in bad]], [])
+        self.assertEqual(bad, [])
         self.assertIn("ui/transit_harness.gd:10", checked)  # known positive: the scan sees a real pair
+        self.assertIn("tools/earth_link_capture.gd:16", checked)  # D-149: the pair held pending until Mark ruled is seen, and now matches
 
     def test_source_scan_covers_gd_and_py_in_subdirectories(self):  # 7am: enumeration control
         files = source_files()

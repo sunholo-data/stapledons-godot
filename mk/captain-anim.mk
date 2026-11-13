@@ -8,8 +8,12 @@ test: captain-anim-test
 .PHONY: bridge-operator-test
 bridge-operator-test: import ## D-132: actual original-desk working points, capsule/route clearance, foot anchor and work-pose reset
 	@mkdir -p $(SCRATCH)
-	@$(SCRIPT_GATE) bridge-operator-test $(SCRATCH)/bridge-operator-test.log 600 '^bridge-operator-contact: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_bridge_operator_contact.gd -- --installed
+	@$(SCRIPT_GATE) bridge-operator-test $(SCRATCH)/bridge-operator-test.log 600 '^bridge-operator-contact: 56 passed, 0 failures$$' -- $(GODOT) --headless --path . --script tests/test_bridge_operator_contact.gd -- --installed
 test: bridge-operator-test
+
+.PHONY: bridge-operator-drills
+bridge-operator-drills: import ## 7ae AC2: the contact test's kill drills, enforced by an expected table (mutates tracked files; not in make test)
+	@GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh --selftest && GODOT='$(GODOT)' sh tools/bridge_operator_drills.sh
 .PHONY: captain-frames-check captain-frames-ingest captain-anim-capture
 captain-frames-check: import ## AC4, AC5: every painted frame against its guide (silhouette IoU) and the stage-0 stills (palette dE), scale consistency, cell geometry, disk and GPU budgets; then the seeded defects (recoloured, wrong pose, wrong scale) must fail
 	@mkdir -p $(SCRATCH)
