@@ -24,9 +24,14 @@ ship-demo-ci: display-audit-comms
 # through the crew playthrough and rejected by the crew audit for its own reason. Both subprocesses run under a deadline:
 # the playthrough target's own $(SCRIPT_GATE), and the audit's gate with WANT_RC 1 (an intentional rejection only). A
 # deadline, launch, rc or SCRIPT ERROR fault is an infrastructure failure: it fails the target and is never counted.
+# 7ar: counts and frames are read from the run (tools/monitor_control_check.sh: @N@ samples, @2N@, @F1@ and @F10@,
+# the frames of sampled rows 1 and 10; N must equal the samples file's lines and be at least 10), never pinned.
 MONITOR_AUDIT_S ?= 600
 .PHONY: display-audit-monitor-controls
 display-audit-monitor-controls: import ## 7aj AC6, AC14: four monitor-face mutants each rejected by the crew audit for its own reason; a stalled run fails closed
+	@v=$(SCRATCH)/monitor-vacuous; mkdir -p $$v; printf 'display-audit: samples=0 checks=0 mismatches=0 missing=0 new=0 known=0 stale=0 failures=0\n' > $$v/audit.log; : > $$v/samples.ndjson; \
+	  if sh tools/monitor_control_check.sh $$v/audit.log $$v/samples.ndjson '^display-audit: samples=@N@ .* new=@N@ .* failures=@N@$$' > $$v/why.txt; then echo "display monitor controls: FAIL a vacuous run (samples=0) passed the derived check"; exit 1; fi; \
+	  grep -q '^samples=0, fewer than ' $$v/why.txt || { echo "display monitor controls: FAIL the vacuous run was not refused by the samples floor: $$(cat $$v/why.txt)"; exit 1; }
 	@out=$(SCRATCH)/monitor-controls; rm -rf $$out; mkdir -p $$out; n=0; bad=0; \
 	ctl() { \
 	  m=$$1; shift; log=$$out/monitor-$$m; \
@@ -34,13 +39,13 @@ display-audit-monitor-controls: import ## 7aj AC6, AC14: four monitor-face mutan
 	    echo "display monitor controls: $$m infrastructure failure (playthrough, log $$log.play.log)"; bad=$$((bad + 1)); return 0; fi; \
 	  if ! $(SCRIPT_GATE) display-audit-monitor-$$m $$log.audit.log $(MONITOR_AUDIT_S) '^display-audit: ' 1 -- $(GODOT_SIM) --headless --path . --script tests/display_audit.gd -- $$log/display_samples.ndjson crew $(DISPLAY_KNOWN); then \
 	    echo "display monitor controls: $$m infrastructure failure (audit, log $$log.audit.log)"; bad=$$((bad + 1)); return 0; fi; \
-	  for p in "$$@"; do grep -Eq -- "$$p" $$log.audit.log || { echo "display monitor controls: $$m missing reason $$p"; bad=$$((bad + 1)); return 0; }; done; \
+	  if ! why=$$(sh tools/monitor_control_check.sh $$log.audit.log $$log/display_samples.ndjson "$$@"); then echo "display monitor controls: $$m $$why"; bad=$$((bad + 1)); return 0; fi; \
 	  n=$$((n + 1)); echo "display monitor control $$m: rejected"; \
 	}; \
-	ctl unrefreshed '^FAIL missing field $$' '^FAIL binding contract .*/monitor_face_signal/' '^FAIL monitor-coverage frame=1 clocks$$'; \
-	ctl drop_one '^FAIL monitor-coverage frame=36 course$$' '^display-audit: .* failures=1$$'; \
-	ctl unbound '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$$' '^display-audit: .* new=46 .* failures=46$$'; \
-	ctl stale '^FAIL stale .*/monitor_face_clocks/' '^FAIL binding contract .*/monitor_face_clocks/' '^display-audit: .* mismatches=46 .* failures=92$$'; \
+	ctl unrefreshed '^FAIL missing field $$' '^FAIL binding contract .*/monitor_face_signal/' '^FAIL monitor-coverage frame=@F1@ clocks$$'; \
+	ctl drop_one '^FAIL monitor-coverage frame=@F10@ course$$' '^display-audit: .* failures=1$$'; \
+	ctl unbound '^FAIL NEW unbound node=.*/monitor_face_clocks/.*/Mutant text="42"$$' '^display-audit: samples=@N@ .* new=@N@ .* failures=@N@$$'; \
+	ctl stale '^FAIL stale .*/monitor_face_clocks/' '^FAIL binding contract .*/monitor_face_clocks/' '^display-audit: samples=@N@ .* mismatches=@N@ .* failures=@2N@$$'; \
 	echo "display monitor controls: $$n rejected"; test $$bad -eq 0 && test $$n -eq 4
 ship-demo-ci: display-audit-monitor-controls
 
