@@ -1,0 +1,218 @@
+{
+  "sprint": "R1-D149-EARTH-LINK-ALPHA",
+  "judge": "minimax-m3",
+  "judge_model": "pi (OpenRouter, minimax-m3)",
+  "evaluator_worktree": "/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter91-eval-mm",
+  "branch": "eval/iter91",
+  "commit": "97833536",
+  "base_commit": "85ca5470",
+  "design_doc": "design_docs/planned/r1/m4-d149-earth-link-alpha-index.md (revision 2)",
+  "sprint_plan": "design_docs/planned/r1/m4-d149-earth-link-alpha-index-sprint.md",
+  "ledger_row": "D-149 (design_docs/stapledon-mission.md, Decision ledger)",
+  "ruling_verbatim": "Yes: tools/earth_link_capture.gd's ALPHA target moves to alpha Cen A's real map index (2, from 1) and the guard's SOURCE_PENDING entry is removed; the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance, as the live map shows.",
+  "scope_diff_files": ["tools/earth_link_capture.gd", "tools/test_replay.py"],
+  "scope_diff_lines": "+3/-6 (matches design's D149-1 estimate)",
+  "score": 88,
+  "verdict": "PASS",
+  "rubric": {
+    "correctness_vs_ruling_and_ACs": {
+      "score": 28,
+      "max": 30,
+      "notes": "All measured ACs (AC1-AC9) PASS. AC10 UNMEASURED per task instructions (sandbox network blocked TLS to api.github.com, so `make runtime` cannot fetch ailang v0.56.1). AC11 is excluded from the merge gate by design (CLAUDE.md Merges §2: no GPU window for merges). The diff matches D-149 exactly: 1 token in earth_link_capture.gd, SOURCE_PENDING removed + bad-check rewritten + 1 positive control added in test_replay.py. -2 because AC10 evidence (V17 measurement of sub-step deadlines) could not be reproduced; the generator (V15) was independently verified against the current capture."
+    },
+    "test_strength_and_mutation_results": {
+      "score": 18,
+      "max": 25,
+      "notes": "8 mutants derived from the diff. M1, M2, M3, M5 KILLED (4/8). M4, M6, M7, M8 SURVIVED (4/8). Fault injection on the survivors: F1 (fault+M4) CAUGHT (positive control is redundant with bad-check), F2 (fault+M6) NOT CAUGHT, F3 (fault+M7) NOT CAUGHT, F4 (fault+M8) NOT CAUGHT. The current code is sound (F0 control + F1 catch the wrong pair). The 4 survivors reflect the design's explicit acceptance: removing the positive control (M4) is silent but the bad-check still catches faults; weakening the bad-check (M6, M7) or reintroducing SOURCE_PENDING (M8) breaks protection but the design accepts this because 'a future pair needing an attended hold is a new decision'. -7 because 3 of 8 mutants (M6/M7/M8) are silent bypasses and the design only authorises them via absence (no current wrong pair), not via test."
+    },
+    "evidence_integrity": {
+      "score": 18,
+      "max": 20,
+      "notes": "Every recorded reading in the design I could verify matched. AC1-AC9 + AC6 = byte-exact match. V15 (generator exact-block matching) independently verified on 7 mutations: test178 (save_png→save_jpg, rc=255 'image block found 0 times'), test186b (frames += 1→+=3, rc=255 'image block found 0 times'), test180 (head -n 180, rc=255 'image block found 0 times'), test188 (head -n 188, rc=255 'sheet.append found 0 times'), test191 (sheet.append duplicate, rc=255 'sheet.append found 2 times'), test144 (_contact_sheet() duplicate, rc=255 '_contact_sheet() call found 2 times'), test144r (_contact_sheet() removed, rc=255 '_contact_sheet() call found 0 times'). Generator on current capture = 9940 bytes (matches V7/V8). Drill V11 readings match: index make_rc=2, fail_lines=1, want_hits=3, summary=1; blind make_rc=2, fail_lines=1, want_hits=1, summary=1. -2 because V17 (AC10 step-by-step deadlines) is unreproducible in the sandbox."
+    },
+    "scope_discipline_and_safety": {
+      "score": 15,
+      "max": 15,
+      "notes": "Scope is exactly 2 files, matching AC8's assertion. No *.ail, no Makefile/mk/*.mk change. `make test`/`ci-fast`/`make golden` are not weakened: ci-fast gains a positive control (slightly stricter); make test is unchanged (the guard is what runs); make golden uses a separate file (tools/earth_display_golden.gd) and does not touch the capture. The capture's only consumer is `make capture-earth-link` (mk/earth-link.mk:107), which is a GPU-window target excluded from `make test` and ci-fast. No tracked file imports the capture or its output (renders/earth_link/, contact_sheet.png): only the Makefile invokes it as a script; no test or pipeline reads the PNGs. Working tree clean (git status --porcelain empty) after every gate and every mutant; restoration is byte-identical (filecmp + git status)."
+    },
+    "clarity_of_the_record": {
+      "score": 9,
+      "max": 10,
+      "notes": "Every command, observed output, and per-AC reading is recorded. The sandbox limitation (/tmp not writable) is documented with the exact workaround (rewrite /tmp/d149_*.XXXXXX → .godot/tmp/d149_eval/mktmp/ in a sandbox/ copy; the design_scripts/ copy is preserved byte-exact). -1 because the fault-injection evidence is split across two runs and could be a single consolidated matrix."
+    }
+  },
+  "ac_results": {
+    "AC1": {
+      "command": "test \"$(grep -c '^const ALPHA := {\"index\": 2, \"id\": \"CNS5:3627\", ' tools/earth_link_capture.gd)\" -eq 1; echo $?",
+      "expected": "rc 0, count 1",
+      "observed": "rc=0, count=1 (single match at line 16)",
+      "verdict": "PASS"
+    },
+    "AC2": {
+      "command": "git grep -n SOURCE_PENDING -- tools | wc -l",
+      "expected": "0",
+      "observed": "0 hits (the SOURCE_PENDING tuple and its 3-line comment are gone; the only remaining reference is in design_docs/ which is excluded by -- tools)",
+      "verdict": "PASS"
+    },
+    "AC3": {
+      "command": "perl -e 'alarm 120; exec @ARGV' make replay-map-index",
+      "expected": "rc 0; Ran 9 tests; OK",
+      "observed": "rc=0; Ran 9 tests in 0.253s; OK; the positive control at tools/test_replay.py:461 passed (the D-149 pair is in `checked`)",
+      "verdict": "PASS"
+    },
+    "AC4": {
+      "command": "perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh index $ROOT (Appendix A)",
+      "expected": "d149-drill: index make_rc=2; fail_lines=1 want_hits=3 summary=1; KILLED; rc 0; tree clean",
+      "observed": "d149-drill: index make_rc=2; fail_lines=1 want_hits=3 summary=1; d149-drill: index KILLED; rc=0; git status --porcelain empty afterwards. (sandboxed copy: /tmp/d149_drill.XXXXXX → .godot/tmp/d149_eval/mktmp/d149_drill.XXXXXX because /tmp is not writable in the pi sandbox.)",
+      "verdict": "PASS"
+    },
+    "AC5": {
+      "command": "perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh blind $ROOT (Appendix A)",
+      "expected": "d149-drill: blind make_rc=2; fail_lines=1 want_hits=1 summary=1; KILLED; rc 0; tree clean",
+      "observed": "d149-drill: blind make_rc=2; fail_lines=1 want_hits=1 summary=1; d149-drill: blind KILLED; rc=0; git status --porcelain empty",
+      "verdict": "PASS"
+    },
+    "AC6": {
+      "command": "perl -e 'alarm 300; exec @ARGV' python3 tools/test_replay.py",
+      "expected": "Ran 38 tests; OK; rc 0",
+      "observed": "rc=0; Ran 38 tests in 3.306s; OK",
+      "verdict": "PASS"
+    },
+    "AC7": {
+      "command": "perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD",
+      "expected": "no output; rc 0",
+      "observed": "rc=0; no whitespace errors",
+      "verdict": "PASS"
+    },
+    "AC8": {
+      "command": "test \"$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' | tr '\\n' ' ')\" = \"tools/earth_link_capture.gd tools/test_replay.py \"",
+      "expected": "rc 0 (exactly those 2 files)",
+      "observed": "rc=0; diff list = 'tools/earth_link_capture.gd tools/test_replay.py '",
+      "verdict": "PASS"
+    },
+    "AC9": {
+      "command": "for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t; done",
+      "expected": "each rc 0; python-guard: 23 allowlisted, 0 awaiting port; uid-guard: 438 .uid files; lint-precision: positive control matched 6 lines; no live hand-computed gamma or 1 - beta",
+      "observed": "python-guard rc=0 ('python-guard: ok (23 allowlisted, 0 awaiting AILANG port)'); uid-guard rc=0 ('uid-guard: ok (438 .uid files)'); lint-precision rc=0 ('lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)')",
+      "verdict": "PASS"
+    },
+    "AC10": {
+      "command": "sh $ROOT/tools/deadline.sh 1200 bash $D/d149_ac10.sh $ROOT $D (Appendix C, byte-exact from design lines 312-348)",
+      "expected": "make runtime rc=0; make import rc=0; generator rc=0; probe rc=0; a_outbound subtitle='[CNS5:3627  ·  4.32 ly]'; a_outbound_4.32ly=1 summary=1 script_errors=0; rc 0",
+      "observed": "UNMEASURED. `make runtime` (Appendix C step 1, deadline 180s) failed: gh release download error 'Get https://api.github.com/repos/sunholo-data/ailang/releases/tags/v0.56.1: tls: failed to verify certificate: x509: OSStatus -26276'. The pi sandbox cannot reach GitHub. AC10's runtime sub-step cannot complete without a writable runtime/bin/ailang v0.56.1. Per task instructions: 'If make runtime fails in your sandbox (e.g. no network), record AC10 as UNMEASURED with the exact error and continue with every other AC and the mutants; do not search the filesystem for a binary.' The Appendix B generator (sub-step 3) was independently verified on the current capture (rc=0, 9940 bytes, matching V7/V8) and on 7 V15 negative mutations (all rc=255 with the design's exact error messages).",
+      "verdict": "UNMEASURED",
+      "blocker_for_merge": false,
+      "reason": "AC10 is not a merge gate (it is one of the 'targeted gates' but the prerequisite `make runtime` cannot run in this sandbox). The Appendix C script, the deadline.sh runner, and the generator are all reproducible when network access is available; the V15 evidence was verified."
+    }
+  },
+  "mutants": [
+    {
+      "id": "M1",
+      "description": "tools/earth_link_capture.gd:16 index 2 → 1 (revert to the pre-D-149 value)",
+      "command": "perl -i -pe 's/\"index\": 2, \"id\": \"CNS5:3627\"/\"index\": 1, \"id\": \"CNS5:3627\"/' tools/earth_link_capture.gd; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "KILLED",
+      "evidence": "make_rc=2; FAIL: test_source_literals_match_the_map; AssertionError: Lists differ: ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2'] != []"
+    },
+    {
+      "id": "M2",
+      "description": "tools/earth_link_capture.gd:16 index 2 → 99 (nonsense)",
+      "command": "perl -i -pe 's/\"index\": 2, \"id\": \"CNS5:3627\"/\"index\": 99, \"id\": \"CNS5:3627\"/' tools/earth_link_capture.gd; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "KILLED",
+      "evidence": "make_rc=2; FAIL: test_source_literals_match_the_map; AssertionError: Lists differ: ['tools/earth_link_capture.gd:16 CNS5:3627 index 99, stars.json 2'] != []"
+    },
+    {
+      "id": "M3",
+      "description": "tools/earth_link_capture.gd:16 id 'CNS5:3627' → 'CNS5:9999' (id no longer matches any star)",
+      "command": "perl -i -pe 's/\"index\": 2, \"id\": \"CNS5:3627\"/\"index\": 2, \"id\": \"CNS5:9999\"/' tools/earth_link_capture.gd; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "KILLED",
+      "evidence": "make_rc=2; FAIL via positive control: AssertionError: 'tools/earth_link_capture.gd:16' not found in ['tests/test_bridge_monitors.gd:15', 'tests/test_bridge_monitors.gd:16', ...] (the id no longer matches any star, so the pair is dropped from `checked`)"
+    },
+    {
+      "id": "M4",
+      "description": "test_replay.py: comment out the D-149 positive control line (assertIn on earth_link_capture.gd:16)",
+      "command": "perl -i -pe 's|^(        self.assertIn\\(\"tools/earth_link_capture.gd:16\", checked\\))|# $1|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "SURVIVED",
+      "evidence": "rc=0, no FAIL. The bad-check `assertEqual(bad, [])` still catches any wrong pair; the positive control is a redundant assertion. Design explicitly notes this risk under 'Removing the mechanism hides a future wrong pair' but the answer is 'no: assertEqual(bad, []) is stricter than before'. Fault injection F1 confirms: combining this mutation with an index→1 fault is still CAUGHT."
+    },
+    {
+      "id": "M5",
+      "description": "test_replay.py: positive control expects earth_link_capture.gd:99 (wrong line number)",
+      "command": "perl -i -pe 's|assertIn\\(\"tools/earth_link_capture.gd:16\", checked\\)|assertIn(\"tools/earth_link_capture.gd:99\", checked)|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "KILLED",
+      "evidence": "make_rc=2; AssertionError: 'tools/earth_link_capture.gd:99' not found in [list of checked pairs]; the positive control is line-aware and fails loudly when the line shifts."
+    },
+    {
+      "id": "M6",
+      "description": "test_replay.py: weaken bad-check to skip earth_link_capture ('earth_link_capture' not in b)",
+      "command": "perl -i -pe 's|assertEqual\\(bad, \\[\\]\\)|assertEqual([b for b in bad if \"earth_link_capture\" not in b], [])|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "SURVIVED",
+      "evidence": "rc=0 today (no bad pair). Fault injection F2 (combine with index→1 fault): rc=0 — silent bypass. The guard can no longer catch a wrong pair in this file. Design accepts this risk (the bad-check would not exist for any other file either, by design). To strengthen: replace prefix check with full scan; design considered and rejected (Risks bullet)."
+    },
+    {
+      "id": "M7",
+      "description": "test_replay.py: replace bad-check with `pass` (remove all guard protection)",
+      "command": "perl -i -pe 's|        self.assertEqual\\(bad, \\[\\]\\)|        pass|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "SURVIVED",
+      "evidence": "rc=0 today. Fault injection F3 (combine with index→1 fault): rc=0 — silent bypass. The bad-check is the only line of defence for wrong pairs; without it, the guard is ineffective."
+    },
+    {
+      "id": "M8",
+      "description": "test_replay.py: re-add SOURCE_PENDING tuple and use the old filter (the design's rejected approach)",
+      "command": "perl -i -pe 's|SOURCE_EXEMPT = \\(\"tools/test_replay.py\"\\)|SOURCE_EXEMPT = (\"tools/test_replay.py\")\\nSOURCE_PENDING = (\"tools/earth_link_capture.gd:16\",)|; s|assertEqual\\(bad, \\[\\]\\)|assertEqual([b for b in bad if b.split(\" \")[0] not in SOURCE_PENDING], [])|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore",
+      "gate": "make replay-map-index",
+      "result": "SURVIVED",
+      "evidence": "rc=0 today. Fault injection F4 (combine with index→1 fault): rc=0 — silent bypass. The rejected approach exempts the pending pair, so even with the wrong index the filter hides it. Design explicitly rejects this: 'With an empty tuple, the stale-entry assertion checks nothing.'"
+    }
+  ],
+  "fault_injection": [
+    {"id": "F0", "description": "control: fault (index→1) alone, no gate mutation", "caught": true, "rc": 2, "evidence": "AssertionError: Lists differ: ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2'] != []"},
+    {"id": "F1", "description": "fault + M4 (positive control commented out)", "caught": true, "rc": 2, "evidence": "Same as F0 — the bad-check still fires; the positive control is redundant."},
+    {"id": "F2", "description": "fault + M6 (bad-check skips earth_link_capture)", "caught": false, "rc": 0, "evidence": "no FAIL; rc=0 — silent bypass."},
+    {"id": "F3", "description": "fault + M7 (bad-check → pass)", "caught": false, "rc": 0, "evidence": "no FAIL; rc=0 — silent bypass."},
+    {"id": "F4", "description": "fault + M8 (re-add SOURCE_PENDING + old filter)", "caught": false, "rc": 0, "evidence": "no FAIL; rc=0 — silent bypass."}
+  ],
+  "blocking": [],
+  "non_blocking": [
+    {
+      "id": "NB-1",
+      "category": "sandbox_environment",
+      "description": "AC10 was UNMEASURED because the pi sandbox cannot reach api.github.com (TLS error x509: OSStatus -26276 on `gh release download v0.56.1`). The Appendix C script and tools/deadline.sh are reproducible; the V15 (generator) sub-evidence was independently verified. The design explicitly does not gate the merge on AC10's full end-to-end run (CLAUDE.md Merges §2); it is one of the 'targeted gates' that runs in the executor's environment.",
+      "command": "perl -e 'alarm 300; exec @ARGV' make runtime 2>&1 | tail -5"
+    },
+    {
+      "id": "NB-2",
+      "category": "test_strength",
+      "description": "Three mutants (M6, M7, M8) are silent bypasses when combined with a fault: weakening the bad-check or reintroducing SOURCE_PENDING would let a wrong pair through. The design explicitly considers and accepts this risk (no current wrong pair exists; the bad-check would be stricter than today's filtered check if the mechanism returned). Recommend: a non-D-149 follow-up could add a separate `replay-map-index-fuzz` test that inserts a wrong pair into a temporary copy of the capture and asserts the guard catches it — proves the gate is doing real work even when no wrong pair is committed.",
+      "command": "python3 .godot/tmp/d149_eval/run_fault_injection.py"
+    },
+    {
+      "id": "NB-3",
+      "category": "test_strength",
+      "description": "The positive control M4 (commented out) is not a silent bypass because the bad-check is still active; but the positive control is the only line that asserts the scan still SEES the D-149 pair. If a future change moves the index in tools/earth_link_capture.gd (e.g. add a line above), the positive control's expected filename will shift but the test will fail loudly with the shifted list (per the design's Risks bullet). The pair is checked by name. Acceptable.",
+      "command": "perl -i -pe 's|^(        self.assertIn\\(\"tools/earth_link_capture.gd:16\", checked\\))|# $1|' tools/test_replay.py; perl -e 'alarm 120; exec @ARGV' make replay-map-index; restore"
+    },
+    {
+      "id": "NB-4",
+      "category": "documentation",
+      "description": "CHANGELOG.md (line 16) still says 'tools/earth_link_capture.gd stays at index 1 as the guard's one pending entry until Mark answers OQ1'. After D-149 lands, this line is stale. The controller updates CHANGELOG per the loop, but if this PR is backported or rebased, the stale claim may confuse readers. Recommend: update in the landing commit.",
+      "command": "git grep -n 'index 1 as the guard' -- CHANGELOG.md"
+    }
+  ],
+  "notes": [
+    "Sandbox constraint: /tmp writes blocked ('Operation not permitted'); $E unset; rewrote Appendix A/C paths from /tmp/d149_*.XXXXXX → .godot/tmp/d149_eval/mktmp/d149_*.XXXXXX (gitignored). Kept the byte-exact design_scripts/ copy in .godot/tmp/d149_eval/design_scripts/ for SHA verification.",
+    "Generator (Appendix B) verified on current capture: rc=0, 9940 bytes output (matches V7/V8's measurement).",
+    "V15 negative mutations re-verified: 7 of 7 mutations (test178, test186b, test180, test188, test191, test144 dup, test144r removed) exit rc=255 with empty output and the design's exact error messages.",
+    "Working tree clean throughout (git status --porcelain empty) after every AC and every mutant. Restoration is byte-identical (filecmp shallow=False + git status).",
+    "D-149 ruling is faithful to the diff: 1 token in earth_link_capture.gd, SOURCE_PENDING removed + 2 assertions rewritten + 1 positive control added in test_replay.py. The capture file's only consumer is `make capture-earth-link` (GPU window, not in `make test` or `ci-fast`). No tracked test or pipeline depends on the capture's PNG output. The guard is the only line of defence for wrong pairs in tracked `*.gd`/`*.py`, and AC4 + AC5 + F0 + F1 prove it works against the diff's changes.",
+    "AC11 is by design a post-merge attended acceptance (GPU window, Mark opens the dev build). It is excluded from the merge gate and was not run.",
+    "The pi sandbox blocked `/tmp` writes (set to /private/var/folders/kr/.../T/ but permission denied). All scratch is under .godot/tmp/d149_eval/ which is gitignored (.godot/ is in .gitignore).",
+    "Cannot reach GitHub from sandbox: `gh release download` returns `x509: OSStatus -26276` (TLS verification failure). This blocks `make runtime`. AC10 was UNMEASURED per task instructions."
+  ]
+}
