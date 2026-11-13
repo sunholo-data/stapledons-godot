@@ -1,0 +1,410 @@
+# The Earth-link capture plans alpha Cen A at its real map index (D-149)
+
+**Status:** Implemented 2026-11-13 (mission iteration 91, PR #446, build `97833536`; evaluation Sonnet 5.5 93 PASS, cross-vendor MiniMax M3 88 PASS). Planned 2026-11-13 (designer Opus 5.5). **Revision 2** (narrow-refinement carve-out) answers quorum round 2 (BLOCKED: gpt6-1-sol REJECT): AC10 is now one script (Appendix C) in which `make runtime`, `make import`, the generator and the probe each run under the repo's process-group deadline `tools/deadline.sh`; V17 measures the steps and V18 shows that a stalled prerequisite is stopped. **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): Appendix B's probe generator now matches exact blocks instead of line numbers (V15, V16). Measured at `origin/main` `85ca5470`. **Release:** r1. **Milestone:** none (charter queue: "D-149's one-token fix", row 7am's held pair).
+**Priority:** low. Nothing is red. Mark ruled on it (D-149, attended 2026-11-12), so the loop may land it.
+**Implements:** ledger row **D-149** (`design_docs/stapledon-mission.md`, Decision ledger), verbatim: *"Yes: tools/earth_link_capture.gd's ALPHA target moves to alpha Cen A's real map index (2, from 1) and the guard's SOURCE_PENDING entry is removed; the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance, as the live map shows."* It closes OQ1 of [`m4-7am-alpha-index-literals.md`](../../implemented/r1/m4-7am-alpha-index-literals.md) (V4, V5). The capture is AC11 of [`r3/earth-link.md`](../../implemented/r3/earth-link.md). That design implements the design repo's [signals-and-instruments.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/signals-and-instruments.md) §2–§3.1. No physics-spec section applies, because the sim never reads the index (7am V7).
+**Depends on:** nothing.
+**Estimated LOC:** 9 lines in 2 files, none of it product code (V13: `2 files changed, 3 insertions(+), 6 deletions(-)`).
+
+## Game vision alignment
+
+Scored against `../stapledons-design/vision/core-pillars.md` and `physics/relativity-spec.md`. The skill was not interviewed because this run is unattended, so the designer scored the table.
+
+| Pillar | Relevance | Score | Notes |
+|---|---|---:|---|
+| Choices Are Final | 0 | 0 | No game logic changes. |
+| The Game Doesn't Judge | 0 | 0 | No copy changes. |
+| Time Has Emotional Weight | 0 | 0 | The live map already shows `· 4.32 ly`. Only the review frame catches up with it. |
+| The Ship Is Home | 0 | 0 | No scene or asset changes. |
+| Grounded Strangeness | 0 | 0 | No content changes. One review frame's subtitle gains the real distance. |
+| We Are Not Built For This | 0 | 0 | No crew or AI changes. |
+| Hard sci-fi authenticity (spec) | 0 | 0 | No formula, shader, LUT, golden or shipped render changes. Physics gates 2 and 3 do not apply. |
+| **Net** | | **0** | **ALIGNED (neutral): go.** This is a correctness fix to a developer review capture. Every 0 means "not touched". |
+
+## Problem
+
+1. `tools/earth_link_capture.gd:16` reads `const ALPHA := {"index": 1, "id": "CNS5:3627", …}`. In `data/starmap/stars.json`, index 1 is `HIP 71681` (alpha Cen B) and index 2 is `CNS5:3627` (alpha Cen A). `CNS5:3627` occurs only at index 2 (V1).
+2. It is the only wrong hand-written pair left. The 7am scan covers 444 tracked `*.gd`/`*.py` files and checks 16 pairs. Exactly one is bad: `tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2` (V2). The guard passes today only because `SOURCE_PENDING` excuses that pair (V3).
+3. `GalaxyMap.subtitle_text()` adds the distance only when `catalogue[index].id == id`. So the capture's `a_outbound` map frame shows `CNS5:3627`, while the live map shows `CNS5:3627  ·  4.32 ly` (V7).
+
+## Goals and non-goals
+
+**Goals:**
+- Change the one token at `tools/earth_link_capture.gd:16` from `1` to `2`.
+- Remove the `SOURCE_PENDING` mechanism, so that every wrong pair fails the guard.
+- Keep a positive control that proves the scan still sees real pairs, including the pair this change fixes.
+
+**Non-goals:**
+- Showing the name "Alpha Centauri A" in the capture. The title stays `En route to CNS5:3627` because the capture never calls `load_names()` (7am V4).
+- Any other capture, golden, `*.ail`, Makefile or `mk/*.mk` change.
+- Running `make capture-earth-link`. It needs a GPU window (see "Gates").
+
+## Design
+
+### D1. The token
+
+At `tools/earth_link_capture.gd:16`, change `"index": 1` to `"index": 2`. The `.uid` file does not change.
+
+### D2. The guard: remove the mechanism, not just the entry
+
+**Choice:** delete `SOURCE_PENDING` and its two-line comment (`tools/test_replay.py:340–342`). Replace the two assertions at `:462–463` with `self.assertEqual(bad, [])`. Add a second named positive control:
+
+```python
+        self.assertEqual(bad, [])
+        self.assertIn("ui/transit_harness.gd:10", checked)  # known positive: the scan sees a real pair
+        self.assertIn("tools/earth_link_capture.gd:16", checked)  # D-149: the pair held pending until Mark ruled is seen, and now matches
+```
+
+**Why not `SOURCE_PENDING = ()`?**
+- With an empty tuple, the stale-entry assertion (`:463`) checks nothing. The filter in `:462` becomes `bad == []` spelled indirectly.
+- The tuple was there for one ruling, and that ruling is now made. If a future pair needs an attended hold, that is a new decision and can bring the mechanism back. Git keeps the code.
+- `assertEqual(bad, [])` gives the clearest failure: it prints every wrong pair.
+
+**Why the second positive control?** When the pair leaves `bad`, nothing else shows that the scan still sees it. A tokeniser regression that dropped `tools/earth_link_capture.gd:16` would pass silently. The `blind` mutation (AC5) proves the new control is live.
+
+**Both edits must land in one commit.** The old guard combined with the fixed `.gd` fails, because the pending entry is stale: `Lists differ: ['tools/earth_link_capture.gd:16'] != []` (V12). The new guard combined with the old `.gd` fails on the pair (V10, `index` mode).
+
+The synthetic controls (`test_the_7am_literals_fail`, `_escaped_ids_fail`, `_intervening_fields_fail`) are unchanged. They still prove that any new wrong pair, in any shape, is caught.
+
+### Gates: where the two files run (V4, V5)
+
+| File | Run by | In `make test` | In `ci-fast` | In `make golden` |
+|---|---|---|---|---|
+| `tools/test_replay.py` | `replay-map-index` (`Makefile:479–482`, `MapIndex` only); `tools-test` (`Makefile:293–294`, the whole file) | yes, through `tools-test` | yes, through `replay-map-index` (`Makefile:482`; edge pinned in `mk/script-gates.mk:17` `SG_PREREQS`) | no |
+| `tools/earth_link_capture.gd` | `capture-earth-link` only (`mk/earth-link.mk:104–109`). This is a GPU window: the recipe has no `--headless`, and the comment says "GPU window; not in make test". It is also listed in `tools/script-gate-baseline.txt:24` (a row only, unaffected). | no | no | no |
+
+`.github/workflows/ci.yml` runs only `make ci-fast` (or `make test` under `workflow_call`). No aggregate target (`test`, `ci-fast`, `golden`, `capture`) depends on `capture-earth-link`.
+
+**Nothing tracked depends on the capture's output.** The capture writes only `renders/earth_link/<state>_{station,map}.png` and `contact_sheet.png`. `renders/` is gitignored (`.gitignore:2`), and no tracked file sits under `renders/earth_link`. `tests/fixtures/earth_link/{strip,beams}.json` are read by `tools/earth_display_golden.gd`, not written by this capture. No sha256 pin names the capture's outputs.
+
+### What visibly changes (V7, V8)
+
+Measured with a headless label probe (Appendix B). It runs the capture's own flow on the real sim at AILANG v0.56.1 and replaces the image block with prints:
+
+| Frame | Before (index 1) | After (index 2) |
+|---|---|---|
+| `a_outbound` map title | `En route to CNS5:3627` | `En route to CNS5:3627` (unchanged) |
+| `a_outbound` map subtitle | `CNS5:3627` (visible) | `CNS5:3627  ·  4.32 ly` (visible) |
+| `a_outbound` station | 20 labels, `labels_sha=c4b3e05190254f4f` | same |
+| `a_outbound` sim view | `view_sans_index_sha=9ffd74fe7d35b829`, `"index":1.0` | same sha, `"index":2.0` (the echo only) |
+| `b_top`, `c_replan`, `d_stale`, `e_home` | the V7 and V8 lines | byte-identical lines (`diff` shows only the two `a_outbound` lines) |
+| summary | `earth-link-capture: 10 frames, 0 failures`, rc 0 | same |
+
+The rate, in-beam state, beams and beam labels in every `earth-link-capture: ok …` line are identical.
+
+## Acceptance criteria
+
+Run from the clone root, `ROOT=/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter91`, or the build's clone. `85ca5470` is the base. Each row also gives its reading on the pristine tree (base), recorded by the designer.
+
+| AC | Checks | Command | Expected (built) | Baseline (pristine `85ca5470`) |
+|---|---|---|---|---|
+| AC1 | The one token | `test "$(grep -c '^const ALPHA := {"index": 2, "id": "CNS5:3627", ' tools/earth_link_capture.gd)" -eq 1 \|\| exit 1` | rc 0 | count 0 → rc 1 (V1/V2: the line has `"index": 1`) |
+| AC2 | The mechanism is gone | `test "$(git grep -n SOURCE_PENDING -- tools \| wc -l)" -eq 0 \|\| exit 1` | rc 0 | 3 hits (`tools/test_replay.py:342,462,463`) → rc 1 (V4) |
+| AC3 | The guard passes | `perl -e 'alarm 120; exec @ARGV' make replay-map-index` | rc 0; `Ran 9 tests`; `OK` | rc 0, `Ran 9 tests`, `OK`: passes only through the pending entry (V3) |
+| AC4 | Killing mutation: ALPHA back at index 1 fails the guard | `perl -e 'alarm 240; exec @ARGV' bash "$D/d149_drill.sh" index "$ROOT"` (Appendix A, saved outside the repo as `$D/d149_drill.sh`) | `d149-drill: index make_rc=2`; `fail_lines=1 want_hits=3 summary=1`; `d149-drill: index KILLED`; rc 0; `git status --porcelain` empty afterwards | `d149-drill: mutation index did not apply`, rc 3 (V11) |
+| AC5 | Killing mutation: the new positive control is live | `perl -e 'alarm 240; exec @ARGV' bash "$D/d149_drill.sh" blind "$ROOT"` | `d149-drill: blind make_rc=2`; `fail_lines=1 want_hits=1 summary=1`; `d149-drill: blind KILLED`; rc 0; tree clean | `mutation blind did not apply`, rc 3 (V11) |
+| AC6 | The whole harness | `perl -e 'alarm 300; exec @ARGV' python3 tools/test_replay.py` | `Ran 38 tests`, `OK`, rc 0 | `Ran 38 tests`, `OK` (V3) |
+| AC7 | Whitespace | `perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD` | no output, rc 0 | rc 0 (V3) |
+| AC8 | Scope | `test "$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' \| tr '\n' ' ')" = "tools/earth_link_capture.gd tools/test_replay.py " \|\| exit 1` | rc 0 | empty → rc 1 (V13 on the prototype: those 2 files) |
+| AC9 | Policy gates on the touched files | `for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t \|\| exit 1; done` | each `…: ok`, rc 0 (`438 .uid files`; `23 allowlisted`) | same (V9 on the prototype; neither file is new) |
+| AC10 | The frame change, headless, every step deadline-bounded | `sh "$ROOT/tools/deadline.sh" 1200 bash "$D/d149_ac10.sh" "$ROOT" "$D"` (Appendix C). The script runs `make runtime` (deadline 180 s), `make import` with the pinned runtime on PATH (300 s), the Appendix B generator (30 s) and the headless probe (600 s), each through `tools/deadline.sh`. `tools/deadline.sh` is the repo's tracked process-group runner, used by `capture-m4-publish` (`Makefile:422`) and `tools/test_m4_publish.sh`: it runs the command in its own process group, sends TERM to the group at the deadline and KILL 5 s later, and returns 124. A timeout or nonzero exit ends acceptance at once: exit 10 for runtime, 11 for import, 12 for the generator, 13 for the probe, so no later step runs. The outer `deadline.sh 1200` covers the sum (1,110 s) with slack, and its TERM reaches each inner supervisor, which KILLs its own group. | `d149-ac10: make runtime rc=0`, `make import rc=0`, `generator rc=0`, `probe rc=0`; the `elc-probe a_outbound … subtitle=[CNS5:3627  ·  4.32 ly]` line; `a_outbound_4.32ly=1 summary=1 script_errors=0`; `d149-ac10: PASS`, rc 0 (V17, on a cold scratch clone with the fix). The b–e `elc-` lines equal V7/V8's. | every step rc 0, then `a_outbound_4.32ly=0 summary=1 script_errors=0` → rc 1 (V17; V7, V14, V16 earlier) |
+| AC11 | Mark sees the frame (attended, after merge; not a merge gate) | `make capture-earth-link` in a GPU window when the GPU is free, then open `renders/earth_link/a_outbound_map.png` and `contact_sheet.png` | `earth-link-capture: 10 frames, 0 failures`. The `a_outbound` map subtitle reads `CNS5:3627  ·  4.32 ly`. | not run: GPU window, and the GPU is busy |
+
+`$D` is a scratch directory outside the repo (for example `D=$(mktemp -d)`) holding Appendices A, B and C (`d149_drill.sh`, `elc_probe_gen.pl`, `d149_ac10.sh`). `ROOT` is the build's clone.
+
+AC11 is the acceptance path Mark's ruling describes ("you see the new frame in the next dev build"). It does not block the merge. Nothing shipped in the game changes visually, and merges never wait on the GPU (CLAUDE.md, Merges §2).
+
+## Sub-milestones and estimates
+
+One milestone, **D149-1**: D1 and D2 in one commit, 2 files, +3/−6. Order: apply both edits, then run AC1–AC10. AC11 follows the merge.
+
+## Risks and mitigations
+
+- **Landing one edit without the other.** Each half alone fails `replay-map-index` (V10, V12). This is caught in `ci-fast`, and AC8 checks both files.
+- **Removing the mechanism hides a future wrong pair.** It does not: `assertEqual(bad, [])` is stricter than before. Every wrong pair fails, and nothing is excused. The synthetic controls and AC4 prove this.
+- **The positive control names a line number** (quorum r1, gemini note). This follows the existing `ui/transit_harness.gd:10` control's convention. A harmless line shift in the capture fails it loudly, with `'tools/earth_link_capture.gd:16' not found in [...]`, which lists the shifted entry. It never fails silently, and the fix is to update the number. A file-prefix check (`any(c.startswith("tools/earth_link_capture.gd:") …)`) was considered and rejected. The file holds exactly one catalogue pair today, so `blind` (AC5) would still kill it. But the prefix check would pass if a second catalogue pair appeared in the file while ALPHA's pair went unseen, so it is weaker than the line check. Kept as designed; AC4 and AC5 are unchanged.
+- **Probe drift** (revised in revision 1, quorum r1 sol). Appendix B no longer works by line number. It reads the whole capture and requires each of three exact original texts to occur **exactly once**: the complete 14-line image block (`frame_post_draw` through `frames += 1`), the `_contact_sheet()` call, and the `sheet.append` statement. Overlapping occurrences count, so adjacent duplicates are seen. The generator prints nothing until all three checks pass, and otherwise exits 255 with `elc-probe-gen: <block> found N times, want exactly 1`. V15 shows that a changed interior line, a changed last line, truncation inside the block, truncation before the final replacement, a duplicate and a removal each make it exit nonzero with empty output. The probe does **not** check the capture's other lines (the sim flow, the state checks, `DisplayBinding.audit`). Those run as written, so a change there changes the probe's own run, not a discarded block.
+
+## Open questions for the user
+
+None. D-149 is complete: the token, the guard entry and the expected frame are all named in the ruling.
+
+## Deliverables
+
+- `tools/earth_link_capture.gd`: one token.
+- `tools/test_replay.py`: `SOURCE_PENDING` removed, the assertion rewritten, one positive control added.
+- After the evaluation passes: this doc moves to `design_docs/implemented/r1/`, and the charter rows are updated (controller).
+
+## Quorum verification log
+
+**Round 1** (artifact `m4-d149-earth-link-alpha-index-2026-11-13T04-23-53Z.json`, on revision 0, commit `1c7edb81`): **BLOCKED**.
+
+| Seat | Verdict | Finding | Disposition in revision 1 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "The headless probe does not fail closed as claimed. Appendix B silently discards lines 174–186 without verifying their contents; its only check in that range rejects a misplaced `frames += 1`. Changes to the removed rendering, save, hash, or blank-check logic can therefore pass unnoticed." | **Applied verbatim** (fix: "Replace the line-number deletion logic with exact matching of the complete original image block, `_contact_sheet()` call, and `sheet.append` statement, requiring exactly one match for each before emitting any generated script. Reject missing, changed, duplicated, or truncated blocks. Add a verification-log row showing that the pristine and fixed captures generate the expected probes, while mutations to a discarded interior line and truncation before the final replacement both make the generator exit nonzero. Revise the probe-drift claim to describe those actual checks."). Appendix B rewritten; V15 holds the positives and seven negatives (incl. `:178` interior and `head -n 188`); the Risks "Probe drift" bullet now describes those checks; AC10 re-run (V16) |
+| gemini-4-argon | PASS | non-blocking: the `:186` check should be `die "186" if ($n == 186) != ($l =~ /frames \+= 1/);` | **Subsumed**: no line-number check survives in revision 1. The block's last line is inside the exact match, and the `:186` mutation fails (V15) |
+| gemini-4-argon | PASS | note: the new positive control pins a line number | **Recorded, design kept**: see Risks, "The positive control names a line number" (same convention as `ui/transit_harness.gd:10`; a shift fails loudly; a file-prefix check would be weaker). AC4 and AC5 are unchanged, and nothing they depend on changed, so they were not re-run (V10, V11 stand) |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
+| Claude | benched | author's vendor | — |
+
+**Round 2** (artifact `m4-d149-earth-link-alpha-index-2026-11-13T04-29-39Z.json`, on revision 1, commit `4565f610`): **BLOCKED** by one seat. No round 3 will run; revision 2 is a **narrow-refinement carve-out: sol's fix applied verbatim, no round 3**.
+
+| Seat | Verdict | Finding | Disposition in revision 2 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "AC10 requires running `make runtime` and `make import` before its timed probe, but gives neither prerequisite a deadline. The unattended acceptance path therefore has unbounded waits, contrary to the bounded-waits axiom. V6's report that earlier provisioning runs were alarm-bounded does not bound the commands prescribed to the implementer." | **Applied verbatim** (fix: "Replace AC10's prerequisite instructions with explicit deadline-enforced commands for both `make runtime` and `make import`, each terminating acceptance on timeout or nonzero exit. Use a process-group-aware timeout so spawned build/import processes are also terminated. Add a verification-log row demonstrating that a deliberately stalled prerequisite exits within its deadline, leaves no child process running, and prevents the probe from executing."). AC10 is now Appendix C: both prerequisites (and the generator and probe) run under the tracked process-group runner `tools/deadline.sh`, reused rather than reinvented; a timeout or nonzero rc exits 10/11 before the probe. The deadlines come from V17's measurements. V18 stalls each prerequisite with a TERM-ignoring child: each exits within its deadline (185 s / 305 s), no stall process survives (pgrep with a firing control, plus `kill -0` on both recorded pids), and the probe never runs (marker absent; control: the marker appears when nothing stalls) |
+| gemini-4-argon | PASS | repeats the line-number note on the positive control and accepts the Risks reasoning | No change (see round 1) |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
+| Claude | benched | author's vendor | — |
+
+## Verification log
+
+| V | What | Ran (where) | Reading |
+|---|---|---|---|
+| V1 | Catalogue indices | `python3 -c` over `data/starmap/stars.json` (clone, `85ca5470`) | `[(0,'Gaia DR3 5853498713190525696'), (1,'HIP 71681'), (2,'CNS5:3627'), (3,'Gaia DR3 4472832130942575872')]`; `CNS5:3627` at `[2]` only |
+| V2 | Pristine source scan | `test_replay.source_index_pairs(MapIndex().sources(), stars())` (clone) | 444 files, 16 checked (incl. `tools/earth_link_capture.gd:16`, `ui/transit_harness.gd:10`); `bad = ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2']` |
+| V3 | Pristine gates | `make replay-map-index`; `python3 tools/test_replay.py`; `git diff --check` (clone, alarm-bounded) | `Ran 9 tests … OK` rc 0; `Ran 38 tests … OK`; diff-check rc 0 |
+| V4 | References | `git grep` (clone, excluding `design_docs` and `.ailang`) | `SOURCE_PENDING` only at `tools/test_replay.py:342,462,463`. `capture-earth-link` only in `mk/earth-link.mk:106–107` and `tools/script-gate-baseline.txt:24`. `ci.yml` runs `make ci-fast` / `make test` only. `ci-fast: replay-map-index` at `Makefile:482`; `tools-test` runs `python3 tools/test_replay.py` (`Makefile:294`) and is in `test` (`Makefile:60`) |
+| V5 | Output dependants | `git check-ignore -v renders/x.png`; `git ls-files \| grep earth_link`; `git grep fixtures/earth_link` (clone) | `.gitignore:2:renders/`; no tracked `renders/earth_link*`; `tests/fixtures/earth_link/*` read by `tools/earth_display_golden.gd:7–8` only; the capture writes only `OUT = res://renders/earth_link` |
+| V6 | Pinned runtime | `make runtime` then `make import` (clone; both alarm-bounded) | `runtime/bin/ailang --version` → `AILANG v0.56.1`; import rc 0. (The `ailang` on PATH is v0.60.0-dev and was not used for probes.) |
+| V7 | Frame labels at index 1 vs 2 | Appendix B probe on pristine (idx 1) and with `"index": 2` (idx 2): `AILANG_BIN=$PWD/runtime/bin/ailang godot --headless --audio-driver Dummy --path . --script …` (clone; 40 s and 37 s) | idx 1: `elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627] subtitle_text=[CNS5:3627] subtitle_visible=true`. idx 2: `… subtitle=[CNS5:3627  ·  4.32 ly] subtitle_text=[CNS5:3627  ·  4.32 ly] subtitle_visible=true`. b–e identical in both runs: `b_top title=[En route to waypoint C (60 ly)] subtitle=[waypoint C (60 ly)]`, `c_replan title=[port B (a 30 ly turn)]`, `d_stale title=[En route to port B (a 30 ly turn)]`, `e_home title=[En route to Sol] subtitle=[Sol]`. Both runs: `earth-link-capture: 10 frames, 0 failures`, rc 0 |
+| V8 | Station and sim view | the same runs, `elc-station` lines | `a_outbound labels_sha=c4b3e05190254f4f nlabels=20 view_sans_index_sha=9ffd74fe7d35b829` in both; `view_sha` `17b1dec2…` → `335995a1…` and `index_values` `"index":1.0` → `"index":2.0` (positive: the echo moves). b–e `labels_sha` `e05ab2ad…`, `99ac268d…`, `ed10578f…`, `6e519ca8…` equal in both. `diff` of all `elc-`/`earth-link-capture` lines: exactly 2 lines differ (`a_outbound` probe and station) |
+| V9 | Prototype gates | scratch clone `/tmp/iter91/proto` with D1+D2 committed: `make replay-map-index`; `python3 tools/test_replay.py`; `git diff --check HEAD~1 HEAD`; `make python-guard uid-guard lint-precision` | `Ran 9 tests … OK`; `Ran 38 tests … OK`; rc 0; `python-guard: ok (23 allowlisted, 0 awaiting AILANG port)`, `uid-guard: ok (438 .uid files)`, `lint-precision: ok (…)` |
+| V10 | Killing mutations on the prototype | `perl -e 'alarm 240; …' bash d149_drill.sh {index,blind} /tmp/iter91/proto` | index: `make_rc=2`, `fail_lines=1 want_hits=3 summary=1`, `KILLED`, rc 0. blind: `make_rc=2`, `fail_lines=1 want_hits=1 summary=1`, `KILLED`, rc 0. `git status --porcelain` empty after each |
+| V11 | Drill fails closed on the pristine tree | the same drill on the clone | `mutation index did not apply` rc 3; `mutation blind did not apply` rc 3; tree clean |
+| V12 | Half-applied edit | prototype with the old `tools/test_replay.py` restored: `python3 tools/test_replay.py MapIndex` | rc 1: `FAIL: test_source_literals_match_the_map`, `AssertionError: Lists differ: ['tools/earth_link_capture.gd:16'] != []`, `FAILED (failures=1)` |
+| V13 | Prototype diff | `git diff --stat` (prototype) | `tools/earth_link_capture.gd \| 2 +-`, `tools/test_replay.py \| 7 ++-----`, `2 files changed, 3 insertions(+), 6 deletions(-)` |
+| V14 | AC10 as written (revision 0 generator) | AC10's command, with revision 0's Appendix B extracted from this doc (`cmp`-equal to the generator run in V7/V8), on the clone (pristine capture) and with the prototype's capture file as input | pristine: `godot_rc=0`, a_outbound hits 0 → rc 1. With the fix: rc 0, and its `elc-` lines `diff`-equal to V7/V8's index 2 run |
+| V15 | Revision 1 generator: exact-block matching | `perl -e 'alarm 30; …' perl elc_probe_gen.pl < INPUT > OUT` (Appendix B as committed, extracted from this doc; `/tmp/iter91/r1`). Positives: the pristine capture, and the fixed capture (pristine with the one token at `:16`). Negatives, each derived from the fixed capture and each checked by `cmp`/`diff` to differ: `:178` `save_png(` → `save_jpg(` (a discarded interior line); `:186` `frames += 1` → `+= 3` (the block's last line); `head -n 180` (truncated inside the block); `head -n 188` (truncated before the final replacement, `sheet.append` at `:191`); `:191` duplicated; `:144` duplicated; `:144` removed | pristine: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 1 probe. fixed: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 2 probe. Each negative: rc 255 and **0 bytes** of output. `:178` → `image block found 0 times, want exactly 1`; `:186` → `image block found 0 times`; `head -n 180` → `image block found 0 times`; `head -n 188` → `sheet.append found 0 times`; `:191` duplicated → `sheet.append found 2 times`; `:144` duplicated → `_contact_sheet() call found 2 times`; `:144` removed → `_contact_sheet() call found 0 times`. The first draft counted non-overlapping matches and missed the adjacent `:191` duplicate (rc 0); counting overlapping matches fixed it, then all were re-run |
+| V16 | AC10 re-run with the revision 1 generator | AC10's command (generator `/tmp/iter91/r1/elc_probe_gen.pl`, the same as Appendix B) on the clone: input `tools/earth_link_capture.gd` (pristine), then the fixed capture | pristine: `godot_rc=0`, AC10 rc 1 (no `4.32 ly` line). fixed: `godot_rc=0`, AC10 rc 0. Both runs' `elc-` lines are `diff`-equal to V7/V8's index 1 and index 2 runs |
+| V17 | AC10 as revised: step times and both readings | `tools/deadline.sh` timings of `make runtime` and `make import` (cold: `.godot` removed; warm: again) in the clone; then `perl -e 'alarm 1200; …' bash d149_ac10.sh ROOT D` on a fresh scratch clone with the fix (`runtime/` and `.godot` removed first, so cold) and on the pristine clone | Measured: `make runtime` 2–3 s (`gh release download` plus `ailang lock`; network dependent); `make import` 24 s cold, 6–7 s warm; probe 37–46 s. Deadlines (headroom): runtime **180 s** (≥60×), import **300 s** (12× cold), generator 30 s, probe 600 s (13×). Built (cold): `make runtime rc=0 at=2s`, `make import rc=0 at=26s`, `generator rc=0`, `probe rc=0 at=72s`, `subtitle=[CNS5:3627  ·  4.32 ly]`, `a_outbound_4.32ly=1 summary=1 script_errors=0`, `PASS`, rc 0. Pristine: `make runtime rc=0 at=3s`, `make import rc=0 at=7s`, `probe rc=0 at=52s`, `subtitle=[CNS5:3627]`, `a_outbound_4.32ly=0 summary=1 script_errors=0`, rc 1. The clone's `git status --porcelain` is empty afterwards |
+| V18 | A stalled prerequisite is stopped (sol's fix) | `perl -e 'alarm 280; …' bash d149_stall_demo.sh ROOT D runtime` and `… 'alarm 400; …' … import` (Appendix D) on the clone, each at AC10's real deadline. A stub `make` on PATH: for the stalled target it starts a child `perl` that ignores TERM and sleeps 3,600 s, then itself `exec`s a TERM-ignoring 3,600 s sleep; both carry a unique token in argv and their pids are recorded. A stub `godot` only touches a marker. Positive controls: a token-carrying TERM-ignoring process is seen by `pgrep -f` (`control pgrep=1`) before each run; with stub `make` that does not stall, AC10 reaches the stub `godot` and the marker appears (rc 1 at the checks, `marker present`) | runtime: `make runtime rc=124 at=185s`, `ac10_rc=10 secs=185 limit=180 stall_pids=2 alive=0 pgrep_left=0 probe_ran=0 calls=[make runtime;]`, `STOPPED`, rc 0. import: `make runtime rc=0`, `make import rc=124 at=305s`, `ac10_rc=11 secs=305 limit=300 stall_pids=2 alive=0 pgrep_left=0 probe_ran=0 calls=[make runtime;make import;]`, `STOPPED`, rc 0. 185 = 180 + the 5 s TERM→KILL grace, because the stall ignores TERM. A `pgrep -fl d149stall` afterwards is empty |
+
+**UNVERIFIED:**
+- AC11. `make capture-earth-link` (GPU window), the PNGs and the contact sheet were not run or opened.
+- The CI fast-tier run on GitHub.
+
+The probe's `target_index=-` field is uninformative: the journey has no `target` key. `index_values` in V8 is the measured echo.
+
+## Appendix A: the drill (`d149_drill.sh`, sha256 `ae32d0e1cabb93c6…`)
+
+```bash
+#!/bin/bash
+# D-149 killing-mutation drill. usage: bash d149_drill.sh MODE ROOT   (MODE: index | blind)
+# index: ALPHA back at HIP 71681's index 1 -> test_source_literals_match_the_map must fail on the pair.
+# blind: ALPHA's "id" key renamed -> the scan no longer sees the pair -> the D-149 positive control must fail.
+MODE=${1:?MODE}; ROOT=${2:?ROOT}
+F=tools/earth_link_capture.gd
+cd "$ROOT" || exit 1
+test -f "$F" || exit 1
+T=$(mktemp -d /tmp/d149_drill.XXXXXX) || exit 1
+cp "$F" "$T/orig" || exit 1
+restore() {
+  cp "$T/orig" "$ROOT/$F" || { echo "d149-drill: RESTORE FAILED"; exit 4; }
+  cmp -s "$T/orig" "$ROOT/$F" || { echo "d149-drill: RESTORE MISMATCH"; exit 4; }
+  rm -rf "$T"
+}
+trap restore EXIT
+trap 'exit 142' ALRM INT TERM
+case "$MODE" in
+  index) perl -pi -e 's/^const ALPHA := \{"index": 2, "id": "CNS5:3627"/const ALPHA := {"index": 1, "id": "CNS5:3627"/' "$F" || exit 1
+         want='tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2' ;;
+  blind) perl -pi -e 's/^const ALPHA := \{"index": 2, "id": "CNS5:3627"/const ALPHA := {"index": 2, "ident": "CNS5:3627"/' "$F" || exit 1
+         want="'tools/earth_link_capture.gd:16' not found in" ;;
+  *) echo "d149-drill: unknown MODE $MODE"; exit 1 ;;
+esac
+if cmp -s "$T/orig" "$F"; then echo "d149-drill: mutation $MODE did not apply"; exit 3; fi
+perl -e 'alarm 120; exec @ARGV' make replay-map-index > "$T/log" 2>&1
+rc=$?
+echo "d149-drill: $MODE make_rc=$rc"
+fails=$(grep -c '^FAIL: test_source_literals_match_the_map' "$T/log")
+hits=$(grep -cF "$want" "$T/log")
+summary=$(grep -c '^FAILED (failures=1)$' "$T/log")
+echo "d149-drill: $MODE fail_lines=$fails want_hits=$hits summary=$summary"
+test "$rc" -eq 2 || exit 1
+test "$fails" -eq 1 || exit 1
+test "$hits" -ge 1 || exit 1
+test "$summary" -eq 1 || exit 1
+echo "d149-drill: $MODE KILLED"
+```
+
+The drill's design:
+- ROOT is explicit.
+- The scratch directory comes from `mktemp`, and an EXIT trap restores the file. The restore fails closed with exit 4, and `ALRM`/`INT`/`TERM` route through the trap.
+- A `cmp` check proves the mutation applied, or the drill exits 3.
+- make's own rc is captured with no pipe and must be exactly 2. An alarm kill gives 142 and fails.
+- Counts are asserted with `test`, every check ends in `|| exit 1`, and no assertion uses `!`.
+- The whole drill is bounded by the outer `alarm 240`, and make by `alarm 120`.
+
+## Appendix B: the headless frame probe (`elc_probe_gen.pl`, revision 1, sha256 `596b20d6fef7073a…`)
+
+`perl elc_probe_gen.pl < tools/earth_link_capture.gd > probe.gd`. This applies to the capture at `85ca5470` and to the capture after D1.
+
+Revision 1 (quorum r1, sol's fix applied verbatim) uses no line numbers. The generator reads the whole capture and works in two steps:
+
+1. **Check.** It requires each of three exact original texts to occur exactly once, counting overlapping matches:
+   - the complete image block (`await RenderingServer.frame_post_draw` through `frames += 1`, 14 lines);
+   - the `_contact_sheet()` call;
+   - the `sheet.append([label, imgs[0], imgs[1]])` statement.
+   If any text is missing, changed, duplicated or truncated, the generator dies with exit 255 **before printing anything** (V15).
+2. **Replace.** It swaps the image block for prints of the map's title and subtitle, a hash of the station's labels, and a hash of the sim view with its `index` values normalised. It keeps `frames += 2`, so the summary line still counts 10. It deletes the other two statements.
+
+The probe keeps the capture's sim flow, its state checks and its `DisplayBinding.audit`. Its output on the pristine and the fixed capture is byte-identical to the probes run in V7/V8 (V15).
+
+```perl
+# perl elc_probe_gen.pl < tools/earth_link_capture.gd > probe.gd   (D-149 Appendix B, revision 1)
+# Exact-block matching: each original text below must occur exactly once in the capture, or the
+# generator dies before printing anything (missing, changed, duplicated or truncated blocks fail).
+use strict; use warnings;
+my $image = <<'GD';
+	await RenderingServer.frame_post_draw
+	var imgs := []
+	for pair: Array in [["station", vp_station], ["map", vp_map]]:
+		var img: Image = (pair[1] as SubViewport).get_texture().get_image()
+		var path := "%s/%s_%s.png" % [OUT, label, pair[0]]
+		img.save_png(ProjectSettings.globalize_path(path))
+		var h := str(hash(img.get_data()))
+		if hashes.has(h):
+			fail("%s %s duplicates %s" % [label, pair[0], hashes[h]])
+		hashes[h] = "%s %s" % [label, pair[0]]
+		if _spread(img) < 0.02:
+			fail("%s %s is blank" % [label, pair[0]])
+		imgs.append(img)
+		frames += 1
+GD
+my $probe = <<'GD';
+	print("elc-probe %s title=[%s] subtitle=[%s] subtitle_text=[%s] subtitle_visible=%s target_index=%s" % [label, map._title.text, map._subtitle.text, map.subtitle_text(), map._subtitle.visible, journey().get("target", {}).get("index") if journey().get("target") is Dictionary else "-"])
+	var labs := []
+	var stack: Array = [station]
+	while not stack.is_empty():
+		var nd: Node = stack.pop_back()
+		if nd is Label: labs.append((nd as Label).text)
+		if nd is RichTextLabel: labs.append((nd as RichTextLabel).text)
+		stack.append_array(nd.get_children())
+	var vj := JSON.stringify(view, "", true)
+	var rx := RegEx.create_from_string("\"index\":\\s*-?[0-9.]+")
+	print("elc-station %s labels_sha=%s nlabels=%d view_sha=%s view_sans_index_sha=%s index_values=%s" % [label, str(labs).sha256_text().substr(0, 16), labs.size(), vj.sha256_text().substr(0, 16), rx.sub(vj, "\"index\":X", true).sha256_text().substr(0, 16), rx.search_all(vj).map(func(m: RegExMatch) -> String: return m.get_string())])
+	var imgs := [null, null]
+	frames += 2
+GD
+my @swaps = (["image block", "\n" . $image, "\n" . $probe],
+             ["_contact_sheet() call", "\n\t_contact_sheet()\n", "\n"],
+             ["sheet.append", "\n\tsheet.append([label, imgs[0], imgs[1]])\n", "\n"]);
+my $src = do { local $/; <STDIN> };
+defined $src or die "elc-probe-gen: no input\n";
+for my $s (@swaps) {
+  my ($name, $old) = @$s;
+  my ($n, $at) = (0, 0);
+  while ((my $i = index($src, $old, $at)) >= 0) { $n++; $at = $i + 1; }  # overlapping matches count (adjacent duplicates share a newline)
+  $n == 1 or die "elc-probe-gen: $name found $n times, want exactly 1\n";
+}
+for my $s (@swaps) {
+  my ($name, $old, $new) = @$s;
+  my $i = index($src, $old);
+  substr($src, $i, length($old)) = $new;
+}
+print $src;
+```
+
+## Appendix C: AC10 (`d149_ac10.sh`, revision 2, sha256 `a2c2693abc814416…`)
+
+```bash
+#!/bin/bash
+# D-149 AC10: the a_outbound map frame, headless, with every step under a process-group deadline.
+# usage: bash d149_ac10.sh ROOT D   (D holds elc_probe_gen.pl, Appendix B)
+# Deadlines (seconds, measured in V17 with headroom): runtime 180, import 300, generator 30, probe 600.
+ROOT=${1:?ROOT}; D=${2:?D}
+cd "$ROOT" || exit 1
+test -f tools/deadline.sh || exit 1
+test -f "$D/elc_probe_gen.pl" || exit 1
+dl() { sh "$ROOT/tools/deadline.sh" "$@"; }  # rc of the command; 124 on expiry (TERM, then KILL, to its process group)
+T=$(mktemp -d /tmp/d149_ac10.XXXXXX) || exit 1
+t0=$(date +%s)
+trap 'rm -rf "$T"' EXIT
+trap 'exit 142' INT TERM HUP
+dl 180 make runtime > "$T/runtime.log" 2>&1; rc=$?
+echo "d149-ac10: make runtime rc=$rc at=$(($(date +%s) - t0))s"
+test "$rc" -eq 0 || exit 10
+dl 300 env PATH="$ROOT/runtime/bin:$PATH" make import > "$T/import.log" 2>&1; rc=$?
+echo "d149-ac10: make import rc=$rc at=$(($(date +%s) - t0))s"
+test "$rc" -eq 0 || exit 11
+dl 30 sh -c 'perl "$1" < "$2"' _ "$D/elc_probe_gen.pl" tools/earth_link_capture.gd > "$T/p.gd" 2> "$T/gen.err"; rc=$?
+echo "d149-ac10: generator rc=$rc $(cat "$T/gen.err")"
+test "$rc" -eq 0 || exit 12
+test -s "$T/p.gd" || exit 12
+dl 600 env AILANG_BIN="$ROOT/runtime/bin/ailang" godot --headless --audio-driver Dummy --path . --script "$T/p.gd" > "$T/log" 2>&1; rc=$?
+echo "d149-ac10: probe rc=$rc at=$(($(date +%s) - t0))s"
+grep '^elc-probe a_outbound ' "$T/log"
+test "$rc" -eq 0 || exit 13
+n=$(grep -cF 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly]' "$T/log")
+s=$(grep -c '^earth-link-capture: 10 frames, 0 failures$' "$T/log")
+e=$(grep -c 'SCRIPT ERROR' "$T/log")
+echo "d149-ac10: a_outbound_4.32ly=$n summary=$s script_errors=$e"
+test "$n" -eq 1 || exit 1
+test "$s" -eq 1 || exit 1
+test "$e" -eq 0 || exit 1
+echo "d149-ac10: PASS"
+```
+
+This uses the repo's `tools/deadline.sh` (process group; TERM, then KILL after 5 s; rc 124). Its limit is the same as `tools/script_gate.sh`'s: a child that calls `setsid`/`setpgrp` itself leaves the group. `make runtime` (gh, tar, ailang) and `make import` (Godot) do not. Every step's rc is captured with no pipe, counts are asserted with `test`, and no assertion uses `!`.
+
+## Appendix D: the stall demonstration (`d149_stall_demo.sh`, sha256 `91c8b4baad59e582…`)
+
+V18 evidence only; the build does not need to run it.
+
+```bash
+#!/bin/bash
+# V17: a stalled AC10 prerequisite. usage: bash d149_stall_demo.sh ROOT D STALL (STALL: runtime | import)
+# Stub make and godot on PATH: make STALL starts a TERM-ignoring child and itself ignores TERM and sleeps;
+# godot only touches a marker. Proves AC10 exits within the deadline, no stall process survives, no probe ran.
+ROOT=${1:?ROOT}; D=${2:?D}; STALL=${3:?STALL}
+case "$STALL" in runtime) want_rc=10; limit=180 ;; import) want_rc=11; limit=300 ;; *) exit 2 ;; esac
+S=$(mktemp -d /tmp/d149_stall.XXXXXX) || exit 1
+TOKEN=d149stall-$$-$RANDOM
+cleanup() { pkill -KILL -f "$TOKEN" 2>/dev/null; rm -rf "$S"; }
+trap cleanup EXIT
+trap 'exit 142' INT TERM HUP ALRM
+mkdir "$S/bin" || exit 1
+cat > "$S/bin/make" <<STUB || exit 1
+#!/bin/sh
+echo "make \$*" >> "$S/calls"
+case " \$* " in *" $STALL "*) ;; *) exit 0 ;; esac
+perl -e '\$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-child" &
+echo \$! >> "$S/pids"
+echo \$\$ >> "$S/pids"
+exec perl -e '\$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-parent"
+STUB
+printf '#!/bin/sh\ntouch "%s/godot-ran"\nexit 0\n' "$S" > "$S/bin/godot" || exit 1
+chmod +x "$S/bin/make" "$S/bin/godot" || exit 1
+# positive control: pgrep sees a process carrying the token
+perl -e '$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-control" &
+cpid=$!
+sleep 1
+c=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+echo "d149-stall: control pgrep=$c"
+test "$c" -ge 1 || exit 1
+kill -KILL "$cpid"; wait "$cpid" 2>/dev/null
+c=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+test "$c" -eq 0 || exit 1
+t0=$(date +%s)
+PATH="$S/bin:$PATH" bash "$D/d149_ac10.sh" "$ROOT" "$D" > "$S/out" 2>&1; rc=$?
+secs=$(($(date +%s) - t0))
+sed 's/^/  | /' "$S/out"
+sleep 1
+left=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+npids=$(wc -l < "$S/pids" | tr -d ' ')
+alive=0; for p in $(cat "$S/pids"); do kill -0 "$p" 2>/dev/null && alive=$((alive + 1)); done
+ran=0; test -e "$S/godot-ran" && ran=1
+calls=$(tr '\n' ';' < "$S/calls")
+echo "d149-stall: $STALL ac10_rc=$rc secs=$secs limit=$limit stall_pids=$npids alive=$alive pgrep_left=$left probe_ran=$ran calls=[$calls]"
+test "$rc" -eq "$want_rc" || exit 1
+test "$secs" -ge "$limit" || exit 1
+test "$secs" -le $((limit + 10)) || exit 1
+test "$npids" -eq 2 || exit 1
+test "$alive" -eq 0 || exit 1
+test "$left" -eq 0 || exit 1
+test "$ran" -eq 0 || exit 1
+grep -q "make $STALL rc=124" "$S/out" || exit 1
+echo "d149-stall: $STALL STOPPED"
+```

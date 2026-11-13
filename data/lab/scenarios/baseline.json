@@ -1,0 +1,15 @@
+{
+  "format": "lab-scenario-2",
+  "id": "baseline",
+  "version": 1,
+  "baseline": { "registry": "baseline-2026.11", "departures": "stapledons-design physics/life-and-worlds.md §7 @ 0038428f1eed" },
+  "summary": "The registry baseline with nothing changed. One universe drawn from the pinned ranges with no selection, the 100,000-year Earth clock, the 3,000 light-year play area, and the two kinds of radio leakage Earth itself makes. It has no departures of its own. The baseline itself departs from the literature in 14 deliberate, reasoned ways (the 10^8-year lifetime bound is the first); they are the registry's, listed in the departures table named above, and the lab prints them with every run.",
+  "switches": [
+    { "switch": "earth_clock_yr", "value": 100000 },
+    { "switch": "reach_ly", "value": 3000 },
+    { "switch": "universe_rule", "value": "pure" },
+    { "switch": "lifetime_prior", "value": "canon" },
+    { "switch": "signature_classes", "value": ["radar", "tv"] },
+    { "switch": "quiet_minds", "value": false }
+  ]
+}

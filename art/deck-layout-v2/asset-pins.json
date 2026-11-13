@@ -6,7 +6,7 @@
   "authoring_script_sha256": "cab215e70914b8a4a7ca5a5ec0c1cca2c0e958f36b0607b08f5704dff19f5470",
   "layout": "art/deck-layout-v2/bow_a.json",
   "operator_contact": "D-132 revises only Voyage/Crew runtime working points and screen anchors; original GLB geometry and historical Blender masters remain pinned below.",
-  "layout_sha256": "9f8df46a94f38b95611fc5754cc8876dfd2e6dc446fae2408bdbf6c5228e474a",
+  "layout_sha256": "0b433ca735848bf47d93027be04e8d6e057b1134fa596d8245710c36d84253c0",
   "source_master": "art/ship-demo-v1/grounded-bridge-v2/stapledon_bridge_mesh_grounded_v2.blend",
   "source_master_sha256": "d1189dd8da752b971c31a19254a39794c8d3a89b67fbe34bd0c392d3e15dd9b5",
   "walk_bake": "tools/deck_walk_bake.gd -> walk_baked.glb (sha256 be6bf75111fa30969adc119eff165fedc2aad97bb26f417de2dbdaa5e5a6e984, 15391 triangles after Blender import), put into WALK_bridge by the generator",

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### m4-d149-earth-link-alpha-index (2026-11-13)
+
+#### Fixed
+
+- **The Earth-link review capture plans alpha Cen A at its real map index** (D-149, Mark's ruling of 2026-11-12; mission iteration 91, sprint R1-D149-EARTH-LINK-ALPHA). `tools/earth_link_capture.gd`'s `ALPHA` target moves from index 1 to 2, so the `a_outbound` map frame of `make capture-earth-link` shows `CNS5:3627  ·  4.32 ly`, as the live map does; its title and the other frames are unchanged. The source-literal guard in `make replay-map-index` (`ci-fast`, `make test`) loses its `SOURCE_PENDING` mechanism: every wrong hand-written `{index, id}` pair now fails, and a new positive control names the fixed pair.
+- Evaluations: Sonnet 5.5 93/100, MiniMax M3 88/100 (cross-vendor). Known gaps (non-blocking): weakening the guard's own `assertEqual(bad, [])` (for example to `assertEqual(bad, bad)`) stays green even with a wrong pair present, because nothing tests the assertion itself (controller reproduced); the new positive control pins line 16, so a harmless line shift fails it loudly. Follow-ups in the charter's iteration-91 backlog line.
+
 ### m4-7an-free-nav-stop-guard-edges (2026-11-12)
 
 #### Added
@@ -13,7 +20,7 @@
 
 #### Added
 
-- **Hand-written catalogue targets are checked at their PR** (7am, sprint R1-7AM-ALPHA-INDEX). `make replay-map-index` (already in `ci-fast` and `make test`) now also scans tracked `*.gd` and `*.py` sources for hand-written `"index"`/`"id"` pairs. The scan is dictionary-aware and takes either key order, with `\"`, `\\` and `\uXXXX` decoding in id literals; any other escape fails by name. A new wrong pair fails at its PR. `tools/earth_link_capture.gd` stays at index 1 as the guard's one pending entry until Mark answers OQ1. The `ci-fast: replay-map-index` edge joins `SG_PREREQS` (pin 5), so dropping the edge fails `script-gate-lint` by name.
+- **Hand-written catalogue targets are checked at their PR** (7am, sprint R1-7AM-ALPHA-INDEX). `make replay-map-index` (already in `ci-fast` and `make test`) now also scans tracked `*.gd` and `*.py` sources for hand-written `"index"`/`"id"` pairs. The scan is dictionary-aware and takes either key order, with `\"`, `\\` and `\uXXXX` decoding in id literals; any other escape fails by name. A new wrong pair fails at its PR. `tools/earth_link_capture.gd` stays at index 1 as the guard's one pending entry until Mark answers OQ1. (D-149, iteration 91: moved to 2, and the pending mechanism removed.) The `ci-fast: replay-map-index` edge joins `SG_PREREQS` (pin 5), so dropping the edge fails `script-gate-lint` by name.
 
 #### Fixed
 
