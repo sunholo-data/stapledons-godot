@@ -36,8 +36,9 @@ def child(cmd):
 
 
 def ail(a, entry, args, bytecode=True):
-    cmd = [a.ailang, "run", "--quiet"] + (["--bytecode"] if bytecode else []) + \
-        ["--caps", "IO,FS", "--package-dir", "sim", "--entry", entry, "--args-json", json.dumps(args), PROBE]
+    vm = ["--bytecode"] if bytecode else []
+    # env -u AI_LIVE: the entry is a variable, so make ai-live-guard wants AI_LIVE cleared here.
+    cmd = ["env", "-u", "AI_LIVE", a.ailang, "run", "--quiet", *vm, "--caps", "IO,FS", "--package-dir", "sim", "--entry", entry, "--args-json", json.dumps(args), PROBE]
     return child(cmd)
 
 
