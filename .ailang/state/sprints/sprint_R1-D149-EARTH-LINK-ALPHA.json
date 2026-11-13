@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-D149-EARTH-LINK-ALPHA",
-  "status": "planned",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark's attended ruling D-149 (2026-11-12): the ALPHA target moves to alpha Cen A's real map index (2, from 1), the guard's SOURCE_PENDING entry is removed, the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance. Design revision 2 after quorum r1 (sol: exact-block probe generator) and r2 (sol: AC10 prerequisites under tools/deadline.sh) under the narrow-refinement carve-out, no round 3; approved for planning, mission iteration 91.",
   "created": "2026-11-13",
-  "design_doc": "design_docs/planned/r1/m4-d149-earth-link-alpha-index.md",
-  "sprint_plan": "design_docs/planned/r1/m4-d149-earth-link-alpha-index-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-d149-earth-link-alpha-index.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-d149-earth-link-alpha-index-sprint.md",
   "branch": "mission/stapledon-iter91-d149",
   "base": "85ca5470 (origin/main = merge-base = the design's measured base; HEAD a51c1a78 is the r2 design commit; diff = the design doc alone, so every V-number applies verbatim)",
   "implements": [
@@ -34,10 +34,10 @@
         "half-B (token alone, transient, V12): python3 tools/test_replay.py MapIndex rc 1, AssertionError: Lists differ: ['tools/earth_link_capture.gd:16'] != [], FAILED (failures=1); then cmp-proved restore",
         "git status --porcelain empty at milestone end; no commit"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-13",
+      "completed": "2026-11-13",
+      "notes": "Executor Haiku 5.5: baselines 9/OK and 38/OK; V11 drills rc 3 on the pristine tree; half-A make rc 2 (Lists differ: [tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2] != []); half-B rc 1 (V12); both restored by cmp. No commit."
     },
     {
       "id": "MS2",
@@ -61,10 +61,10 @@
         "AC8: test \"$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' | tr '\\n' ' ')\" = \"tools/earth_link_capture.gd tools/test_replay.py \" || exit 1 -> rc 0",
         "AC9: for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t || exit 1; done -> each '...: ok', rc 0 (V9: 'python-guard: ok (23 allowlisted, 0 awaiting AILANG port)', 'uid-guard: ok (438 .uid files)'; record actuals)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-13",
+      "completed": "2026-11-13",
+      "notes": "Commit 97833536 (2 files, +3/-6). AC1, AC2, AC3 (9 OK), AC6 (38 OK), AC7, AC8, AC9 green (executor; controller re-ran AC3). Fast tier pass on 97833536 (run 43368961442)."
     },
     {
       "id": "MS3",
@@ -84,10 +84,10 @@
         "final re-run: AC3 'Ran 9 tests' OK; AC6 'Ran 38 tests' OK; AC7 rc 0; AC8 rc 0; AC9 all ok",
         "evidence: measured fields appended for MS1/MS2/MS3 (both half-RED lines, the shortstat, the drill lines, AC10's full line set with wall-clock times); passes/started/completed left null for the controller"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": "2026-11-13",
+      "completed": "2026-11-13",
+      "notes": "AC4 index KILLED, AC5 blind KILLED; AC10 PASS (a_outbound subtitle CNS5:3627  ·  4.32 ly, 10 frames, 0 failures), re-measured by the Sonnet judge (cold). Judges: Sonnet 93 PASS, MiniMax M3 88 PASS (AC10 unmeasured in its sandbox: no network)."
     }
   ],
   "controller_steps": [
