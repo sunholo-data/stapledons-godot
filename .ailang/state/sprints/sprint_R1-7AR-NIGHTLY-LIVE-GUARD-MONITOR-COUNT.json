@@ -1,0 +1,163 @@
+{
+  "sprint_id": "R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "Design revision 2 (commit 5572504b): pillar table net 0 (suite hygiene, restores main's nightly rig/full; issue #392). Quorum r1 BLOCKED (gpt6-1-sol REJECT: unbounded fast-tier guard) -> r1: ai-live-guard-static under $(SCRIPT_GATE) with AI_GUARD_S ?= 120, stall drill AC17. Quorum r2 BLOCKED (gpt6-1-sol REJECT: unbounded mutant-loop guard runs) -> r2 narrow-refinement carve-out, sol's fix verbatim: every mutant-loop and rule-E guard run under tools/deadline.sh $(AI_GUARD_RUN_S), AI_GUARD_RUN_S ?= 60, caught only on rc 1 with the rule's line, drills AC19/AC20; no round 3. 'Open questions for the user: None.' Approved for planning, mission iteration 92.",
+  "created": "2026-11-13",
+  "design_doc": "design_docs/planned/r1/m4-7ar-nightly-live-guard-monitor-count.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ar-nightly-live-guard-monitor-count-sprint.md",
+  "branch": "mission/stapledon-iter92-7ar",
+  "base": "36f4ab4c (origin/main = merge-base = the design's measured base; HEAD 5572504b is the r2 design commit; diff = the design doc alone, so every V-number applies verbatim)",
+  "implements": [
+    "7ar"
+  ],
+  "scope": "Exactly the design's six files (AC14): mk/ai.mk (E6 D2 block + ci-fast edge, E6b header, E6c bounded mutant-loop/rule-E runs, E7 D3 mutant row), mk/lab.mk (E1-E3 env -u AI_LIVE), tools/lab_probe.py (E4), tools/reach_probe.py (E5), mk/earth-link.mk (E8-E11), new tools/monitor_control_check.sh (E12, shell, mode 100644, run with sh, NO .uid). Prototype-measured +81/-17 (V25, 5cd79549). No .gd, no Makefile (held, V19), no GPU, no make golden, no full make test, no changelog fragment (AC14's scope check fails on anything more). TWO code commits (design: 'one commit (or two: D1-D3 and D4 are independent)').",
+  "environment": "ROOT = clone root. export PATH=$PWD/runtime/bin:$PATH (AILANG v0.56.1, provisioned, planner-verified). Godot 4.7.2.stable, headless only. runtime/ untracked and present; .godot imported in this clone - in a fresh clone run 'sh tools/deadline.sh 600 make import' first. Every command bounded with 'sh tools/deadline.sh <s>' (macOS has no timeout). $D = scratch outside the repo (e.g. /tmp/i92_7ar) holding d7ar_drill.sh (Appendix A) and d7ar_helper_cases.sh (Appendix B). Sandbox note (7am D1 precedent, planner-verified: /tmp refuses writes in a sandboxed pi role): if /tmp refuses, reroot $D and the appendix scripts' hardcoded mktemp//tmp templates 1:1 under $ROOT/.godot/tmp/7ar (untracked); expectations unchanged; never retype design text. All timings are the design's Verification Log readings; do not re-derive.",
+  "features": [
+    {
+      "id": "MS1",
+      "description": "RED (test-first, NO commit): extract Appendix A -> $D/d7ar_drill.sh (sha256 prefix e55b79e3e52d828b) and Appendix B -> $D/d7ar_helper_cases.sh (prefix af21a44e875e5c88) byte-for-byte, verify with shasum; mismatch -> re-extract once, then stop (never retype). Record the Baseline column on the pristine tree: AC1 baseline (V1) 'sh tools/deadline.sh 120 sh tools/ai_live_guard.sh .' -> the five rule-A lines (mk/lab.mk:62,63,70; tools/lab_probe.py:44; tools/reach_probe.py:40), rc 1; AC12 baseline (V7) the git grep -> exactly the four mk/earth-link.mk:40-43 pinned hits; AC8 baseline (V5) 'sh tools/deadline.sh 590 make display-audit-monitor-controls' -> rc 2, unbound/stale 'missing reason ...new=46/mismatches=46...', 'display monitor controls: 2 rejected'; drill RED reads (V17) 'bash $D/d7ar_drill.sh guard-lab $ROOT' -> 'd7ar-drill: mutation guard-lab did not apply', rc 3 (same for static-breach). No edits, no commit; git status --porcelain empty at milestone end.",
+      "files": [
+        "$D/d7ar_drill.sh (scratch outside the repo, never committed)",
+        "$D/d7ar_helper_cases.sh (scratch outside the repo, never committed)"
+      ],
+      "estimated_loc": "0 committed (2 extracted scratch scripts)",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "shasum -a 256 $D/d7ar_drill.sh | cut -c1-16 -> e55b79e3e52d828b (design Appendix A header)",
+        "shasum -a 256 $D/d7ar_helper_cases.sh | cut -c1-16 -> af21a44e875e5c88 (design Appendix B header)",
+        "AC1 baseline: sh tools/deadline.sh 120 sh tools/ai_live_guard.sh . -> 5 'A' lines (P1 table), rc 1 (V1)",
+        "AC12 baseline: git grep -nE '(new\\|mismatches\\|failures)=(4[0-9]\\|9[0-9])\\|frame=(1\\|36) (clocks\\|course)' -- mk Makefile tests tools -> the four mk/earth-link.mk:40-43 hits (V7)",
+        "AC8 baseline: sh tools/deadline.sh 590 make display-audit-monitor-controls -> rc 2; 'unbound missing reason ...new=46...', 'stale missing reason ...mismatches=46...', '2 rejected' (V5)",
+        "sh tools/deadline.sh 300 bash $D/d7ar_drill.sh guard-lab $ROOT | tail -1 -> 'd7ar-drill: mutation guard-lab did not apply', rc 3 (V17)",
+        "git status --porcelain empty at milestone end; no commit"
+      ],
+      "passes": false,
+      "started": true,
+      "completed": true,
+      "notes": "MS1 (iteration 92, executor, no commit). Extracted Appendix A and B to /tmp/i92_7ar (sha prefixes e55b79e3e52d828b, af21a44e875e5c88 matched). Appendix C6 helper staged in scratch: aecd62112b67616a matched. AC1 baseline rc 1: 'ai-live-guard: A mk/lab.mk:62', 'A mk/lab.mk:63', 'A mk/lab.mk:70', 'A tools/lab_probe.py:44', 'A tools/reach_probe.py:40' (five A lines, as planned). AC12 baseline: DEVIATION in the command as written. The design table escapes pipes as \\| (markdown); the literal backslash-pipe form in git grep -E matches nothing (rc 1, no output, so it passes vacuously). With plain ERE pipes it gives the four planned hits: mk/earth-link.mk:40 ctl unrefreshed ... frame=1 clocks; :41 drop_one ... frame=36 course; :42 unbound ... new=46 ... failures=46; :43 stale ... mismatches=46 ... failures=92. AC8 baseline DIFFERS from the Baseline column (STOP, tree drift or harness flake; not edited). Actual: rc=2; 'display monitor control unrefreshed: rejected'; 'display monitor controls: drop_one infrastructure failure (playthrough, log .godot/tmp/monitor-controls/monitor-drop_one.play.log)'; same for unbound and stale; 'display monitor controls: 1 rejected'. Cause in the mutant playthrough logs: 'SCRIPT ERROR: Invalid assignment of property or key 'record_sent' with value of type 'bool' on a base object of type 'Nil'. at: _run (res://tests/m4_playthrough_ship.gd:481)' (demo.journey_sim is nil); the unrefreshed run passed. Drill RED reads (rc 3 both): 'd7ar-drill: mutation guard-lab did not apply' rc=3; 'd7ar-drill: mutation static-breach did not apply' rc=3. git status clean. UPDATE (controller ruling after MS2): one-off infrastructure failure in the executor's 14:51 AC8 reading, recorded verbatim above (drop_one, unbound, stale: 'infrastructure failure (playthrough ...)'; '1 rejected'; rc 2). It did not recur. The controller's rerun at MS2 head b9259b7f, 1-min load 5.4, matched the design baseline: rc=2 48s; unrefreshed rejected; drop_one rejected; unbound missing reason ^display-audit: .* new=46 .* failures=46$; stale missing reason ^display-audit: .* mismatches=46 .* failures=92$; 'display monitor controls: 2 rejected'. MS1 passes stays false (my own reading differed); the pristine baseline is the controller's."
+    },
+    {
+      "id": "MS2",
+      "description": "GREEN part 1, the live guard (D1-D3; E1-E7 with E6b, E6c), ONE commit. Text byte-for-byte from Appendix C1-C4: E1-E3 mk/lab.mk:62,63,70 prefix 'env -u AI_LIVE ' to the three $(LAB_RUN) --entry $$... lines; E4 tools/lab_probe.py:44 comment line + return [\"env\", \"-u\", \"AI_LIVE\", ailang(), \"run\", ...]; E5 tools/reach_probe.py:39-40 hoist the flag into vm, one-line cmd = [\"env\", \"-u\", \"AI_LIVE\", a.ailang, \"run\", \"--quiet\", *vm, \"--caps\", ..., PROBE] (the two-line form still fails rule A, V10 M-reach-split); E6 the D2 block after ai-test: (comment, AI_GUARD_S ?= 120, AI_GUARD_RUN_S ?= 60, ai-live-guard-static under $(SCRIPT_GATE), the 'ci-fast: ai-live-guard-static' edge); E6b 'ai-live-guard: import ai-live-guard-static' with the old '@sh tools/ai_live_guard.sh .' line removed; E6c the mutant-loop guard run and the rule-E setup + its two guard runs each under 'sh tools/deadline.sh $(AI_GUARD_RUN_S)' with rc classified 0/1/124/other (caught = rc 1 AND grep -qF the rule's line; 124/other = infrastructure failure) and the setup chain ending '|| { ...setup ... failed; exit 1; }'; E7 the D3 mk/lab.mk mutant row after _rogue2. Pre-commit: AC1, AC2, AC3, AC4, AC6, AC7. Commit: git add mk/ai.mk mk/lab.mk tools/lab_probe.py tools/reach_probe.py (named files only). Post-commit on the committed tree: AC5, AC17, AC18, AC19, AC20 (drills restore themselves; prove git status --porcelain empty after each).",
+      "files": [
+        "mk/ai.mk",
+        "mk/lab.mk",
+        "tools/lab_probe.py",
+        "tools/reach_probe.py"
+      ],
+      "estimated_loc": "~+70/-15 of the prototype's +81/-17 (V25); under the 250-line cap",
+      "dependencies": [
+        "MS1"
+      ],
+      "acceptance_criteria": [
+        "AC1: sh tools/deadline.sh 120 sh tools/ai_live_guard.sh . -> 'ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings)', rc 0",
+        "AC2: test \"$(sh tools/deadline.sh 60 make -n ci-fast 2>/dev/null | grep -c '^sh tools/script_gate.sh ai-live-guard-static .* 120 .* -- sh tools/ai_live_guard.sh \\.$')\" -eq 1 -> rc 0",
+        "AC3: sh tools/deadline.sh 200 make ai-live-guard-static -> 'script-gate: ai-live-guard-static ok: ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 6 s of 120 s)' (seconds vary), rc 0",
+        "AC4: sh tools/deadline.sh 900 make ai-live-guard > $D/alg.log 2>&1; echo rc=$?; grep -c '^guard mutant caught' $D/alg.log; grep -x 'guard mutant caught: mk/lab.mk (A mk/lab.mk)' $D/alg.log; tail -1 $D/alg.log -> rc=0; 25; the lab.mk line; 'guard: rule E reads git ls-files (...)'; 'script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) ...'; about 4 minutes (239 s at load 5.4, V25)",
+        "AC5: for m in guard-lab guard-reach guard-labprobe; do sh tools/deadline.sh 300 bash $D/d7ar_drill.sh $m $ROOT | tail -1; done -> 'd7ar-drill: guard-lab KILLED', '... guard-reach KILLED', '... guard-labprobe KILLED'",
+        "AC6: sh tools/deadline.sh 600 make lab-parity -> 4 'lab-parity: ... (strict VM = interpreter)' lines and 'lab-parity: 4 checks NOT on the strict VM ...', rc 0",
+        "AC7: AILANG=ailang sh tools/deadline.sh 120 python3 -I -c 'import sys; sys.path.insert(0, \"tools\"); import lab_probe as l; p = l.start(\"draws\", 2000); print(p.args[:4]); print(l.finish(p)[0])' and sh tools/deadline.sh 120 python3 -I -c 'import sys, types; sys.path.insert(0, \"tools\"); import reach_probe as r; print(r.ail(types.SimpleNamespace(ailang=\"ailang\"), \"drawMain\", {\"seed\": 1, \"n\": 0})[0])' -> ['env', '-u', 'AI_LIVE', 'ailang'] then 'draws n=2000 accepted=91 first=1 mix=6578220370666750'; and 0.0; both rc 0",
+        "AC17: sh tools/deadline.sh 120 bash $D/d7ar_drill.sh stall $ROOT -> 'script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)...'; 'd7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0' (secs below 30); 'd7ar-drill: stall KILLED', rc 0",
+        "AC18: sh tools/deadline.sh 400 bash $D/d7ar_drill.sh static-breach $ROOT -> 'ai-live-guard: A mk/lab.mk:63: ...'; 'script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line ...'; 'd7ar-drill: static-breach KILLED', rc 0",
+        "AC19: sh tools/deadline.sh 120 bash $D/d7ar_drill.sh mutant-stall $ROOT -> 'script-gate: ai-live-guard-static ok: ...'; 'guard mutant infrastructure failure: mk/ai.mk: the guard did not finish in 3 s (deadline, rc 124)'; 'd7ar-drill: mutant-stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=14 survivors=0 caught=0' (secs below 60); 'mutant-stall KILLED', rc 0",
+        "AC20: sh tools/deadline.sh 120 bash $D/d7ar_drill.sh mutant-exit2 $ROOT -> 'guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:'; '... make_rc=2 secs=6 survivors=0 caught=0'; 'mutant-exit2 KILLED', rc 0",
+        "git show --stat -> exactly the four named files; git status --porcelain empty after the drills"
+      ],
+      "passes": true,
+      "started": true,
+      "completed": true,
+      "notes": "MS2 (iteration 92): commit b9259b7f, mk/ai.mk mk/lab.mk tools/lab_probe.py tools/reach_probe.py. Pre-commit. AC1: rc 0, 'ai-live-guard: ok (97 make/shell/CI files, 548 test/tool scripts, launch builder, settings)'. DEVIATION from the expected 98/549: the design attributes the +1/+1 to the new helper tools/monitor_control_check.sh (V8), which MS3 adds; this milestone does not add it, so 97/548 is the pre-helper count, not drift (main still 36f4ab4c). AC2: rc 0, count 1. AC3: rc 0, 'script-gate: ai-live-guard-static ok: ai-live-guard: ok (97 make/shell/CI files, 548 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 7 s of 120 s)'. AC4: rc=0; grep -c '^guard mutant caught' = 25; 'guard mutant caught: mk/lab.mk (A mk/lab.mk)'; 'guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)'; 'script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) (rc 0, no SCRIPT ERROR, 1 s of 600 s)'; SURVIVED/infrastructure lines: 0. AC6: rc 0; 'lab-parity: scenarioVm scenario-ok (strict VM = interpreter)', 'lab-parity: scenarioProbe 18744 bytes (strict VM = interpreter)', 'lab-parity: statsVm stats-ok (strict VM = interpreter)', 'lab-parity: statsProbe 10722 bytes (strict VM = interpreter)', 'lab-parity: 4 checks NOT on the strict VM (they run under ailang test only; ...)'. AC7: rc 0 \"['env', '-u', 'AI_LIVE', 'ailang']\", 'draws n=2000 accepted=91 first=1 mix=6578220370666750'; rc 0 '0.0'. Post-commit. AC5: 'd7ar-drill: guard-lab KILLED', 'guard-reach KILLED', 'guard-labprobe KILLED' (rc 0 each). AC17: rc 0; 'script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)...'; 'd7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0'; 'd7ar-drill: stall KILLED'. AC18: rc 0; 'ai-live-guard: A mk/lab.mk:63: ...'; 'script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line ...'; 'd7ar-drill: static-breach KILLED'. AC19: rc 0; 'script-gate: ai-live-guard-static ok: ...'; 'guard mutant infrastructure failure: mk/ai.mk: the guard did not finish in 3 s (deadline, rc 124)'; 'd7ar-drill: mutant-stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=15 survivors=0 caught=0'; 'mutant-stall KILLED' (scratch tree shows 461 test/tool scripts; the drill's copy, not the gate). AC20: rc 0; 'guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:'; 'd7ar-drill: mutant-exit2 before=0 control_seen=1 control_cleared=0 make_rc=2 secs=6 survivors=0 caught=0'; 'mutant-exit2 KILLED'. No sleeper left (pgrep '^sleep 319[13]$' empty); git status clean after each drill."
+    },
+    {
+      "id": "MS3",
+      "description": "GREEN part 2, the monitor controls (D4; E8-E12), ONE commit. Text byte-for-byte from Appendix C5 (the whole mk/earth-link.mk target after the edit) and C6: E8 the 2 comment lines naming the tokens; E9 the vacuous-run negative control (3 recipe lines: synthetic samples=0 log + empty samples file, require the refusal 'samples=0, fewer than ...'); E10 the inline grep loop replaced by 'if ! why=$$(sh tools/monitor_control_check.sh $$log.audit.log $$log/display_samples.ndjson \"$$@\"); then echo \"display monitor controls: $$m $$why\"; bad=$$((bad + 1)); return 0; fi;'; E11 the four ctl lines with tokens (frame=@F1@ clocks; frame=@F10@ course with failures=1 literal; samples=@N@ .* new=@N@ .* failures=@N@; samples=@N@ .* mismatches=@N@ .* failures=@2N@); E12 new tools/monitor_control_check.sh byte-for-byte from C6 (mode 100644, run with sh, NO .uid; after writing verify shasum prefix aecd62112b67616a and sh -n rc 0). Pre-commit: AC8, AC11, AC12. Commit: git add mk/earth-link.mk tools/monitor_control_check.sh (named files only). Post-commit: AC9, AC10 - ordering matters: the drill's trap restores tools/monitor_control_check.sh with git checkout, so the helper must be tracked at HEAD before AC9's floor mode deletes a line from it.",
+      "files": [
+        "mk/earth-link.mk",
+        "tools/monitor_control_check.sh (new, mode 100644, shell - no .uid)"
+      ],
+      "estimated_loc": "~+11/-2 plus the 33-line new helper (V25); under the 250-line cap",
+      "dependencies": [
+        "MS2"
+      ],
+      "acceptance_criteria": [
+        "helper check: shasum -a 256 tools/monitor_control_check.sh | cut -c1-16 -> aecd62112b67616a (Appendix C header); sh -n tools/monitor_control_check.sh rc 0",
+        "AC8: sh tools/deadline.sh 590 make display-audit-monitor-controls > $D/mc.log 2>&1; echo rc=$?; grep '^display monitor' $D/mc.log -> rc=0; four 'display monitor control <m>: rejected' lines; 'display monitor controls: 4 rejected'",
+        "AC9: for m in unbound-partial stale-partial drop-row floor; do sh tools/deadline.sh 600 bash $D/d7ar_drill.sh $m $ROOT | tail -1; done -> 'd7ar-drill: unbound-partial KILLED', 'stale-partial KILLED', 'drop-row KILLED', 'floor KILLED' (partial modes also require '3 rejected'; floor reads '...not refused by the samples floor: sampled row 1 of ... has 0 integer \"frame\" keys, want 1')",
+        "AC10: sh tools/deadline.sh 600 bash $D/d7ar_drill.sh cadence $ROOT | tail -1 -> 'd7ar-drill: cadence PASSED (samples=60)'",
+        "AC11: sh tools/deadline.sh 60 sh $D/d7ar_helper_cases.sh $ROOT -> nine 'case ...: ok' lines (vacuous, short, skew, nosummary, partial, accepted, keyorder, ambiguous, noframe), 'd7ar helper cases: 0 wrong', rc 0",
+        "AC12: git grep -nE '(new\\|mismatches\\|failures)=(4[0-9]\\|9[0-9])\\|frame=(1\\|36) (clocks\\|course)' -- mk Makefile tests tools; test $? -eq 1 -> no output, rc 0",
+        "git show --stat -> exactly the two named files; git status --porcelain empty after the drills"
+      ],
+      "passes": true,
+      "started": true,
+      "completed": true,
+      "notes": "MS3 (iteration 92): commit fb269135, mk/earth-link.mk + tools/monitor_control_check.sh (mode 100644, no .uid). Pre-commit. AC8: rc=0; 'display monitor control unrefreshed: rejected'; 'display monitor control drop_one: rejected'; 'display monitor control unbound: rejected'; 'display monitor control stale: rejected'; 'display monitor controls: 4 rejected'. AC11: 'case vacuous: ok (rc 1: samples=0, fewer than 10 (a vacuous run))', 'case short: ok (rc 1: samples=9, ...)', 'case skew: ok', 'case nosummary: ok', 'case partial: ok', 'case accepted: ok (rc 0)', 'case keyorder: ok (rc 0)', 'case ambiguous: ok', 'case noframe: ok', 'd7ar helper cases: 0 wrong', rc 0. AC12 (plain ERE |, accepted deviation 1): git grep no output; rc 1 (pass). Infrastructure-failure rule: none of AC8/AC9/AC10 reported an infrastructure failure, so no rerun was needed. Post-commit. AC9: 'd7ar-drill: unbound-partial KILLED' (3 rejected; 'display monitor controls: unbound missing reason ^display-audit: samples=45 .* new=45 .* failures=45$'); 'd7ar-drill: stale-partial KILLED' (3 rejected; 'stale missing reason ^display-audit: samples=45 .* mismatches=45 .* failures=90$'); 'd7ar-drill: drop-row KILLED' (3 rejected; 'drop_one missing reason ^FAIL monitor-coverage frame=36 course$'); 'd7ar-drill: floor KILLED' ('FAIL the vacuous run was not refused by the samples floor: sampled row 1 of .godot/tmp/monitor-vacuous/samples.ndjson has 0 integer \"frame\" keys, want 1'). AC10: rc 0, 'd7ar-drill: cadence PASSED (samples=60)'; 'display monitor controls: 4 rejected'. git status clean after each drill."
+    },
+    {
+      "id": "MS4",
+      "description": "Evidence (NO code commit): run AC13, AC14, AC16 and record each AC's output verbatim in this JSON's notes field. The executor appends measured outputs; the controller sets passes/started/completed.",
+      "files": [
+        ".ailang/state/sprints/sprint_R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT.json (measured fields only)"
+      ],
+      "estimated_loc": "0 committed",
+      "dependencies": [
+        "MS3"
+      ],
+      "acceptance_criteria": [
+        "AC13: for t in python-guard uid-guard script-gate-lint; do sh tools/deadline.sh 120 make $t || exit 1; done; git diff --check 36f4ab4c HEAD; sh -n tools/monitor_control_check.sh (and shellcheck tools/monitor_control_check.sh where installed) -> 'python-guard: ok (25 allowlisted, ...)', 'uid-guard: ok (470 .uid files)', 'script-gate-prereqs: ok ...'; no diff-check output; rc 0",
+        "AC14: test \"$(git diff --name-only 36f4ab4c HEAD -- . ':!design_docs' ':!.ailang' | tr '\\n' ' ')\" = \"mk/ai.mk mk/earth-link.mk mk/lab.mk tools/lab_probe.py tools/monitor_control_check.sh tools/reach_probe.py \" -> rc 0",
+        "AC16: git status --porcelain -> empty (after every drill, and finally)"
+      ],
+      "passes": true,
+      "started": true,
+      "completed": true,
+      "notes": "MS4 (iteration 92), no code commit. AC13: 'python-guard: ok (25 allowlisted, 0 awaiting AILANG port)'; 'uid-guard: ok (470 .uid files)'; 'script-gate-lint: ok (281 --script invocations: 163 through $(SCRIPT_GATE), 118 on the baseline; 37 includes, all in mk/*.mk; 38 makefiles scanned)'; 'script-gate-prereqs: ok (5 pairs hold ...)'; git diff --check 36f4ab4c HEAD: no output, rc 0; sh -n tools/monitor_control_check.sh rc 0; shellcheck rc 0. AC14: test rc 0; name list 'mk/ai.mk mk/earth-link.mk mk/lab.mk tools/lab_probe.py tools/monitor_control_check.sh tools/reach_probe.py'. AC1 re-check (deviation 3 closed): rc 0, 'ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings)'. AC3 re-check: rc 0, 'script-gate: ai-live-guard-static ok: ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 7 s of 120 s)'. AC16: git status --porcelain empty. AC15 (GitHub fast tier on the PR) is a controller step and was not run; the executor does not push."
+    }
+  ],
+  "controller_steps": [
+    "AC15 - the GitHub fast tier on the PR, including ai-live-guard-static on Linux: 'sh tools/deadline.sh 60 gh pr checks <PR>' -> 'fast tier ... pass'. The executor does NOT push; this is the measurement the designer explicitly left unverified.",
+    "git log --oneline 36f4ab4c..HEAD shows exactly the two code commits (MS2 = mk/ai.mk mk/lab.mk tools/lab_probe.py tools/reach_probe.py; MS3 = mk/earth-link.mk tools/monitor_control_check.sh) plus the planner's plan/JSON commit; re-run AC13/AC14/AC16; set passes/started/completed per milestone",
+    "after the cross-family evaluation passes and the merge: move the design doc to design_docs/implemented/r1/, update the README index, charter row 7ar and issue #392 (design Deliverables). The next nightly rig/full on main should not name ai-live-guard or display-audit-monitor-controls - the outcome, not a merge gate"
+  ],
+  "commit_rules": "One commit per code milestone (MS2, MS3); MS1 and MS4 commit nothing. Stage named files only, never 'git add -A'. tools/monitor_control_check.sh is a shell script: no .uid file (.uid is for Godot scripts/shaders only). Every commit message ends with 'Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>'. Restore every drill mutation (the drills restore themselves via their git checkout trap and refuse rc 3 if a mutation did not apply); prove 'git status --porcelain' empty after each drill and at each milestone end (AC16). The executor never sets passes (the controller does).",
+  "risks": [
+    "Static guard fails on Linux for a portability reason - AC15 is the measurement; the fix is in the guard's portability, never a removal from ci-fast (design Risks)",
+    "The fast tier grows by about 8 s (about 1%): accepted (D2)",
+    "60 s per mutant-loop run too tight on a loaded host - it fails by name as an infrastructure failure, never as a catch; 60 s = 7.5x the slowest measured scan (V24); never bump silently",
+    "120 s too tight on a slow runner - fails loudly ('timeout after 120 s (rc 142)'); the fix would be a measured new AI_GUARD_S, not gate removal",
+    "The gate's Godot wording on a timeout is wrong for this shell guard - follow-up F3, not this row; target name and 'timeout after N s (rc 142)' are unambiguous",
+    "Drill leftovers - the drills restore with git checkout on exit and refuse rc 3 on a non-applying mutation; AC16 checks"
+  ],
+  "pause_points": [
+    "runtime/bin/ailang != v0.56.1 or Godot != 4.7.2 -> stop",
+    "an appendix sha256 prefix mismatches -> re-extract once; still mismatched -> stop, never retype design text",
+    "a pristine baseline differs from the Baseline column (the five A lines / rc 1; the four pinned hits; '2 rejected'; drill rc 3) -> tree drift, stop",
+    "any drill prints SURVIVED, or git status --porcelain is non-empty after a drill -> stop; do not hand-edit the drill's mutations",
+    "AC1/AC3's 98/549 counts, AC13's '25 allowlisted' / '470 .uid files', or AC4's 25 caught count differ -> main moved under the sprint; stop - do not edit the expectations (98 = 97 + the newly tracked helper, V8)",
+    "AC19/AC20 show caught != 0, a survivor sleeper (pgrep -f '^sleep 319[13]$' non-empty), or make_rc=124 -> the bound or the rc classification is wrong; stop - never widen the catch to a non-1 rc, never bump AI_GUARD_S/AI_GUARD_RUN_S silently",
+    "make ai-live-guard runs far past 239 s (V25) -> let the 900 s deadline fire; report the log, do not re-run with a longer deadline",
+    "AC14 fails on an extra file (a changelog fragment, a .uid, a Makefile edit) -> stop; the design's Deliverables name E1-E12 only"
+  ],
+  "local_pr_gates": [
+    "sh tools/deadline.sh 120 sh tools/ai_live_guard.sh . (AC1): 'ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings)', rc 0",
+    "sh tools/deadline.sh 200 make ai-live-guard-static (AC3): gate ok line, rc 0; make -n ci-fast names the gated guard once (AC2)",
+    "sh tools/deadline.sh 900 make ai-live-guard (AC4): rc 0, 25 caught, the mk/lab.mk row, launch builder ok",
+    "the Appendix A drills (AC5, AC9, AC10, AC17-AC20): each KILLED (cadence PASSED), rc 0, tree clean",
+    "sh tools/deadline.sh 590 make display-audit-monitor-controls (AC8): rc 0, '4 rejected'",
+    "sh tools/deadline.sh 600 make lab-parity (AC6); AC7's two bounded python3 probes; AC11's helper cases '0 wrong'",
+    "make python-guard / uid-guard / script-gate-lint (AC13): each '...: ok', rc 0; git diff --check 36f4ab4c HEAD silent; AC14 scope rc 0; AC16 clean",
+    "NO make test, NO make golden, NO GPU capture, NO rig run - the nightly covers make test; AC15 is the PR's fast tier (controller)"
+  ],
+  "plan_verification": "Planner, 2026-11-13, HEAD 5572504b (r2 design commit) on branch mission/stapledon-iter92-7ar (no git writes beyond the plan/JSON commit): merge-base with origin/main = 36f4ab4c = origin/main = the design's measured base; git diff --name-only = the design doc alone, so every V-number applies verbatim; git status --porcelain empty. Appendix fences extracted read-only by piping (sandbox refuses /tmp writes): A sha256 e55b79e3e52d828b... matches, B af21a44e875e5c88... matches, C6 helper aecd62112b67616a... matches - all equal the doc's pinned prefixes. Edit anchors verified verbatim: mk/lab.mk:62,63,70 the three $(LAB_RUN) --entry $$... lines; tools/lab_probe.py:44 'return [ailang(), \"run\", ...]'; tools/reach_probe.py:39-40 the two-line cmd; mk/ai.mk:445 ai-test:, :449-450 'ai-live-guard: import' + '@sh tools/ai_live_guard.sh .', the _rogue2 row and the 'Makefile include infra/live.mk' row, the mutant-loop guard run and the rule-E chain exactly as E6c's 'before'; mk/earth-link.mk:29,37,40-43 the inline grep loop and the four pinned ctl lines. Environment: runtime/bin/ailang v0.56.1; Godot 4.7.2.stable; .godot imported; tools/deadline.sh present; tools/monitor_control_check.sh absent (as expected pre-MS3); /tmp writes refused in the planner sandbox (7am D1 precedent). The planner ran no make target and no Godot (sandbox hard rule); every number above is a V-row citation.",
+  "velocity": null,
+  "ambiguities": [
+    "A1: the mission's MS1 names scratch '$D, e.g. /tmp/i92_7ar', but a sandboxed pi role cannot write /tmp (planner-verified: Operation not permitted; 7am D1 precedent). Plan: the executor probes /tmp first; if refused, reroots $D and the appendix scripts' hardcoded mktemp//tmp/d7ar-$MODE.log templates 1:1 under $ROOT/.godot/tmp/7ar (untracked). Not resolved by guessing - recorded for the executor's environment check.",
+    "A2: the design's 'Sub-milestones and estimates' says 'One milestone, 7ar-1, one commit (or two: D1-D3 and D4 are independent)' and runs AC13/AC14 in the first batch; the mission mandates 4 milestones with 2 code commits and an MS4 evidence step. Plan follows the mission (the design explicitly allows two commits; MS1/MS4 commit nothing). If the loop requires a commit per milestone, that is a controller call.",
+    "A3: the mission's MS2 acceptance list reads 'AC1-AC7, AC17-AC20, AC5' - AC5 named twice (it is inside AC1-AC7). Plan: MS2 runs AC1-AC7 and AC17-AC20 once each; AC5 post-commit with the other drills.",
+    "A4: AC1/AC3's '98 make/shell/CI files, 549 test/tool scripts', AC13's '25 allowlisted' / '470 .uid files' and AC4's '25' caught count are stable only if main lands no new tracked script/.py/.uid/mutant row before execution (98 = 97 + the newly tracked helper, V8). The pause point covers drift - do not edit the expectations.",
+    "A5: no changelog fragment - the design's Deliverables name only E1-E12 and AC14's scope check fails on anything more (recent sprints shipped one; listed for visibility).",
+    "A6: the drills hardcode pgrep tokens 'sleep 3191'/'sleep 3193' and mktemp -d; on a heavily loaded host the 'secs below 30/60' bounds in AC17/AC19 could in principle be tight - the design measured secs=5 and secs=14 (V21, V26). Not resolved; if a drill reads SURVIVED solely on secs, record verbatim and stop for the controller."
+  ],
+  "notes": "Planner: plan and JSON written, jq-validated, committed as the plan commit. Executor: append measured outputs per milestone (MS4 evidence: AC13/AC14/AC16 verbatim) to the features' notes fields; do not set passes - the controller does."
+}

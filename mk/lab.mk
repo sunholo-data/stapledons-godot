@@ -59,15 +59,15 @@ lab-parity: ## R3-UNIVERSE-LAB UL3: the lab's pure modules run wholly on the str
 	@mkdir -p $(SCRATCH)
 	@for spec in $(LAB_PARITY); do \
 	  f=$${spec%%:*}; rest=$${spec#*:}; e=$${rest%%:*}; want=$${rest#*:}; \
-	  $(LAB_RUN) --bytecode --strict-bytecode --entry $$e --args-json 0 sim/$$f.ail > $(SCRATCH)/lab-$$e-vm.txt || { echo "lab-parity: FAIL $$e (strict VM)"; exit 1; }; \
-	  $(LAB_RUN) --entry $$e --args-json 0 sim/$$f.ail > $(SCRATCH)/lab-$$e-interp.txt || { echo "lab-parity: FAIL $$e (interpreter)"; exit 1; }; \
+	  env -u AI_LIVE $(LAB_RUN) --bytecode --strict-bytecode --entry $$e --args-json 0 sim/$$f.ail > $(SCRATCH)/lab-$$e-vm.txt || { echo "lab-parity: FAIL $$e (strict VM)"; exit 1; }; \
+	  env -u AI_LIVE $(LAB_RUN) --entry $$e --args-json 0 sim/$$f.ail > $(SCRATCH)/lab-$$e-interp.txt || { echo "lab-parity: FAIL $$e (interpreter)"; exit 1; }; \
 	  cmp $(SCRATCH)/lab-$$e-vm.txt $(SCRATCH)/lab-$$e-interp.txt || { echo "lab-parity: FAIL $$e: strict VM != interpreter"; exit 1; }; \
 	  test -s $(SCRATCH)/lab-$$e-vm.txt || { echo "lab-parity: FAIL $$e printed nothing"; exit 1; }; \
 	  if [ -n "$$want" ]; then test "$$(cat $(SCRATCH)/lab-$$e-vm.txt)" = "$$want" || { echo "lab-parity: FAIL $$e: $$(cat $(SCRATCH)/lab-$$e-vm.txt)"; exit 1; }; fi; \
 	  echo "lab-parity: $$e $${want:-$$(wc -c < $(SCRATCH)/lab-$$e-vm.txt | tr -d ' ') bytes} (strict VM = interpreter)"; \
 	done
 	@: > $(SCRATCH)/lab-not-strict.txt; for spec in $(LAB_NOT_STRICT); do \
-	  $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} --args-json 0 sim/$${spec%%:*}.ail >> $(SCRATCH)/lab-not-strict.txt || { echo "lab-parity: FAIL $${spec#*:}"; exit 1; }; \
+	  env -u AI_LIVE $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} --args-json 0 sim/$${spec%%:*}.ail >> $(SCRATCH)/lab-not-strict.txt || { echo "lab-parity: FAIL $${spec#*:}"; exit 1; }; \
 	done; \
 	n=$$(tr ',' '\n' < $(SCRATCH)/lab-not-strict.txt | grep -c 'ailang#'); \
 	echo "lab-parity: $$n checks NOT on the strict VM (they run under ailang test only; add them back at the fix): $$(paste -sd';' $(SCRATCH)/lab-not-strict.txt | sed 's/;/; /g')"
