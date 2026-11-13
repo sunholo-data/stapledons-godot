@@ -686,7 +686,12 @@
     "painted_residents": 42,
     "source_triangles": 981694,
     "production_vertices": 854316,
-    "status": "preparing current-main packed candidate; native appearance/FPS acceptance pending",
-    "local_gpu_used": false
+    "status": "packed headless review checks pass; final CPU packaging/publication and native appearance/FPS acceptance pending",
+    "local_gpu_used": false,
+    "export_pack_check": {
+      "checked": 3046,
+      "skips": 0,
+      "failures": 0
+    }
   }
 }

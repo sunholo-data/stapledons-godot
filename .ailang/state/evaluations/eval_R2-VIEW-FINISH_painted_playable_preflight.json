@@ -9,7 +9,10 @@
   "verified": [
     "1141 compiled mesh hashes and nine native resource hashes match",
     "native geometry, cameras/WALK/collision/live UI preserved",
-    "deck transitions retain compiled replacements"
+    "deck transitions retain compiled replacements",
+    "Exported macOS app outside source checkout loads 141 bridge meshes, 1000 Commons meshes and 42 painted residents",
+    "Strict headless export oracle: 3046 checked, 0 skips, 0 failures; pinned AI core staged, raw observation and paint authoring excluded",
+    "Painted NPC raw-image export closure preserves the 27 catalog hashes; source NPC checks: 23 passed"
   ],
   "resolved_after_review": [
     "Explicit authoring export exclusion",
@@ -17,7 +20,6 @@
     "Late NPC rollback and painted lift round-trip tests added"
   ],
   "remaining": [
-    "Packed export smoke",
     "Native appearance/FPS acceptance on laptop",
     "Full sprint and cross-family merge evaluation"
   ],
