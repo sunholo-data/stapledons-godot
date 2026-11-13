@@ -3,11 +3,14 @@ extends SceneTree
 const SOURCE:="res://art/environment-painted-pilot/"
 const DEST:="res://assets/levels/painted/"
 func _initialize()->void:
+ if OS.get_cmdline_user_args()==PackedStringArray(["people"]):
+  var ok:=_people();quit(0 if ok else 1);return
  for path:String in ["res://tools/painted_levels_stage.gd","res://demos/painted_levels_finish.gd","res://tests/test_painted_levels.gd"]:
   if not FileAccess.file_exists(path+".uid"):FileAccess.open(path+".uid",FileAccess.WRITE).store_line(ResourceUID.id_to_text(ResourceUID.create_id()))
  for deck:String in ["bridge","commons"]:
   if not _stage(deck):quit(1);return
- print("PAINTED_LEVELS_STAGE two native material/mesh closures, no authoring paths");quit()
+ if not _people():quit(1);return
+ print("PAINTED_LEVELS_STAGE two native material/mesh closures and raw NPC images, no authoring paths");quit()
 func _stage(deck:String)->bool:
  var src:=SOURCE+deck+"-finish/";var dest:=DEST+deck+"/"
  DirAccess.make_dir_recursive_absolute(dest+"compiled")
@@ -47,4 +50,17 @@ func _stage(deck:String)->bool:
  doc.resources=resources;doc.paint_vertices=vertices;doc.normal_game_installation=true;doc.production_indexed=true
  FileAccess.open(dest+"manifest.json",FileAccess.WRITE).store_string(JSON.stringify(doc,"  ")+"\n")
  print("PAINTED_LEVELS_STAGE ",deck," ",doc.meshes.size()," meshes; ",vertices," indexed vertices")
+ return true
+
+func _people()->bool:
+ var root:="res://assets/characters/npcs/"
+ var doc:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(root+"manifest.json"))
+ var files:Dictionary={}
+ for character:Dictionary in doc.characters:
+  for pose:Dictionary in character.poses.values():files[root+str(pose.file)]=str(pose.sha256)
+  if not str(character.get("entity_id","")).is_empty():files[str(character.portrait)]=str(character.portrait_sha256)
+ for path:String in files:
+  if FileAccess.get_sha256(path)!=files[path]:printerr("raw NPC source changed ",path);return false
+  if DirAccess.copy_absolute(path,path+".bin")!=OK:return false
+ print("PAINTED_PEOPLE_STAGE ",files.size()," raw images preserve hash closure")
  return true
