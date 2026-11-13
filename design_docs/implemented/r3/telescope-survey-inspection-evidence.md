@@ -1,6 +1,6 @@
 # Telescope implementation evidence
 
-Status: implementation and review in progress, 2026-11-12. This is not visual acceptance or a landing record. [Design](telescope-survey-inspection.md), [sprint](telescope-survey-inspection-sprint.md), [progress](../../../.ailang/state/sprints/sprint_R3-TELESCOPE.json).
+Status: accepted for landing, 2026-11-13. Mark explicitly directed “merge it” after being told that his dev-build OK was the remaining visual gate. This records his authorization, without claiming an additional witnessed play session. [Design](telescope-survey-inspection.md), [sprint](telescope-survey-inspection-sprint.md), [progress](../../../.ailang/state/sprints/sprint_R3-TELESCOPE.json).
 
 ## Real observations
 
@@ -46,14 +46,14 @@ The final headless benchmark exercises 32 real-pack zoom/pan states and 1,024 in
 
 The initial Studio health snapshot showed GPU 75%, CPU 70.1%, with an active Ollama job; GPU work was deferred. Once it became free, the focused capture rendered 40 frames at 960×540, 1280×720 and 2560×1440: actual ship/Navigation/chair/popup contexts, live Sun and Aldebaran, registered picking, survey context, credits, missing imagery and resolution limits. All five archive SR/GR image comparisons passed. The actual unclipped Sun viewport has a black rim and 0.000581-pixel CPU/GPU centroid error; 39 physical uniforms match. Eight independent image-mask controls reject blank, all-lit, edge-clipped and displaced cases. Aldebaran at the actual close stop exceeds the fixed 14° field, so its centroid is deliberately not assessed and the panel labels the native crop. No demagnification or exposure-model change was introduced.
 
-Visual review opened all 40 initial frames and caught panel clipping, stale scroll position and arrival-presentation timing. These are corrected; the final stable-source rerender and complete dev-build review remain pending. Raw oracle viewport validation alone is explicitly insufficient to claim that the composed UI fits.
+Visual review opened all 40 initial frames and caught panel clipping, stale scroll position and arrival-presentation timing. These are corrected. The combined dev build was published and Mark explicitly authorized merge on 2026-11-13; final composed-UI rerender defers to nightly under the busy-GPU rule. Raw oracle viewport validation alone is explicitly insufficient to claim that the composed UI fits; no additional rendered validation is claimed.
 
 The public immutable observation cache has 193 hash-addressed objects; 12 anonymous downloads verified source/image/index/tile and provenance bytes. Publisher negative controls pass 28/0. No latest alias is overwritten.
 
-## Remaining review gates
+## Landing record
 
-- Current main `0154b7c2` is integrated. The final lock uses celestial 0.7.0 and worlds 0.2.1; the latter's 19 AILANG files and 78 interfaces are identical to main's worlds 0.2.0, with 65 native tests passing.
-- Final stable-source rendered evidence and GitHub fast tier on the review head (earlier checkpoints `04cdd5e6` and `dc15f91e` passed).
-- Independent cross-family evaluation under `sprint-evaluator`: round 1 scored 62, round 2 scored 75, round 3 scored **80, code pass, no remaining P1/P2 findings** at 581cb165. The judge reviewed public text and ran no tests. Its pending-app observation preceded the successful complete-app run above. Final-head CI and visual acceptance remain independent gates.
-- Complete combined macOS review build, opened rendered evidence and Mark's visual verdict.
-- Only after those gates: land, move design/sprint to implemented, and update the canon/roadmap. The sprint remains in progress until then.
+- Current main `c7a5815d` is integrated, including RE0, lab and mission changes. The only conflict was independent Python allowlist additions; all four tools were retained. Map 49/0 and first-entry 48/0 pass after integration, along with UID/Python policy checks. The final lock uses celestial 0.7.0 and worlds 0.2.1; the latter's 19 AILANG files and 78 interfaces are identical to main's worlds 0.2.0, with 65 native tests passing.
+- GitHub fast tier on published head `1bbeb077` passed (run 43309879402, 11m8s). Final integration CI must pass before PR merge. The final composed-UI cases remain wired to nightly under the busy-GPU rule; no additional render run is claimed.
+- Independent cross-family evaluation under `sprint-evaluator`: round 1 scored 62, round 2 scored 75, round 3 scored **80, code pass, no remaining P1/P2 findings** at 581cb165. The judge reviewed public text and ran no tests. Its pending-app observation preceded the successful complete-app run above. CI and Mark's merge authorization are separate evidence recorded here, not retroactive changes to the judge's report.
+- Combined macOS build `1bbeb077` was published through make publish-dev: standard AI/map/interior/ship/finder/current-ship/title/planet/guided-voyage checks passed; strict pack audit checked 1,848 paths with no skips or failures. Its separate offline telescope probe passed 32/0, all 176 hashes, actual runtime and exact live Sun. Published ZIP SHA256: `2ff314f0f33444163e9c166b40bc2e4f80ecf79876c4d297a4414af6b288bbed`.
+- Mark explicitly authorized merge on 2026-11-13. Design/sprint/evidence/review moved to implemented; changelog and index updated. The canonical roadmap receives a linked status entry without changing instrument physics or survey-time rules.

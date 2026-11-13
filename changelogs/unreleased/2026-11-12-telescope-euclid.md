@@ -5,4 +5,4 @@
 - Direction-only Euclid context in the existing map, with the local map camera restored on exit. Survey sources are observation records and cannot become journey targets.
 - Hash-pinned image pyramids with bounded tile caches and export staging. Live stellar magnification reuses the existing renderer and honours an explicitly selected star.
 
-Visual acceptance and combined dev-build review remain pending; this fragment records the implementation branch, not a landed release.
+Landing authorized by Mark on 2026-11-13 after the combined dev build was published. Independent code review: 80/100 pass; normal export checks and the actual offline app probe pass. New composed-UI GPU cases remain in nightly under the standing busy-GPU rule.

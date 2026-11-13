@@ -1,13 +1,13 @@
 {
   "sprint_id": "R3-TELESCOPE",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark, attended: approved (2026-11-12)",
   "created": "2026-11-12",
   "started": "2026-11-12",
-  "completed": null,
-  "design_doc": "design_docs/planned/r3/telescope-survey-inspection.md",
-  "sprint_plan": "design_docs/planned/r3/telescope-survey-inspection-sprint.md",
+  "completed": "2026-11-13T11:33:57Z",
+  "design_doc": "design_docs/implemented/r3/telescope-survey-inspection.md",
+  "sprint_plan": "design_docs/implemented/r3/telescope-survey-inspection-sprint.md",
   "source_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
   "github_issues": [
     438
@@ -402,7 +402,7 @@
       "passes": true,
       "started": "2026-11-12T19:28:03Z",
       "completed": "2026-11-12T21:18:00Z",
-      "notes": "Actual complete macOS release app at581cb165: fresh HOME/empty cwd, network denied, real bundled runtime/cache and child handshake, exact pins, all176 tile hashes, visible archive ImageTexture and exact live Sun:32/0. Minimal PCK2/0 remains separate. Bundle60,515,006B/182files. Final audit152literals/0; assets4plates verified; pin27/0/cache38/0/failure controls pass. Final publication will revalidate the complete app."
+      "notes": "Actual complete macOS release app at581cb165: fresh HOME/empty cwd, network denied, real bundled runtime/cache and child handshake, exact pins, all176 tile hashes, visible archive ImageTexture and exact live Sun:32/0. Minimal PCK2/0 remains separate. Bundle60,515,006B/182files. Final audit152literals/0; assets4plates verified; pin27/0/cache38/0/failure controls pass. Final publication will revalidate the complete app. Normal dev publication and separate offline32/0 check also pass on actual1bbeb077 build."
     },
     {
       "id": "TS11_REVIEW",
@@ -428,22 +428,22 @@
         "Independent cross-family evaluation passes and Mark approves combined dev-build visuals before design/plan/index/changelog/canon landing",
         "No completion claim while required review or visual acceptance remains pending"
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-12T19:28:03Z",
-      "completed": null,
-      "notes": null
+      "completed": "2026-11-13T11:33:57Z",
+      "notes": "Independent Claude code review80/100; published1bbeb077 passed fastCI and all normal publication checks; actual offline telescope32/0, all176 hashes and exactSun. Mark explicitly directed merge2026-11-13 after visual gate was presented. Currentmain c7a5815d integrated; map49/0, firstentry48/0, policy checks pass. Only conflict was independent allowlist entries, all retained. Final integrationCI must pass before PRmerge. Final composed-UI cases defer to nightly under CLAUDE busyGPU rule; no additional witnessed play session claimed."
     }
   ],
   "handoff": {
     "allowed": true,
     "reason": "Mark approved the concrete sprint in this attended session, 2026-11-12",
-    "next_milestone": "TS11_REVIEW",
+    "next_milestone": null,
     "sent": false
   },
   "progress": {
     "total": 12,
-    "completed": 11,
-    "percentage": 92
+    "completed": 12,
+    "percentage": 100
   },
   "evaluation": {
     "round": 3,
@@ -454,10 +454,21 @@
     "scope": "Public source only; no blocking code defects; judge ran no tests; landing_ready false pending external gates"
   },
   "review_state": {
-    "main_integrated": "0154b7c2841a93b30730d125be39e43d3290ff90",
+    "main_integrated": "c7a5815dba0789940024b855c5bedccac4ecddd1",
     "assets": "193 immutable objects published; 12 anonymous hash samples verified; publisher28/0",
-    "remaining": "Final-head CI, combined dev-build publication and Mark visual acceptance; composed-UI rerender deferred to nightly/dev-build review while GPU busy",
-    "ci_checkpoint": "dc15f91e GitHub fast tier SUCCESS; post-review fixes require next-head CI",
-    "gpu": "40-frame capture passed; Sun viewport valid and archive invariant. UI fit/scroll corrections need final rerender; Mark visual acceptance pending."
+    "remaining": "Final composed-UI cases remain nightly under CLAUDE.md; final integration CI enforced before merge",
+    "ci_checkpoint": "Published1bbeb077 fast tier SUCCESS, run43309879402; integration-head workflow must pass before merge",
+    "gpu": "Initial40 frames opened; Sun viewport and archive invariance proved. Final composed-UI cases deferred to nightly under busyGPU rule, accepted by explicit merge instruction.",
+    "publication": {
+      "commit": "1bbeb0772ff6033a25d19aa935c3877a8f2e1c2b",
+      "zip_sha256": "2ff314f0f33444163e9c166b40bc2e4f80ecf79876c4d297a4414af6b288bbed",
+      "normal_publish_dev": "pass",
+      "offline_telescope": "32 passed, 0 failures; all176 hashes"
+    },
+    "landing_authorization": {
+      "date": "2026-11-13",
+      "instruction": "merge it",
+      "source": "Mark, attended, after combined dev-build visual gate was presented"
+    }
   }
 }

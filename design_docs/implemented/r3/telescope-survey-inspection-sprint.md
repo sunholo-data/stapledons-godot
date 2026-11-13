@@ -1,6 +1,6 @@
 # R3-TELESCOPE sprint: visible telescope, map links and Euclid inspection
 
-**Status:** Approved and executing. Mark, attended 2026-11-12: “approved”. Source proof, package coordinates, exact-ID import, bounded tiles, read-only journey handoff, archive controls and shared facts are implemented. Final regressions, rendered evidence, independent evaluation and combined dev-build visual acceptance remain in progress. See [evidence](telescope-survey-inspection-evidence.md) and sprint JSON for individual gate status.
+**Status:** Implemented, 2026-11-13. Mark approved execution on 2026-11-12 and explicitly directed “merge it” on 2026-11-13 after the combined dev build and visual merge gate were presented. Independent Claude review passed at 80/100; published build `1bbeb077` passed standard export checks and its offline telescope probe. See [evidence](telescope-survey-inspection-evidence.md) and sprint JSON. The final integration CI must pass before PR #438 merges; GPU follow-up remains nightly under the standing rule.
 **Design:** [telescope-survey-inspection.md](telescope-survey-inspection.md).
 **Progress:** `.ailang/state/sprints/sprint_R3-TELESCOPE.json`.
 **Baseline inspected:** game `f3aa83bf`, current branch `feat/captain-command`; unrelated animation/art/mission edits must be preserved. Plan files only in this planning session. Do implementation in a separate full clone based on the combined current game, following CLAUDE.md's checkout policy; retain the approved cockpit work rather than starting a feature build that drops it.
@@ -70,6 +70,21 @@ For the actual example/probe modules:
 No simulation/NDJSON minor bump in this sprint. Host session metadata pins the observation pack. Project gate names override generic AILANG-repo targets: use this game's targeted tests/`ci-fast`, not `make test-changed` or coverage targets that do not exist here.
 
 ## Milestones
+
+Landing checklist (measured detail and commands are recorded in the evidence and JSON):
+
+- [x] TS0_SOURCE: real registered image, source rows, hashes, rights and five centroids.
+- [x] TS1_COORDS: published celestial maths, native/strict parity and independent oracle.
+- [x] TS2_INDEX: deterministic exact-ID import and content-pinned snapshots.
+- [x] TS3_TILES: bounded offline pyramid, corruption controls and read-only-project fixture test.
+- [x] TS4_IDENTITY: read-only focus, preserved plan, explicit plot action and failing navigation mutants.
+- [x] TS5_LIVE: exact target, preserved physical renderer and honest resolution/crop states.
+- [x] TS6_ARCHIVE: real tile pan/zoom, source picking and viewport/scroll lifecycle.
+- [x] TS7_MAP: direction-only survey context; local camera and planning authority restored.
+- [x] TS8_INSPECTION: shared facts, per-fact methods, unavailable values and credits.
+- [x] TS9_ACCESS: actual chair, console and finder integration; first-entry recorded-wire checks.
+- [x] TS10_PACKAGE: actual release app offline, all 176 tile pins, real runtime/Sun and standard publication checks.
+- [x] TS11_REVIEW: independent code pass, CPU benchmark, initial opened renders and Mark's explicit merge instruction. Final composed-UI rerender is deferred to nightly/dev review under CLAUDE.md; final integration CI gates the merge.
 
 All paths below are intended implementation files, not files created by this plan. Existing giant coordinator scripts receive narrow hooks; keep substantial behaviour in the named companion files. Every milestone records actual counts, time and evidence in the JSON before setting `passes: true`.
 

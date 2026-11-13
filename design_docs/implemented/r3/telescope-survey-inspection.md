@@ -1,6 +1,6 @@
 # R3-TELESCOPE: the existing map, a visible telescope and one object inspector
 
-**Status:** Approved implementation in progress, 2026-11-12. Mark requested an investigation of Euclid DR1-Foundation, proposed a telescope console, then directed: “we already have a 3d map … lets add the telescope and object inspection enhancements”; he confirmed this is a non-commercial game and explicitly approved the sprint. [Implementation evidence](telescope-survey-inspection-evidence.md). Independent evaluation and combined dev-build visual acceptance remain required before landing.
+**Status:** Implemented, 2026-11-13 ([PR #438](https://github.com/sunholo-data/stapledons-godot/pull/438)). Mark explicitly directed “merge it” after the combined dev build and visual merge gate were presented. Independent Claude review: 80/100, code pass. The normal dev build at `1bbeb077` passed all publication checks and its separate offline telescope probe. Final integration CI gates the merge; new composed-UI render cases defer to nightly under CLAUDE.md while the GPU is busy. [Implementation evidence](telescope-survey-inspection-evidence.md).
 **Release:** r3 · **Milestone:** new; the roadmap has no dedicated telescope-browser row yet. Extends R2-STAR-SURFACES D-111 and the existing map/inspection paths.
 **Priority:** P2. Makes astronomical objects worth looking at from aboard ship; independent of R1 completion.
 **Implements:**
