@@ -1,0 +1,261 @@
+module stapledons/sim/tools/reach_probe
+-- R3-REACH RE0a/RE0b. Measurement probes, not shipped logic. `make reach-probe`
+-- and `make reach-probe-io` (tools/reach_probe.py) time these entries from
+-- outside: each probe repeats its work K times, and the cost of one pass is
+-- (cost at K - cost at 0) / K, so start-up, compile and parse time cancel.
+-- Rows are GCNS rows straight from the pinned CSV (ids as the map writes them);
+-- the truth-table and companion rules of the shipped tiers are not applied here.
+import stapledons/sim/tools/catalogue (transform, Row)
+import stapledons/sim/tools/starmap (mapId)
+import stapledons/sim/exoplanets_snapshot (snapshotFromJson)
+import stapledons/sim/census (observedIndex, observedFor)
+import stapledons/sim/worlds_catalogue (rowOf)
+import stapledons/sim/worlds_model (StarRow, HistoryDrawPlan, FixedHistories, ChanceHistory, SurveyHistory,
+  prepareHistoryDrawPlan, historyUniformsFromPlan, eligibleHistoryUniforms, systemFrom, systemDigest)
+import stapledons/sim/tools/exoplanets (Planet as ObservedPlanet)
+import stapledons/sim/rng (keyed, unit53, shr)
+import pkg/sunholo/worlds/baseline (baseline)
+import pkg/sunholo/worlds/dial (Params, applyDial, zeroDial)
+import pkg/sunholo/worlds/history (historyOf)
+import std/array as A
+import std/bytes (slice, toInts, length as byteLength)
+import std/fs (readFile, writeFile, readFileRaw, writeFileBytes)
+import std/io (println, exit)
+import std/json (Json, encode, jo, kv, ja, js, jnum, jint, jb)
+import std/list (map, filter, flatMap, foldl, range, length, sortBy, nth_or, mapAccumL)
+import std/math (intToFloat, floatToInt, floor)
+import std/option (Option, Some, None)
+import std/result (Result, Ok, Err)
+import std/string (split, join)
+import std/crypto (sha256Hex)
+
+-- worlds_model's draw domain ("worlds"). gateOpen mirrors its one-draw gate; `agree`
+-- below checks the mirror against historyUniformsFromPlan on every row.
+pure func domain() -> int = 0x776f726c6473
+-- Radii in light-years. 100 pc is parallax >= 10 mas; the CSV rounds coordinates to
+-- 1e-6 ly, so the bound carries that much slack (302,239 rows, as counted from table1c).
+pure func ly59() -> float = 59.0
+pure func ly168() -> float = 168.0
+pure func ly100pc() -> float = 326.156379
+
+-- 1. The keyed-draw rate: n draws of rng.keyed + unit53, summed.
+export pure func drawSum(seed:int, n:int) -> float {
+  let inner = range(0, 1000);
+  foldl(\a c. foldl(\b i. b + unit53(keyed(seed, domain(), c * 1000 + i, 0)), a, inner), 0.0, range(0, n / 1000))
+}
+
+-- 2. The one-draw gate over prepared plans.
+export type Entry = {id:string, plan:HistoryDrawPlan}
+export pure func gateOpen(seed:int, p:Params, plan:HistoryDrawPlan) -> bool = match plan {
+  ChanceHistory(key, eta) => unit53(keyed(seed, domain(), key, 0)) < eta,
+  FixedHistories(keys) => length(keys) > 0,
+  SurveyHistory(row) => length(eligibleHistoryUniforms(seed, p, row, [])) > 0
+}
+export pure func gateHits(seed:int, p:Params, es:[Entry]) -> int =
+  foldl(\n e. if gateOpen(seed, p, e.plan) then n + 1 else n, 0, es)
+pure func agree(seed:int, p:Params, es:[Entry]) -> bool =
+  foldl(\ok e. ok && gateOpen(seed, p, e.plan) == (length(historyUniformsFromPlan(seed, p, e.plan)) > 0), true, es)
+
+-- 3. The rare query: the gate, a history for every hit, and the worlds whose
+-- technological epoch overlaps [0, 16,000 yr] (the census's mindsWindow), encoded.
+export type Rare = {id:string, techT:float, endT:float}
+pure func rareOf(seed:int, p:Params, e:Entry) -> [Rare] =
+  flatMap(\u. {
+    let h = historyOf(p, true, u);
+    match h.mind {
+      Some(m) => if m.techT <= 16000.0 && m.endT > 0.0 then [{id: e.id, techT: m.techT, endT: m.endT}] else [],
+      None => []
+    }
+  }, historyUniformsFromPlan(seed, p, e.plan))
+export pure func rareQuery(seed:int, p:Params, es:[Entry]) -> [Rare] = flatMap(\e. rareOf(seed, p, e), es)
+pure func rareText(rs:[Rare]) -> string =
+  encode(ja(map(\r. jo([kv("id", js(r.id)), kv("techT", jnum(r.techT)), kv("endT", jnum(r.endT))]), rs)))
+-- A fixture, not a preset: every habitable-zone world is alive and technological at
+-- some time, and the lifetime is set so that `perStar` of ALL stars in `es` are
+-- technological inside the window in expectation. P(overlap) = (L + 16000) / window.
+pure func expectedHz(es:[Entry]) -> float = foldl(\s e. s + (match e.plan {
+  ChanceHistory(_, eta) => eta, FixedHistories(keys) => intToFloat(length(keys)), SurveyHistory(_) => 0.4
+}), 0.0, es)
+export pure func fixture(base:Params, perStar:float, es:[Entry]) -> Params {
+  let share = perStar * intToFloat(length(es)) / expectedHz(es);
+  {base | fLife: 1.0, fComplex: 1.0, fMinds: 1.0, fTech: 1.0, lifetimeYr: share * base.windowYr - 16000.0}
+}
+
+-- 4. Full population, as the imaging query needs it: every planet and history.
+export pure func planetsIn(seed:int, rows:[StarRow], idx:Map[string,[ObservedPlanet]]) -> int =
+  foldl(\n r. { let s = systemFrom(seed, zeroDial(), r, observedFor(idx, r.id)); n + length(s.planets) }, 0, rows)
+pure func systemsSha(seed:int, rows:[StarRow], idx:Map[string,[ObservedPlanet]]) -> string =
+  sha256Hex(join("", map(\r. systemDigest(systemFrom(seed, zeroDial(), r, observedFor(idx, r.id))), rows)))
+
+pure func dist2(r:StarRow) -> float = r.pos.x * r.pos.x + r.pos.y * r.pos.y + r.pos.z * r.pos.z
+pure func inside(rows:[StarRow], ly:float) -> [StarRow] = filter(\r. dist2(r) <= ly * ly, rows)
+pure func entries(rows:[StarRow], idx:Map[string,[ObservedPlanet]]) -> [Entry] =
+  map(\r. {id: r.id, plan: prepareHistoryDrawPlan(r, observedFor(idx, r.id))}, rows)
+pure func seeds(seed:int, k:int) -> [int] = range(seed, seed + k)
+
+export type Ks = {seed:int, kSystem:int, kGate168:int, kGate100:int, kRare1:int, kRare10:int, check:bool}
+-- Everything measured is in this pure function, so the strict VM and the interpreter
+-- can be compared on its text. A K of 0 skips that probe; preparation always runs.
+export pure func run(csv:string, planets:string, k:Ks) -> string = match (transform(csv), snapshotFromJson(planets)) {
+  (Ok(parsed), Some(snap)) => {
+    let idx = observedIndex(snap.planets);
+    let all = map(\r. { let id = mapId(r.id); rowOf(id, {x: r.x, y: r.y, z: r.z}, r.v, r.teff, r.flags, observedFor(idx, id)) }, parsed.rows);
+    let r59 = inside(all, ly59());
+    let e168 = entries(inside(all, ly168()), idx);
+    let e100 = entries(inside(all, ly100pc()), idx);
+    let p = applyDial(baseline(), zeroDial());
+    let fx1 = fixture(p, 0.0008, e168);
+    let fx10 = fixture(p, 0.008, e168);
+    let rare1 = map(\s. rareText(rareQuery(s, fx1, e168)), seeds(k.seed, k.kRare1));
+    let rare10 = map(\s. rareText(rareQuery(s, fx10, e168)), seeds(k.seed, k.kRare10));
+    let count = \t. jint(length(split(t, "\"id\"")) - 1);
+    encode(jo([kv("rows59", jint(length(r59))), kv("rows168", jint(length(e168))), kv("rows100pc", jint(length(e100))),
+      kv("expectedHz168", jnum(expectedHz(e168))), kv("fixtureLifetimeYr1x", jnum(fx1.lifetimeYr)), kv("fixtureLifetimeYr10x", jnum(fx10.lifetimeYr)),
+      kv("planets59", ja(map(\s. jint(planetsIn(s, r59, idx)), seeds(k.seed, k.kSystem)))),
+      kv("gate168", ja(map(\s. jint(gateHits(s, p, e168)), seeds(k.seed, k.kGate168)))),
+      kv("gate100pc", ja(map(\s. jint(gateHits(s, p, e100)), seeds(k.seed, k.kGate100)))),
+      kv("rare1x", ja(map(count, rare1))), kv("rare1xSha", js(sha256Hex(join("", rare1)))),
+      kv("rare10x", ja(map(count, rare10))), kv("rare10xSha", js(sha256Hex(join("", rare10)))),
+      kv("gateAgrees", if k.check then jb(agree(k.seed, p, e168) && agree(k.seed, fx10, e100)) else js("not run")),
+      kv("systemsSha", js(if k.check then systemsSha(k.seed, r59, idx) else "not run"))]))
+  },
+  _ => "REACH-PROBE-FAIL invalid CSV or planet snapshot"
+}
+
+export func main(a:{csv:string, planets:string, seed:int, kSystem:int, kGate168:int, kGate100:int, kRare1:int, kRare10:int, check:bool}) -> () ! {FS, IO} {
+  let out = run(readFile(a.csv), readFile(a.planets),
+    {seed: a.seed, kSystem: a.kSystem, kGate168: a.kGate168, kGate100: a.kGate100, kRare1: a.kRare1, kRare10: a.kRare10, check: a.check});
+  println(out)
+}
+export func drawMain(a:{seed:int, n:int}) -> () ! {IO} = println(show(drawSum(a.seed, a.n)))
+
+-- Slices of the CSV by radius, so a probe does not pay for parsing rows it never reads.
+pure func lineInside(line:string, ly:float) -> bool = match split(line, ",") {
+  [_, x, y, z, _, _, _] => match transform("id,x,y,z,G,BPRP,wd\n0,${x},${y},${z},,,0") {
+    Ok(s) => foldl(\ok r. ok && r.x * r.x + r.y * r.y + r.z * r.z <= ly * ly, true, s.rows), Err(_) => false
+  },
+  _ => false
+}
+pure func sliceCsv(lines:[string], ly:float) -> string =
+  "id,x,y,z,G,BPRP,wd\n${join("\n", filter(\l. lineInside(l, ly), lines))}\n"
+-- The gate as a packed float64 array, three values a row: the high and low 32 bits of
+-- the draw key and eta. Rows that take no single draw (no slot: eta 0) stay in, so the
+-- array has one entry per star; hosts of measured planets and RV-surveyed stars are
+-- counted and left to the list path.
+pure func packedOf(es:[Entry]) -> [float] = flatMap(\e. match e.plan {
+  ChanceHistory(key, eta) => [intToFloat(shr(key, 32)), intToFloat(key & 0xffffffff), eta],
+  FixedHistories(keys) => if length(keys) == 0 then [0.0, 0.0, 0.0] else [],
+  SurveyHistory(_) => []
+}, es)
+export func prepareMain(a:{csv:string, planets:string, csv168:string, csv100:string, packed168:string, packed100:string}) -> () ! {FS, IO} {
+  let lines = split(readFile(a.csv), "\n");
+  let c168 = sliceCsv(lines, ly168());
+  let c100 = sliceCsv(lines, ly100pc());
+  match (transform(c100), snapshotFromJson(readFile(a.planets))) {
+    (Ok(parsed), Some(snap)) => {
+      let idx = observedIndex(snap.planets);
+      let all = map(\r. { let id = mapId(r.id); rowOf(id, {x: r.x, y: r.y, z: r.z}, r.v, r.teff, r.flags, observedFor(idx, id)) }, parsed.rows);
+      let p168 = packedOf(entries(inside(all, ly168()), idx));
+      let p100 = packedOf(entries(all, idx));
+      writeFile(a.csv168, c168);
+      writeFile(a.csv100, c100);
+      writeFileBytes(a.packed168, A.encodeF64LE(A.fromList(p168)));
+      writeFileBytes(a.packed100, A.encodeF64LE(A.fromList(p100)));
+      println(encode(jo([kv("rows100pc", jint(length(all))), kv("packed168", jint(length(p168) / 3)), kv("packed100pc", jint(length(p100) / 3))])))
+    },
+    _ => { println("reach-probe prepare: FAIL invalid CSV or planet snapshot"); exit(1) }
+  }
+}
+export pure func packedHits(seed:int, arr:Array[float]) -> int =
+  foldl(\c i. {
+    let eta = A.get(arr, 3 * i + 2);
+    if eta > 0.0 && unit53(keyed(seed, domain(), (floatToInt(A.get(arr, 3 * i)) << 32) + floatToInt(A.get(arr, 3 * i + 1)), 0)) < eta then c + 1 else c
+  }, 0, range(0, A.length(arr) / 3))
+export func packedMain(a:{packed:string, seed:int, k:int}) -> () ! {FS, IO} = match readFileRaw(a.packed) {
+  Err(e) => { println("reach-probe packed: FAIL ${e}"); exit(1) },
+  Ok(raw) => match A.decodeF64LE(raw) {
+    Err(e) => { println("reach-probe packed: FAIL ${e}"); exit(1) },
+    Ok(arr) => println(encode(jo([kv("rows", jint(A.length(arr) / 3)), kv("hits", ja(map(\s. jint(packedHits(s, arr)), seeds(a.seed, a.k))))])))
+  }
+}
+
+-- RE0b. A stand-in registry of `rows` stars: float64 x, y, z, V, Teff and one spare,
+-- 48 bytes a row (the design's row is 44), written as one float64 array.
+export func ioWriteMain(a:{out:string, rows:int}) -> () ! {FS, IO} {
+  let arr = A.fromList(map(\i. intToFloat(i) * 0.25, range(0, a.rows * 6)));
+  writeFileBytes(a.out, A.encodeF64LE(arr));
+  println(encode(jo([kv("rows", jint(a.rows)), kv("bytes", jint(a.rows * 48))])))
+}
+pure func checksum(arr:Array[float]) -> float = A.sum(arr)
+pure func leafSum(raw:bytes, offset:int, size:int) -> float = match slice(raw, offset, size) {
+  None => -1.0, Some(part) => match A.decodeF64LE(part) { Ok(arr) => checksum(arr), Err(_) => -1.0 }
+}
+-- One row decoded field by field, as a mixed row (float64 position, an int64 id, two
+-- more numbers) would have to be: three slices, two float decodes and eight bytes folded.
+pure func mixedRow(raw:bytes, off:int) -> float = match (slice(raw, off, 24), slice(raw, off + 24, 8), slice(raw, off + 32, 16)) {
+  (Some(pos), Some(ident), Some(rest)) => match (A.decodeF64LE(pos), A.decodeF64LE(rest)) {
+    (Ok(xyz), Ok(vt)) => A.sum(xyz) + A.sum(vt) + intToFloat(foldl(\v b. v * 256 + b, 0, toInts(ident)) % 1024),
+    _ => -1.0
+  },
+  _ => -1.0
+}
+-- mode "none": start-up only. "mixed": read, then decode every row field by field. "raw": read the file. "whole": read and decode all of it,
+-- then touch every value. "leaves": read the file, then decode `leaves` slices of
+-- `leafRows` rows each, spread through it (what a per-leaf read costs once the bytes are held).
+export func ioReadMain(a:{path:string, mode:string, leaves:int, leafRows:int}) -> () ! {FS, IO} =
+  if a.mode == "none" then println("{\"mode\":\"none\"}") else match readFileRaw(a.path) {
+    Err(e) => { println("reach-probe io: FAIL ${e}"); exit(1) },
+    Ok(raw) => {
+      let n = byteLength(raw);
+      if a.mode == "raw" then println(encode(jo([kv("mode", js("raw")), kv("bytes", jint(n))])))
+      else if a.mode == "whole" then match A.decodeF64LE(raw) {
+        Err(e) => { println("reach-probe io: FAIL ${e}"); exit(1) },
+        Ok(arr) => println(encode(jo([kv("mode", js("whole")), kv("bytes", jint(n)), kv("values", jint(A.length(arr))), kv("sum", jnum(checksum(arr)))])))
+      } else if a.mode == "mixed" then {
+        let total = foldl(\s i. s + mixedRow(raw, i * 48), 0.0, range(0, n / 48));
+        println(encode(jo([kv("mode", js("mixed")), kv("bytes", jint(n)), kv("rows", jint(n / 48)), kv("sum", jnum(total))])))
+      } else {
+        let size = a.leafRows * 48;
+        let step = (n - size) / 48 / (if a.leaves > 1 then a.leaves - 1 else 1) * 48;
+        let total = foldl(\s i. s + leafSum(raw, i * step, size), 0.0, range(0, a.leaves));
+        println(encode(jo([kv("mode", js("leaves")), kv("bytes", jint(n)), kv("leaves", jint(a.leaves)), kv("leafRows", jint(a.leafRows)), kv("sum", jnum(total))])))
+      }
+    }
+  }
+
+-- RE0b. Stars per leaf cell inside 100 pc, for cubes of side `sizes` ly anchored at Sol.
+-- "inside" leaves lie wholly within the sphere; "touched" also counts the cut ones at the edge.
+pure func cellOf(v:float, side:float) -> int = floatToInt(floor(v / side)) + 512
+pure func farthest(i:int, side:float) -> float {
+  let lo = intToFloat(i - 512) * side;
+  if lo >= 0.0 then lo + side else if lo + side <= 0.0 then 0.0 - lo else (if 0.0 - lo > lo + side then 0.0 - lo else lo + side)
+}
+pure func wholly(key:int, side:float) -> bool {
+  let x = farthest(key / 1048576, side);
+  let y = farthest(key / 1024 % 1024, side);
+  let z = farthest(key % 1024, side);
+  x * x + y * y + z * z <= ly100pc() * ly100pc()
+}
+pure func leafCounts(sorted:[int]) -> [(int, int)] =
+  match mapAccumL(\st k. match st { (prev, n) => if k == prev then ((-1, 0), (prev, n + 1)) else ((prev, n), (k, 1)) }, (-1, 0), sorted) {
+    (emitted, last) => filter(\e. match e { (_, n) => n > 0 }, emitted) ++ [last]
+  }
+pure func statsJson(label:string, counts:[int]) -> Json {
+  let s = sortBy(\a b. a - b, counts);
+  let n = length(s);
+  jo([kv("set", js(label)), kv("leaves", jint(n)), kv("min", jint(nth_or(s, 0, 0))), kv("median", jint(nth_or(s, n / 2, 0))),
+    kv("max", jint(nth_or(s, n - 1, 0))), kv("stars", jint(foldl(\a c. a + c, 0, s)))])
+}
+pure func leafJson(rows:[Row], side:float) -> Json {
+  let keys = sortBy(\a b. a - b, map(\r. cellOf(r.x, side) * 1048576 + cellOf(r.y, side) * 1024 + cellOf(r.z, side), rows));
+  let cs = leafCounts(keys);
+  jo([kv("sideLy", jnum(side)), kv("sets", ja([statsJson("touched", map(\c. match c { (_, n) => n }, cs)),
+    statsJson("inside", flatMap(\c. match c { (k, n) => if wholly(k, side) then [n] else [] }, cs))]))])
+}
+export func leafMain(a:{csv:string}) -> () ! {FS, IO} = match transform(readFile(a.csv)) {
+  Err(e) => { println("reach-probe leaves: FAIL ${e}"); exit(1) },
+  Ok(parsed) => {
+    let rows = filter(\r. r.x * r.x + r.y * r.y + r.z * r.z <= ly100pc() * ly100pc(), parsed.rows);
+    println(encode(jo([kv("rows", jint(length(rows))), kv("sizes", ja(map(\s. leafJson(rows, s), [20.0, 40.0, 80.0])))])))
+  }
+}

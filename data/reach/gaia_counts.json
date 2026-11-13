@@ -1,0 +1,19 @@
+{
+ "service": "https://gea.esac.esa.int/tap-server/tap/sync",
+ "catalogue": "gaiadr3.gaia_source",
+ "date": "2026-11-12",
+ "counted": true,
+ "distance": "1000/parallax pc, no prior; 1 pc = 3.261563777 ly",
+ "queries": [
+  {"label": "control_100pc_poe5", "what": "inside 100 pc, parallax/error >= 5 (control: GCNS keeps 302,239 of these after its own cleaning)", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 10 AND parallax_over_error >= 5", "count": 541958},
+  {"label": "shell_1000ly_any", "what": "100 pc to 1,000 ly, any parallax quality", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10", "count": 17210964},
+  {"label": "shell_1000ly_poe5", "what": "100 pc to 1,000 ly, parallax/error >= 5", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10 AND parallax_over_error >= 5", "count": 8646330},
+  {"label": "shell_1000ly_poe5_g14", "what": "100 pc to 1,000 ly, parallax/error >= 5 and G < 14", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10 AND parallax_over_error >= 5 AND phot_g_mean_mag < 14", "count": 1129417},
+  {"label": "shell_1000ly_poe5_g15", "what": "100 pc to 1,000 ly, parallax/error >= 5 and G < 15", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10 AND parallax_over_error >= 5 AND phot_g_mean_mag < 15", "count": 1527761},
+  {"label": "shell_1000ly_poe5_g16", "what": "100 pc to 1,000 ly, parallax/error >= 5 and G < 16", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10 AND parallax_over_error >= 5 AND phot_g_mean_mag < 16", "count": 2101173},
+  {"label": "shell_1000ly_poe5_g17", "what": "100 pc to 1,000 ly, parallax/error >= 5 and G < 17", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 3.261563777 AND parallax < 10 AND parallax_over_error >= 5 AND phot_g_mean_mag < 17", "count": 2970141},
+  {"label": "shell_3000ly_any", "what": "100 pc to 3,000 ly, any parallax quality", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 1.087187926 AND parallax < 10", "count": 190439224},
+  {"label": "shell_3000ly_poe5", "what": "100 pc to 3,000 ly, parallax/error >= 5", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 1.087187926 AND parallax < 10 AND parallax_over_error >= 5", "count": 57486634},
+  {"label": "shell_3000ly_poe5_g14", "what": "100 pc to 3,000 ly, parallax/error >= 5 and G < 14", "adql": "SELECT COUNT(*) AS n FROM gaiadr3.gaia_source WHERE parallax >= 1.087187926 AND parallax < 10 AND parallax_over_error >= 5 AND phot_g_mean_mag < 14", "count": 6909295}
+ ]
+}
