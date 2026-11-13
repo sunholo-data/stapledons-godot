@@ -1,10 +1,10 @@
 # Main's nightly is green again: the live guard's five call sites, and monitor controls that read their counts from the run (row 7ar)
 
-**Status:** Planned 2026-11-13 (mission iteration 92, designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): `ai-live-guard-static` now runs the guard under `$(SCRIPT_GATE)` with `AI_GUARD_S ?= 120`, and a stall drill proves the bound (D2, AC17, V21). The helper also finds the integer `"frame"` key anywhere on the row (gemini-4-argon, non-blocking; D4, V23). Measured at `origin/main` `36f4ab4c`. **Release:** r1. **Milestone:** none (charter clause 5, suite hygiene: restores main's nightly `rig/full`).
+**Status:** Planned 2026-11-13 (mission iteration 92, designer Opus 5.5). **Revision 2 (narrow-refinement carve-out)** applies quorum round 2's fix verbatim (BLOCKED: gpt6-1-sol REJECT; no round 3): every guard run in `ai-live-guard`'s mutant loop and its two rule-E runs go through `tools/deadline.sh` at `AI_GUARD_RUN_S ?= 60`. A mutant counts as caught only on rc 1 with its rule's line; a timeout or any other rc is an infrastructure failure. Two new drills prove it (D2, AC19, AC20, V25–V27). **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): `ai-live-guard-static` now runs the guard under `$(SCRIPT_GATE)` with `AI_GUARD_S ?= 120`, and a stall drill proves the bound (D2, AC17, V21). The helper also finds the integer `"frame"` key anywhere on the row (gemini-4-argon, non-blocking; D4, V23). Measured at `origin/main` `36f4ab4c`. **Release:** r1. **Milestone:** none (charter clause 5, suite hygiene: restores main's nightly `rig/full`).
 **Priority:** high. Main's nightly `make test` is red on two targets (issue #392, comment of 2026-11-13 06:11 UTC on `85ca5470`: `2 red: ai-live-guard display-audit-monitor-controls`). Both are still red at `36f4ab4c` (V1, V5).
 **Implements:** row **7ar** (charter queue). It restores AC15 of [`ai-service-foundation.md`](ai-service-foundation.md) (line 1047: "No spend in automation", checked by `make ai-live-guard`; the rules A–E are in the header of `tools/ai_live_guard.sh`) and AC6/AC14 of [`m4-7aj-monitor-face-bindings.md`](../../implemented/r1/m4-7aj-monitor-face-bindings.md) (four monitor-face mutants, each rejected by the crew audit for its own reason). No design-repo feature doc or physics-spec section applies: nothing the player sees, hears or computes changes.
 **Depends on:** nothing. It must merge before the next nightly to stop the red, but no other row waits on it.
-**Estimated LOC:** 6 files, +64 / −13 (V20, revision 1 prototype commit): `mk/lab.mk` 3 lines, `tools/lab_probe.py` +2/−1, `tools/reach_probe.py` +3/−2, `mk/ai.mk` +13/−2, `mk/earth-link.mk` +10/−5, new `tools/monitor_control_check.sh` (33 lines). No product code, no `.gd`, no `.uid`, and no `Makefile` edit (the `Makefile` is held by open PRs #435, #380 and #373, V19).
+**Estimated LOC:** 6 files, +81 / −17 (V25, revision 2 prototype commit): `mk/lab.mk` 3 lines, `tools/lab_probe.py` +2/−1, `tools/reach_probe.py` +3/−2, `mk/ai.mk` +30/−6, `mk/earth-link.mk` +10/−5, new `tools/monitor_control_check.sh` (33 lines). No product code, no `.gd`, no `.uid`, and no `Makefile` edit (the `Makefile` is held by open PRs #435, #380 and #373, V19).
 
 ## Game vision alignment
 
@@ -92,8 +92,12 @@ New target in `mk/ai.mk` (the AI targets' home; the `Makefile` is held), after `
 # so a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. Bounded
 # by $(SCRIPT_GATE), as the fast tier's other non-Godot gates are (mk/observations.mk): AI_GUARD_S is 15 times the
 # measured 8 s, for a slower runner; a stall is stopped (TERM, then KILL to the process group) and fails the target.
-# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first, so make test is bounded too.
+# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first. Row 7ar r2 (quorum carve-out): every
+# other guard run in ai-live-guard (one per mutant, and the two rule-E runs) is bounded by tools/deadline.sh at
+# AI_GUARD_RUN_S, 7.5 times the slowest measured scan (8.0 s whole tree; 5.4-5.6 s on a mutant scratch copy). A mutant
+# is caught only on the guard's rc 1 with its rule's line; a timeout (124) or any other rc is an infrastructure failure.
 AI_GUARD_S ?= 120
+AI_GUARD_RUN_S ?= 60
 .PHONY: ai-live-guard-static
 ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh), under a deadline; in ci-fast
 	@$(SCRIPT_GATE) ai-live-guard-static $(SCRATCH)/ai-live-guard-static.log $(AI_GUARD_S) '^ai-live-guard: ok \([1-9][0-9]* make/shell/CI files, [1-9][0-9]* test/tool scripts, launch builder, settings\)$$' -- sh tools/ai_live_guard.sh .
@@ -106,13 +110,35 @@ ai-live-guard: import ai-live-guard-static   ## AC15: ... (its old first line, @
 1. **Cost.** 8.0 s wall (3.9 s user) on the Studio at 1-min load 3.4 (V1, V8); 6 s through the gate (V20). Against a fast tier of about 10 minutes that is about 1%. It scans 98 make/shell/CI files and 549 scripts.
 2. **Dependencies.** `git`, `perl` (with `POSIX`, already needed by `tools/script_gate.sh` in the fast tier), `sh`, `mktemp`, `sed`, `grep`. All are on `ubuntu-latest`, and `actions/checkout` gives a work tree, so the guard takes its `git ls-files` branch, as on the Studio. No AILANG, no Godot, no `import`.
 3. **It is a policy lint,** like `python-guard`, `audio-silent-guard` and `uid-guard`, which are already in `ci-fast` for the same reason: a merge rule that skips them lets the class back in. Both of 7ar's breaches came from attended PRs that merged green on the fast tier.
-4. **It does not duplicate the mutant loop.** The mutants and the Godot launch-builder check stay in `make test` (they need `import`). `ai-live-guard` now runs the static half through the same bounded target instead of its own unbounded line, so `make test` runs it once, bounded.
+4. **It does not duplicate the mutant loop.** The mutants and the Godot launch-builder check stay in `make test` (they need `import`). `ai-live-guard` now runs the static half through the same bounded target instead of its own unbounded line, so `make test` runs it once.
 
 **The bound (revision 1, quorum r1 sol).** The fast tier must not hold an unbounded wait, and the observed 8 s is not a bound.
 - **Runner.** `$(SCRIPT_GATE)` (`tools/script_gate.sh`), not a bare `tools/deadline.sh`. It is what the fast tier's other non-Godot gates use: `observation-import-parity` and `survey-footprint-parity` (`mk/observations.mk`, in `ci-fast`) run `$(SCRIPT_GATE) <name> <log> 180 '<summary>' -- sh -c …`. In `make -n ci-fast` at the base (327 lines), the only bounded steps are those two `tools/script_gate.sh` calls and one `$(SG_SUP)` supervisor (`script-gate-selftest`, the same perl process-group code); `tools/deadline.sh` appears in none, and the policy lints (`python-guard`, `uid-guard`, `audio-silent-guard`) are unbounded (V4b). The gate is a process-group supervisor: at the deadline it sends TERM to the group, waits 2 s, then KILLs the group, and exits 142. It also passes only on rc 0 *and* the guard's own summary line, with its zero probe (a summary whose counts are zeroed must not match), so a guard that printed nothing, or `ok (0 …)`, would fail. A breach still fails the target, and the gate prints the guard's `A …` lines from its log (V22).
 - **Value.** `AI_GUARD_S ?= 120`: 15× the 8.0 s measured on the loaded Studio (V1). The headroom is for GitHub's 2-core runner, which ci.yml's own comment calls slow enough to shorten the PR replay (the 10k-tick interpreter run "takes ~75 s on this 2-core runner", `ci.yml:25`); the designer has no Linux reading of the guard (AC15 is that reading). 120 s is still far below anything that would hide a hang: it is 2% of the job's enclosing bound (below). It is a variable only so the stall drill can shorten it (`AI_GUARD_S=3`); `ci-fast` runs it at the default.
 - **Enclosing bound.** `.github/workflows/ci.yml` sets **no** `timeout-minutes` on the `headless` job or on any step (`grep -n timeout-minutes .github/workflows/*.yml`: no output, V4b). The only enclosing bound is GitHub Actions' documented default for a job without one, 360 minutes, which the designer did not measure. So the repo itself bounds nothing above this step, and the gate's 120 s is the real bound. Adding a job `timeout-minutes` is a CI-wide change for every step, not this row's (follow-up F2).
 - **Measured.** A stand-in guard that ignores TERM and starts a second TERM-ignoring sleeper is stopped at `AI_GUARD_S=3`: the target fails in 5 s with `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)`, and `pgrep` finds no sleeper afterwards; the same run's positive control (a sleeper of the same command line started by the drill) is found by the same `pgrep`, so "no survivor" is a real reading (AC17, V21). With the unbounded revision 0 recipe in place, the same drill reads `SURVIVED`: only the drill's own outer 60 s deadline stops it (`make_rc=124 secs=65`, V21).
+
+**Every guard run in `ai-live-guard` (revision 2, quorum r2 carve-out).** Bounding `ai-live-guard-static` does not bound the target's other guard runs: one per mutant (25, `sh tools/ai_live_guard.sh $(AI_G)`) and the two rule-E runs (`sh $(CURDIR)/tools/ai_live_guard.sh .` in the scratch git tree, expecting rc 0 and then rc 1). Each now runs as `sh tools/deadline.sh $(AI_GUARD_RUN_S) sh tools/ai_live_guard.sh …`, with `AI_GUARD_RUN_S ?= 60`, and its rc is classified:
+
+```make
+	  rc=0; sh tools/deadline.sh $(AI_GUARD_RUN_S) sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) echo "guard mutant SURVIVED: $$file $$to"; exit 1;; 1) ;; \
+	    124) echo "guard mutant infrastructure failure: $$file: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard mutant infrastructure failure: $$file: the guard exited $$rc, want 1:"; cat $(AI_G)/out.txt; exit 1;; esac; \
+	  grep -qF "ai-live-guard: $$want" $(AI_G)/out.txt || { …did not fail '$$want'…; exit 1; }; \
+```
+
+- **Runner: `tools/deadline.sh`, not `$(SCRIPT_GATE)`.** Both are the repo's process-group supervisors: TERM to the group at the limit, KILL later, so a TERM-ignoring child is killed too. `deadline.sh` returns the command's own rc, or 124 on expiry, so the recipe can tell the four outcomes apart: 0 (the mutant survived), 1 (a rejection, which still needs its rule's line), 124 (timeout) and anything else (a launch failure or an unexpected status). `$(SCRIPT_GATE)` folds those into one `FAIL` and wants a summary ERE per call. It also prints one `ok` line per call, 27 extra lines.
+- **What counts as caught.** Only rc 1 *and* the existing `grep -qF "ai-live-guard: $$want"`. Revision 1 counted any non-zero rc. Under it, a stand-in that prints the right rule line and exits 2 was counted as caught three times before a later mutant failed (V27).
+- **Limit.** `AI_GUARD_RUN_S ?= 60`: 7.5× the slowest guard scan measured, the 8.0 s whole-tree scan (V1), and 10.7× a mutant scratch-copy scan (5.44–5.56 s in three runs at 1-min load 4.8, V24). It is a variable only so the drills can shorten it (`AI_GUARD_RUN_S=3`). The worst case for the target's guard runs is then bounded: 120 s for the static gate plus 27 × 60 s.
+- **The rule-E setup fails closed.** `cd $(AI_G) && git init … > x.gd` now ends `|| { echo "guard: rule E infrastructure failure: setup in $(AI_G) failed"; exit 1; }`. A failed `cd` can then no longer run the guard and `git add` in the real tree.
+- **What is bounded, and verified (narrowed wording).** In `ai-live-guard`, these run under a deadline:
+  - the static gate (120 s), which stalls and is stopped (AC17);
+  - each of the 25 mutant runs (60 s each). The first mutant run stalls with a TERM-ignoring child and is stopped (AC19), and an rc-2 run is an infrastructure failure, not a catch (AC20);
+  - the two rule-E runs (60 s each). They use the same wrapper and classification, but no drill stalls them, so they are bounded by construction, not by a drill;
+  - the launch builder (600 s), which already ran through `$(SCRIPT_GATE)`.
+
+  Not bounded by this row: the `import` prerequisite (Godot), the scratch copies (`tar`) and the `perl` substitutions. This doc does not claim that `make test` as a whole is bounded. Outside the nightly rig, that rests on those steps, not on the guard.
 
 Not verified by the designer: the run on GitHub's Linux runner. The PR's own fast-tier run is that measurement (AC15).
 
@@ -162,7 +188,7 @@ The four `ctl` lines change only where a number was pinned:
 
 ## Exact edits
 
-The edited text of every changed region, copied from the revision 1 prototype commit measured in V20, is Appendix C. In summary (line numbers at `36f4ab4c`):
+The edited text of every changed region, copied from the revision 2 prototype commit measured in V25, is Appendix C. In summary (line numbers at `36f4ab4c`):
 
 | # | File:line | Before | After |
 |---|---|---|---|
@@ -171,7 +197,8 @@ The edited text of every changed region, copied from the revision 1 prototype co
 | E3 | `mk/lab.mk:70` | `\t  $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} …` | `\t  env -u AI_LIVE $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} …` |
 | E4 | `tools/lab_probe.py:44` | `    return [ailang(), "run", …]` | comment line + `    return ["env", "-u", "AI_LIVE", ailang(), "run", …]` |
 | E5 | `tools/reach_probe.py:39–40` | two-line `cmd = [a.ailang, "run", "--quiet"] + (["--bytecode"] if bytecode else []) + \` / `["--caps", …, PROBE]` | `vm = ["--bytecode"] if bytecode else []`, comment line, one-line `cmd = ["env", "-u", "AI_LIVE", a.ailang, "run", "--quiet", *vm, "--caps", …, PROBE]` |
-| E6 | `mk/ai.mk:446` (after `ai-test:`) | — | the D2 block (12 lines: comment, `AI_GUARD_S ?= 120`, the gated target, `ci-fast:` edge) |
+| E6 | `mk/ai.mk:446` (after `ai-test:`) | — | the D2 block (16 lines: comment, `AI_GUARD_S ?= 120`, `AI_GUARD_RUN_S ?= 60`, the gated target, `ci-fast:` edge) |
+| E6c | `mk/ai.mk:479` and `:486–488` at the base (the mutant loop's guard run; the rule-E setup and its two guard runs) | `if sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt; then …SURVIVED…; fi; \` and `sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt \|\| …` / `if sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt; then …` | each through `sh tools/deadline.sh $(AI_GUARD_RUN_S)`, its rc classified (0, 1, 124, other); the setup chain ends `\|\| { …setup … failed; exit 1; }` (Appendix C4) |
 | E6b | `mk/ai.mk:449–450` (the `ai-live-guard` header) | `ai-live-guard: import   ## …` and its first recipe line `\t@sh tools/ai_live_guard.sh .` | `ai-live-guard: import ai-live-guard-static   ## …`; the line is removed |
 | E7 | `mk/ai.mk:474` (after `_rogue2`) | — | the D3 row |
 | E8 | `mk/earth-link.mk:26` (after the 7aj comment) | — | 2 comment lines naming the tokens |
@@ -189,7 +216,7 @@ Run from the clone root with the pinned runtime: `export PATH=$PWD/runtime/bin:$
 | AC1 | The static guard passes | `sh tools/deadline.sh 120 sh tools/ai_live_guard.sh .` | `ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings)`, rc 0 | 5 `A` lines (P1 table), rc 1 (V1) |
 | AC2 | The static guard is in the fast tier, bounded | `test "$(sh tools/deadline.sh 60 make -n ci-fast 2>/dev/null \| grep -c '^sh tools/script_gate.sh ai-live-guard-static .* 120 .* -- sh tools/ai_live_guard.sh \.$')" -eq 1` | rc 0 | count 0, rc 1 (V4) |
 | AC3 | The new target runs alone, under its gate | `sh tools/deadline.sh 200 make ai-live-guard-static` | `script-gate: ai-live-guard-static ok: ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 6 s of 120 s)` (seconds vary), rc 0 | no such target |
-| AC4 | The whole guard, its 25 mutants and the launch builder | `sh tools/deadline.sh 900 make ai-live-guard > $D/alg.log 2>&1; echo rc=$?; grep -c '^guard mutant caught' $D/alg.log; grep -x 'guard mutant caught: mk/lab.mk (A mk/lab.mk)' $D/alg.log; tail -1 $D/alg.log` | `rc=0`; `25`; the lab.mk line; `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) …` | rc 2 at the static step (V1) |
+| AC4 | The whole guard, its 25 mutants and the launch builder | `sh tools/deadline.sh 900 make ai-live-guard > $D/alg.log 2>&1; echo rc=$?; grep -c '^guard mutant caught' $D/alg.log; grep -x 'guard mutant caught: mk/lab.mk (A mk/lab.mk)' $D/alg.log; tail -1 $D/alg.log` | `rc=0`; `25`; the lab.mk line; `guard: rule E reads git ls-files (…)`; `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) …`; about 4 minutes (239 s at load 5.4, V25) | rc 2 at the static step (V1) |
 | AC5 | Killing mutants: each fixed site reverted in a scratch copy is caught | `for m in guard-lab guard-reach guard-labprobe; do sh tools/deadline.sh 300 bash $D/d7ar_drill.sh $m $ROOT \| tail -1; done` | `d7ar-drill: guard-lab KILLED`, `… guard-reach KILLED`, `… guard-labprobe KILLED` | `mutation guard-lab did not apply`, rc 3 (V17) |
 | AC6 | The fixed lab lines still run | `sh tools/deadline.sh 600 make lab-parity` | 4 `lab-parity: … (strict VM = interpreter)` lines and `lab-parity: 4 checks NOT on the strict VM …`, rc 0 | the same (unchanged behaviour) (V12) |
 | AC7 | The fixed probes still spawn AILANG | `AILANG=ailang sh tools/deadline.sh 120 python3 -I -c 'import sys; sys.path.insert(0, "tools"); import lab_probe as l; p = l.start("draws", 2000); print(p.args[:4]); print(l.finish(p)[0])'` and `sh tools/deadline.sh 120 python3 -I -c 'import sys, types; sys.path.insert(0, "tools"); import reach_probe as r; print(r.ail(types.SimpleNamespace(ailang="ailang"), "drawMain", {"seed": 1, "n": 0})[0])'` | `['env', '-u', 'AI_LIVE', 'ailang']` then `draws n=2000 accepted=91 first=1 mix=6578220370666750`; and `0.0`; both rc 0 | the same values without the `env` prefix (V11) |
@@ -204,6 +231,8 @@ Run from the clone root with the pinned runtime: `export PATH=$PWD/runtime/bin:$
 | AC16 | Tree clean after the drills | `git status --porcelain` | empty | empty (V17, V20) |
 | AC17 | The fast-tier bound stops a stalled guard and leaves nothing running (quorum r1 sol) | `sh tools/deadline.sh 120 bash $D/d7ar_drill.sh stall $ROOT` | `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)…`; `d7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0` (secs below 30); `d7ar-drill: stall KILLED`, rc 0 | with revision 0's unbounded recipe: `make_rc=124 secs=65 survivors=0`, `stall SURVIVED`, rc 1 (only the drill's outer 60 s deadline stopped it, V21) |
 | AC18 | The gate still fails, and still shows the breach, on a real breach | `sh tools/deadline.sh 400 bash $D/d7ar_drill.sh static-breach $ROOT` | `ai-live-guard: A mk/lab.mk:63: …`; `script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line …`; `d7ar-drill: static-breach KILLED`, rc 0 | `mutation static-breach did not apply`, rc 3 (no `env -u AI_LIVE` to remove) |
+| AC19 | Every mutant-loop guard run is bounded: a stand-in that passes the static scan but stalls with a TERM-ignoring child on a mutant scratch tree is stopped, and nothing survives (quorum r2 carve-out) | `sh tools/deadline.sh 120 bash $D/d7ar_drill.sh mutant-stall $ROOT` | `script-gate: ai-live-guard-static ok: …`; `guard mutant infrastructure failure: mk/ai.mk: the guard did not finish in 3 s (deadline, rc 124)`; `d7ar-drill: mutant-stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=14 survivors=0 caught=0` (secs below 60); `mutant-stall KILLED`, rc 0 | revision 1's loop: `make_rc=124 secs=65 survivors=0`, `SURVIVED`, rc 1 (only the drill's outer 60 s deadline stopped it, V27) |
+| AC20 | An unexpected status is an infrastructure failure, never a catch | `sh tools/deadline.sh 120 bash $D/d7ar_drill.sh mutant-exit2 $ROOT` | `guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:`; `… make_rc=2 secs=6 survivors=0 caught=0`; `mutant-exit2 KILLED`, rc 0 | revision 1's loop: `guard mutant caught: mk/ai.mk (A mk/ai.mk)` three times (`caught=3`), `SURVIVED`, rc 1 (V27) |
 
 The next nightly `rig/full` on main should not name `ai-live-guard` or `display-audit-monitor-controls`. That is the outcome this row is for, but it is not a merge gate (merges never wait on the rig).
 
@@ -220,6 +249,9 @@ The next nightly `rig/full` on main should not name `ai-live-guard` or `display-
 | the bound (D2, r1) | a stand-in guard that ignores TERM and sleeps, with a TERM-ignoring child, at `AI_GUARD_S=3` | AC17 `stall` | `FAIL; timeout after 3 s (rc 142)`, `make_rc=2 secs=5 survivors=0`, positive control `control_seen=1` |
 | the bound (D2, r1) | the recipe reverted to revision 0's bare `@sh tools/ai_live_guard.sh .` | AC17 `stall` reads `SURVIVED` | `make_rc=124 secs=65`: the gate is what bounds it |
 | the gate's pass predicate | a real breach (`mk/lab.mk:63` reverted) through the gated target | AC18 `static-breach` | `A mk/lab.mk:63` shown; `FAIL; rc 1, want 0; no summary line` |
+| the mutant-loop bound (r2) | a stand-in guard: real on `.`, TERM-ignoring sleeper with a child on a mutant tree, `AI_GUARD_RUN_S=3` | AC19 `mutant-stall` | `did not finish in 3 s (deadline, rc 124)`, `secs=14 survivors=0 caught=0` |
+| the mutant-loop bound (r2) | the loop reverted to revision 1 (no deadline) | AC19 reads `SURVIVED` | `make_rc=124 secs=65` |
+| caught = rc 1 + rule line (r2) | a stand-in that prints the expected rule line and exits 2 on a mutant tree | AC20 `mutant-exit2` | `the guard exited 2, want 1:`, `caught=0` (revision 1's loop: `caught=3`) |
 | `unbound` (`new=@N@ failures=@N@`) | the stray label added on sampled row 2, not 1 (misses one frame) | AC9 `unbound-partial` | `new=44 failures=44` with `samples=45`: `unbound missing reason ^display-audit: samples=45 .* new=45 .* failures=45$`, `3 rejected` |
 | `stale` (`mismatches=@N@ failures=@2N@`) | the stale text skipped on the first sampled frame | AC9 `stale-partial` | `mismatches=44 failures=88`: `stale missing reason …mismatches=45 .* failures=90$`, `3 rejected` |
 | `drop_one` (`frame=@F10@`) | the face hidden on row 11, not 10 | AC9 `drop-row` | `drop_one missing reason ^FAIL monitor-coverage frame=36 course$`, `3 rejected` |
@@ -236,12 +268,13 @@ The next nightly `rig/full` on main should not name `ai-live-guard` or `display-
 
 ## Sub-milestones and estimates
 
-One milestone, **7ar-1**, one commit (or two: D1–D3 and D4 are independent), 6 files, +64/−13. Order: apply E1–E12 (with E6b); run AC1–AC4, AC6–AC8 and AC11–AC14; then the drills (AC5, AC9, AC10, AC17, AC18: about 4.5 minutes of headless playthroughs in total); then AC16. Wall time about 15 minutes; the slowest steps are `make ai-live-guard` (≈200 s) and the five control runs (≈52 s each).
+One milestone, **7ar-1**, one commit (or two: D1–D3 and D4 are independent), 6 files, +81/−17. Order: apply E1–E12 (with E6b, E6c); run AC1–AC4, AC6–AC8 and AC11–AC14; then the drills (AC5, AC9, AC10, AC17–AC20: about 4.5 minutes of headless playthroughs in total); then AC16. Wall time about 15 minutes; the slowest steps are `make ai-live-guard` (≈200 s) and the five control runs (≈52 s each).
 
 ## Risks and mitigations
 
 - **The static guard fails on Linux for a portability reason.** It uses only POSIX `sh`, `perl`, `git`, `mktemp`, `sed` and `grep -E`, and the work-tree branch (`git ls-files`). AC15 is the measurement; if it fails, the fix is in the guard's portability, not a removal from `ci-fast`.
 - **The fast tier grows by about 8 s.** Accepted (D2). It is about 1% of the tier.
+- **60 s per mutant-loop run is too tight on a loaded host.** A run would then fail as an infrastructure failure, by name (`did not finish in 60 s`), never counted as caught. 60 s is 7.5× the slowest scan measured, at 1-min load 3.4–5.4.
 - **120 s is too tight on a slow runner.** The guard would then fail by its timeout, loudly (`timeout after 120 s (rc 142)`), not pass. The fix would be a measured new `AI_GUARD_S`, not removing the gate. At 15× the Studio reading this is not expected.
 - **The gate's Godot wording.** On a timeout `tools/script_gate.sh` adds its fixed hint `a runtime error before quit() leaves Godot running`, which is wrong for this shell guard. The same text already appears for the observation gates. The target name and `timeout after N s (rc 142)` are unambiguous. Making the hint conditional is follow-up F3, not this row's.
 - **A future walk change drops the crew playthrough below 10 samples.** The floor then fails the controls by name (`samples=9, fewer than 10`). That is correct: below 10 rows `drop_one` cannot run. The fix would be in the playthrough script, and the message says so.
@@ -251,7 +284,7 @@ One milestone, **7ar-1**, one commit (or two: D1–D3 and D4 are independent), 6
 
 ## Follow-ups (out of scope)
 
-- **F1.** The `ai-live-guard` mutant loop runs the guard script directly on each scratch copy, 25 times at about 7 s each. These calls are bounded only by the nightly rig's 7,200 s watchdog. They are in `make test`, not in the fast tier.
+- **F1** (revision 1 deferred the mutant loop's 27 unbounded guard runs to the nightly rig's watchdog). Removed in revision 2: they are bounded and drilled in this row (D2, AC19, AC20).
 - **F2.** `.github/workflows/ci.yml` sets no `timeout-minutes` on any job. A job-level bound for the fast tier would cap every step, not just this one. That is a CI-wide change, so it belongs to its own row.
 - **F3.** `tools/script_gate.sh`'s timeout message always names Godot. It could name the command instead.
 
@@ -276,6 +309,15 @@ None. The loop decided these itself (recorded here):
 |---|---|---|---|
 | gpt6-1-sol | REJECT (blocking) | "D2 adds an unbounded guard invocation to the required PR fast tier: ai-live-guard-static directly executes `sh tools/ai_live_guard.sh .` without a deadline. The document verifies its observed runtime but does not verify an enclosing CI timeout or another enforced bound. Acceptance-test wrappers do not bound the production CI invocation, so bounded-waits compliance is not established." | **Applied.** `ai-live-guard-static` runs the guard under `$(SCRIPT_GATE)` (the fast tier's existing process-group runner, as `mk/observations.mk`'s gates use it) with `AI_GUARD_S ?= 120`, 15× the measured 8 s (D2, "The bound"). `ai-live-guard` uses it instead of its own unbounded line (E6b). The enclosing bound was checked: `ci.yml` sets no `timeout-minutes` (V4b), so the gate is the real bound. New stall drill AC17: a TERM-ignoring stand-in guard with a TERM-ignoring child, at `AI_GUARD_S=3`, is stopped in 5 s with no survivor, with a `pgrep` positive control in the same run; the revision 0 recipe reads `SURVIVED` under the same drill (V21). New AC18: a breach still fails through the gate and is shown (V22). |
 | gemini-4-argon | PASS | non-blocking: in `tools/monitor_control_check.sh`, match `"frame":([0-9]+)` anywhere on the line rather than assuming `"frame"` is the first key | **Applied, with one refinement.** The rows carry four nested `"frame"` keys (a string and three floats, V23), so a plain match anywhere can pick the wrong one. The helper takes the integer `"frame"` key wherever it sits and requires exactly one; zero or two are refused by name. Appendix B gains `keyorder` (accepted), `ambiguous` and `noframe` (refused); the helper stays fail-closed, and the cases are green (V23). |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
+
+**Round 2** (on revision 1, commit `2235a3c9`; cost $0.1523): **BLOCKED** by one seat. No round 3 will run. Revision 2 is a **narrow-refinement carve-out: sol's proposed fix applied verbatim, no round 3**.
+
+| Seat | Verdict | Finding | Disposition in revision 2 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "Bounded-waits compliance remains incomplete in the target this revision extends: D3 adds another direct, unbounded guard invocation to ai-live-guard's mutant loop. F1 explicitly acknowledges that all 25 invocations rely on the nightly rig's watchdog, which does not bound standalone make ai-live-guard or make test. Bounding ai-live-guard-static does not bound these subsequent executions." Catch: "AC17 stalls only the static prerequisite. It cannot establish the C4 comment's claim that 'make test is bounded too': a guard that passes the initial scan but stalls on a mutant scratch tree can still hang the mutant loop outside the nightly rig." | **Proposed fix applied verbatim:** "Wrap every mutant-loop guard invocation in the existing process-group deadline runner with an explicit per-invocation limit. Count a mutant as caught only when the guard exits with the expected rejection status and emits the expected rule diagnostic; treat timeout, launch failure, and unexpected status as infrastructure failures. Add a drill whose stand-in guard passes the initial static scan but stalls with a TERM-ignoring child on a mutant scratch tree, and verify bounded failure with no survivors. Remove F1's deferral and narrow the 'make test is bounded' wording to the specific invocations actually verified." How: each of the 25 mutant runs and the two rule-E runs goes through `tools/deadline.sh $(AI_GUARD_RUN_S)` (60 s, 7.5× the slowest measured scan, V24). The recipe classifies rc 0 / 1 / 124 / other, and only rc 1 plus the rule line is caught (E6c). Drill AC19 (`mutant-stall`): the stand-in passes the static scan and stalls with a TERM-ignoring child on the first mutant tree; it is stopped in 14 s with `survivors=0` and a `pgrep` positive control in the same run. Drill AC20 (`mutant-exit2`): an rc 2 is an infrastructure failure, `caught=0`. F1 is removed. The C4 comment and D2 now name exactly the invocations bounded and which of them a drill verifies (V25–V27) |
+| gemini-4-argon | PASS | "the newly added fast-tier static target is now properly bounded via $(SCRIPT_GATE)"; notes the same mutant-loop gap | Covered by the same change |
 | oc-glm-5-3 | absent | unreachable | — |
 | oc-kimi-k3 | absent | unreachable | — |
 
@@ -309,6 +351,10 @@ All readings are on `/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter9
 | V21 | The stall drill (quorum r1 sol) | `bash d7ar_drill.sh stall ROOT` (Appendix A), on the uncommitted revision 1 tree and again on `c8b60f40`; then with `mk/ai.mk`'s gated line swapped back to revision 0's `@sh tools/ai_live_guard.sh .`, restored after | revision 1, both runs: `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142): …`, `d7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0`, `stall KILLED`, rc 0, about 7 s in all. Revision 0 recipe: `before=0 control_seen=1 control_cleared=0 make_rc=124 secs=65 survivors=0`, `stall SURVIVED`, rc 1. `pgrep -f '^sleep 3191$' \| grep -c .` read `0` after the last run |
 | V22 | A breach through the gate | `bash d7ar_drill.sh static-breach ROOT` on `c8b60f40` | `ai-live-guard: A mk/lab.mk:63: …`, `script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line matching ^ai-live-guard: ok …`, `static-breach KILLED`, rc 0 |
 | V23 | The frame key (gemini, non-blocking) | `awk '{ n = gsub(/"frame":/, "&"); … }'` over the four control samples files; `sed -n 10p … \| grep -oE '"frame":[^,}]*'`; Appendix B on the revision 1 helper, on revision 0's helper, and on three revision 1 helper mutants; the revision 1 helper on the real `unbound` and `unrefreshed` logs | every row of all four files (45 each) has 5 `"frame":` keys: `"frame":36` (row 10, top level), `"frame":"galactic"` and three `"frame":0.0`. Revision 1: 9 cases ok, `0 wrong`, rc 0. Revision 0's helper: `3 wrong` (keyorder refused, ambiguous accepted, noframe refused for the old reason). Floor deleted: `2 wrong`. Skew check disabled: `1 wrong`. Uniqueness relaxed to the first integer key: `1 wrong` (ambiguous accepted). Real logs: rc 0 for both |
+| V24 | Per-run guard time for the limit (revision 2) | `sh /tmp/…/time_scans.sh ROOT`: three fresh mutant scratch copies (the loop's copy recipe, one `--entry live` recipe appended to `mk/ai.mk`), each `tools/deadline.sh 120 sh tools/ai_live_guard.sh $G`, timed with `Time::HiRes` | rc 1 each, one `A mk/ai.mk:635` line; wall 5.56, 5.49, 5.44 s; 1-min load 4.76 |
+| V25 | Revision 2 prototype commit and gates | E6c on top of revision 1, committed on a temporary local branch (`5cd79549`, `6 files changed, 81 insertions(+), 17 deletions(-)`; deleted afterwards): `make ai-live-guard`; drills `stall`, `static-breach`, `guard-lab`; the static guard; `make script-gate-lint`; `git diff --check 36f4ab4c HEAD` | `make ai-live-guard` rc 0 in **239 s** (1-min load 5.4; 207 s for revision 1 at lower load): the static gate `… (rc 0, no SCRIPT ERROR, 7 s of 120 s)`, 25 `guard mutant caught`, `guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)`, `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default)`. `stall`, `static-breach`, `guard-lab` KILLED. Static guard `ok (98 …, 549 …)`. Lint rc 0, diff-check rc 0. `mk/earth-link.mk` and the helper are byte-identical to revision 1 (`cmp`), so V20's control and helper readings stand |
+| V26 | The two new drills on revision 2 | `bash d7ar_drill.sh mutant-stall ROOT`; `bash d7ar_drill.sh mutant-exit2 ROOT` (Appendix A) on `5cd79549`. Each builds a scratch git tree (the loop's copy set, `git init` + `git add -A`), moves the real guard outside it, and runs `make -C S -o import ai-live-guard AI_GUARD_RUN_S=3` under an outer 60 s deadline | `mutant-stall`: `script-gate: ai-live-guard-static ok: … (98 make/shell/CI files, 462 test/tool scripts, …)`, `guard mutant infrastructure failure: mk/ai.mk: the guard did not finish in 3 s (deadline, rc 124)`, `d7ar-drill: mutant-stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=14 survivors=0 caught=0`, `KILLED` (17 s in all). `mutant-exit2`: the same static `ok`, `guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:`, `… make_rc=2 secs=6 survivors=0 caught=0`, `KILLED` (9 s). `pgrep -f '^sleep 319[13]$' \| grep -c .` read `0` afterwards; `git status --porcelain` empty |
+| V27 | The same drills against revision 1's loop | `mk/ai.mk` replaced by revision 1's (the loop without deadlines, any non-zero rc counted), both drills run, then `git checkout -- mk/ai.mk` | `mutant-stall`: `before=0 control_seen=1 control_cleared=0 make_rc=124 secs=65 survivors=0 caught=0`, `SURVIVED`, rc 1: the drill's outer deadline stopped it. `mutant-exit2`: `guard mutant caught: mk/ai.mk (A mk/ai.mk)` ×3, then `guard mutant in .github/workflows/ci.yml did not fail 'C .github/workflows/ci.yml'`, `caught=3`, `SURVIVED`, rc 1. No sleeper left; tree clean after |
 
 Every tracked file mutated for measurement was restored with `git checkout`; the temporary branch was deleted. At the end, `git status --porcelain`, `git diff --stat` and `git diff --cached --stat` are empty. `make import` left no untracked files in this clone.
 
@@ -316,9 +362,9 @@ Every tracked file mutated for measurement was restored with `git checkout`; the
 - AC15, the GitHub fast tier on Linux with the new step.
 - The controller's bisect points other than HEAD and the 7ae working points (V6 confirms the cause directly on HEAD).
 
-## Appendix A: the drill (`d7ar_drill.sh`, revision 1, sha256 `ea8bfdeee19b7329…`)
+## Appendix A: the drill (`d7ar_drill.sh`, revision 2, sha256 `e55b79e3e52d828b…`)
 
-Revision 1 adds the `stall` and `static-breach` modes; the other modes are unchanged from revision 0 (`137537ba34afbb56…`).
+Revision 2 adds the `mutant-stall` and `mutant-exit2` modes. Revision 1 (`ea8bfdeee19b7329…`) added `stall` and `static-breach`. The other modes are unchanged from revision 0 (`137537ba34afbb56…`).
 
 ```bash
 #!/bin/bash
@@ -331,6 +377,12 @@ Revision 1 adds the `stall` and `static-breach` modes; the other modes are uncha
 #           ai-live-guard-static must fail by its timeout within 30 s and leave no sleeper (pgrep, with a
 #           positive control in the same run)
 #   static-breach : mk/lab.mk:63 reverted in a scratch copy; ai-live-guard-static must fail and show the A line
+#   mutant-stall : revision 2. In a scratch git tree, a stand-in guard runs the real guard when its ROOT is "."
+#           (so the static prerequisite passes) and, on a mutant scratch tree, ignores TERM and sleeps with a
+#           child. make ai-live-guard (AI_GUARD_RUN_S=3, import skipped) must fail by the deadline within
+#           60 s and leave no sleeper (pgrep, with a positive control in the same run)
+#   mutant-exit2 : revision 2. The same, but on a mutant tree the stand-in prints the expected rule line and
+#           exits 2: it must be reported as an infrastructure failure, never as caught
 # Prints "d7ar-drill: MODE KILLED" (or "PASSED" for cadence) and exits 0; 1 if the mutant survived;
 # 3 if the mutation did not apply. Every tracked file it touches is restored (git checkout) on exit.
 MODE=${1:?MODE}; ROOT=${2:?ROOT}
@@ -401,6 +453,25 @@ static-breach) S=$(mktemp -d)/g; mkdir -p "$S"
 	grep -E '^ai-live-guard: A |^script-gate:' "$S.out" | cut -c1-160
 	if [ $rc -ne 0 ] && grep -Eq '^ai-live-guard: A mk/lab\.mk:63:' "$S.out" && grep -q '^script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line' "$S.out"; then echo "d7ar-drill: static-breach KILLED"; exit 0; fi
 	echo "d7ar-drill: static-breach SURVIVED (make rc $rc)"; exit 1 ;;
+mutant-stall|mutant-exit2) S=$(mktemp -d)/g; mkdir -p "$S" "$S.real"
+	git ls-files Makefile mk .github tests tools bridge ui | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$' | tar -cf - -T - | tar -xf - -C "$S"
+	mv "$S/tools/ai_live_guard.sh" "$S.real/ai_live_guard.sh"
+	tok=3193; pat="^sleep $tok\$"
+	if [ "$MODE" = mutant-stall ]; then body=$(printf 'trap "" TERM\nsleep %s &\nsleep %s' $tok $tok); else body=$(printf 'echo "ai-live-guard: A mk/ai.mk:1: stand-in"\nexit 2'); fi
+	printf '#!/bin/sh\ncase "${1:-.}" in .) exec sh %s "$@";; esac\n%s\n' "$S.real/ai_live_guard.sh" "$body" > "$S/tools/ai_live_guard.sh"
+	git -C "$S" init -q && git -C "$S" add -A || { echo "d7ar-drill: $MODE scratch git setup failed"; exit 3; }
+	before=$(pgrep -f "$pat" | grep -c .)
+	sleep $tok & ctl=$!; sleep 0.5; seen=$(pgrep -f "$pat" | grep -c .); kill $ctl; wait $ctl 2>/dev/null
+	cleared=$(pgrep -f "$pat" | grep -c .)
+	t0=$(date +%s); $DL 60 make -C "$S" --no-print-directory -o import ai-live-guard AI_GUARD_RUN_S=3 > "$S.out" 2>&1; rc=$?; secs=$(($(date +%s) - t0))
+	sleep 1; after=$(pgrep -f "$pat" | grep -c .)
+	grep -E '^script-gate:|^guard' "$S.out" | cut -c1-200
+	caught=$(grep -c '^guard mutant caught' "$S.out")
+	echo "d7ar-drill: $MODE before=$before control_seen=$seen control_cleared=$cleared make_rc=$rc secs=$secs survivors=$after caught=$caught"
+	if [ "$MODE" = mutant-stall ]; then want='^guard mutant infrastructure failure: mk/ai\.mk: the guard did not finish in 3 s \(deadline, rc 124\)$'; else want='^guard mutant infrastructure failure: mk/ai\.mk: the guard exited 2, want 1:$'; fi
+	if [ "$before" = 0 ] && [ "$seen" -ge 1 ] && [ "$cleared" = 0 ] && [ $rc -ne 0 ] && [ $rc -ne 124 ] && [ $secs -lt 60 ] && [ "$after" = 0 ] && [ "$caught" = 0 ] \
+	  && grep -q '^script-gate: ai-live-guard-static ok: ' "$S.out" && grep -Eq "$want" "$S.out"; then echo "d7ar-drill: $MODE KILLED"; exit 0; fi
+	echo "d7ar-drill: $MODE SURVIVED"; exit 1 ;;
 *) echo "d7ar-drill: unknown mode $MODE"; exit 2 ;;
 esac
 ```
@@ -446,9 +517,9 @@ case_ noframe 1 '^sampled row 1 of .* has 0 integer "frame" keys, want 1$' $T/ok
 rm -rf "$T"; echo "d7ar helper cases: $bad wrong"; [ $bad -eq 0 ]
 ```
 
-## Appendix C: the edited text (revision 1 prototype `c8b60f40`, against `36f4ab4c`; helper sha256 `aecd62112b67616a…`)
+## Appendix C: the edited text (revision 2 prototype `5cd79549`, against `36f4ab4c`; helper sha256 `aecd62112b67616a…`, unchanged since revision 1)
 
-Each block is the text after the edit, copied from the prototype (V20). Context lines are included where they locate the edit.
+Each block is the text after the edit, copied from the prototype (V25). Context lines are included where they locate the edit.
 
 ### C1. `mk/lab.mk` (lines 62, 63 and 70 after the edit)
 
@@ -477,7 +548,7 @@ def ail(a, entry, args, bytecode=True):
     return child(cmd)
 ```
 
-### C4. `mk/ai.mk`: the D2 block (lines 447–456), the `ai-live-guard` header without its old first recipe line (line 460), and the D3 row (line 485, between the `_rogue2` row and the `include` row)
+### C4. `mk/ai.mk`: the D2 block with both bounds (lines 447–460), the `ai-live-guard` header (line 464), the D3 row (line 489), and the bounded guard runs of the mutant loop and of rule E (lines 491–513)
 
 ```make
 ai-test: ai-live-guard ai-settings
@@ -486,8 +557,12 @@ ai-test: ai-live-guard ai-settings
 # so a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. Bounded
 # by $(SCRIPT_GATE), as the fast tier's other non-Godot gates are (mk/observations.mk): AI_GUARD_S is 15 times the
 # measured 8 s, for a slower runner; a stall is stopped (TERM, then KILL to the process group) and fails the target.
-# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first, so make test is bounded too.
+# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first. Row 7ar r2 (quorum carve-out): every
+# other guard run in ai-live-guard (one per mutant, and the two rule-E runs) is bounded by tools/deadline.sh at
+# AI_GUARD_RUN_S, 7.5 times the slowest measured scan (8.0 s whole tree; 5.4-5.6 s on a mutant scratch copy). A mutant
+# is caught only on the guard's rc 1 with its rule's line; a timeout (124) or any other rc is an infrastructure failure.
 AI_GUARD_S ?= 120
+AI_GUARD_RUN_S ?= 60
 .PHONY: ai-live-guard-static
 ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh), under a deadline; in ci-fast
 	@$(SCRIPT_GATE) ai-live-guard-static $(SCRATCH)/ai-live-guard-static.log $(AI_GUARD_S) '^ai-live-guard: ok \([1-9][0-9]* make/shell/CI files, [1-9][0-9]* test/tool scripts, launch builder, settings\)$$' -- sh tools/ai_live_guard.sh .
@@ -501,6 +576,30 @@ ai-live-guard: import ai-live-guard-static   ## AC15: no target, test, CI job or
 	  'ui/ui_scale.gd@\z@\nfunc _rogue2() -> void:\n\tOS.execute("ailang", ["run", "--entry", "live", "ai/service.ail"])\n@A ui/ui_scale.gd' \
 	  'mk/lab.mk@\z@\nlab-mutant:\n\tfor e in x; do $$(LAB_RUN) --entry $$$$e --args-json 0 sim/$$$$e.ail; done\n@A mk/lab.mk' \
 	  'Makefile@\z@\ninclude infra/live.mk\n@A Makefile: include outside mk/'; do \
+	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; want=$${rest#*@}; \
+	  rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
+	  FROM="$$from" TO="$$to" perl -0pi -e '$$t = $$ENV{TO}; $$t =~ s/\\n/\n/g; $$t =~ s/\\t/\t/g; $$t =~ s/\\x40/chr(64)/ge; s/$$ENV{FROM}/$$t/m or die "anchor not found: $$ENV{FROM}\n"' $(AI_G)/$$file; \
+	  rc=0; sh tools/deadline.sh $(AI_GUARD_RUN_S) sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) echo "guard mutant SURVIVED: $$file $$to"; exit 1;; 1) ;; \
+	    124) echo "guard mutant infrastructure failure: $$file: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard mutant infrastructure failure: $$file: the guard exited $$rc, want 1:"; cat $(AI_G)/out.txt; exit 1;; esac; \
+	  grep -qF "ai-live-guard: $$want" $(AI_G)/out.txt || { echo "guard mutant in $$file did not fail '$$want':"; cat $(AI_G)/out.txt; exit 1; }; \
+	  echo "guard mutant caught: $$file ($$want)"; \
+	done
+	@# Rule E reads tracked files only: an untracked checkout under the root (.claude/worktrees/*)
+	@# writing live_allowed changes nothing; the same file tracked is caught.
+	@rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) ui bridge | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
+	  cd $(AI_G) && git init -q && git add -A && mkdir -p .claude/worktrees/w/ui && printf '\tbridge.live_allowed = true\n' > .claude/worktrees/w/ui/x.gd || { echo "guard: rule E infrastructure failure: setup in $(AI_G) failed"; exit 1; }; \
+	  rc=0; sh $(CURDIR)/tools/deadline.sh $(AI_GUARD_RUN_S) sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) ;; 1) echo "guard: an untracked worktree file changed rule E:"; cat out.txt; exit 1;; \
+	    124) echo "guard: rule E infrastructure failure: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard: rule E infrastructure failure: the guard exited $$rc, want 0:"; cat out.txt; exit 1;; esac; \
+	  git add .claude/worktrees/w/ui/x.gd; rc=0; sh $(CURDIR)/tools/deadline.sh $(AI_GUARD_RUN_S) sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) echo "guard mutant SURVIVED: tracked live_allowed writer"; exit 1;; 1) ;; \
+	    124) echo "guard: rule E infrastructure failure: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard: rule E infrastructure failure: the guard exited $$rc, want 1:"; cat out.txt; exit 1;; esac; \
+	  grep -qF "ai-live-guard: E live_allowed written outside AiSettings.apply" out.txt && echo "guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)"
+	@$(SCRIPT_GATE) ai-live-guard $(SCRATCH)/ai-live-guard.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; launch_default\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
 ```
 
 ### C5. `mk/earth-link.mk` (lines 23–50 after the edit: the whole target)
