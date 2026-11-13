@@ -1,6 +1,6 @@
 # The Earth-link capture plans alpha Cen A at its real map index (D-149)
 
-**Status:** Planned 2026-11-13 (mission iteration 91, designer Opus 5.5). Measured at `origin/main` `85ca5470`. **Release:** r1. **Milestone:** none (charter queue: "D-149's one-token fix", row 7am's held pair).
+**Status:** Planned 2026-11-13 (mission iteration 91, designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): Appendix B's probe generator now matches exact blocks instead of line numbers (V15, V16). Measured at `origin/main` `85ca5470`. **Release:** r1. **Milestone:** none (charter queue: "D-149's one-token fix", row 7am's held pair).
 **Priority:** low. Nothing is red. Mark ruled on it (D-149, attended 2026-11-12), so the loop may land it.
 **Implements:** ledger row **D-149** (`design_docs/stapledon-mission.md`, Decision ledger), verbatim: *"Yes: tools/earth_link_capture.gd's ALPHA target moves to alpha Cen A's real map index (2, from 1) and the guard's SOURCE_PENDING entry is removed; the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance, as the live map shows."* It closes OQ1 of [`m4-7am-alpha-index-literals.md`](../../implemented/r1/m4-7am-alpha-index-literals.md) (V4, V5). The capture is AC11 of [`r3/earth-link.md`](../../implemented/r3/earth-link.md). That design implements the design repo's [signals-and-instruments.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/signals-and-instruments.md) §2–§3.1. No physics-spec section applies, because the sim never reads the index (7am V7).
 **Depends on:** nothing.
@@ -107,7 +107,7 @@ Run from the clone root, `ROOT=/Users/voightkampff/dev/sunholo-data/stapledons-g
 | AC7 | Whitespace | `perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD` | no output, rc 0 | rc 0 (V3) |
 | AC8 | Scope | `test "$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' \| tr '\n' ' ')" = "tools/earth_link_capture.gd tools/test_replay.py " \|\| exit 1` | rc 0 | empty → rc 1 (V13 on the prototype: those 2 files) |
 | AC9 | Policy gates on the touched files | `for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t \|\| exit 1; done` | each `…: ok`, rc 0 (`438 .uid files`; `23 allowlisted`) | same (V9 on the prototype; neither file is new) |
-| AC10 | The frame change, headless | `make runtime` (or AILANG v0.56.1) and `make import` first. Then: `T=$(mktemp -d) && trap 'rm -rf "$T"' EXIT && perl "$D/elc_probe_gen.pl" < tools/earth_link_capture.gd > "$T/p.gd" && AILANG_BIN=$PWD/runtime/bin/ailang perl -e 'alarm 600; exec @ARGV' godot --headless --audio-driver Dummy --path . --script "$T/p.gd" > "$T/log" 2>&1; rc=$?; test $rc -eq 0 \|\| exit 1; test "$(grep -cF 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly]' "$T/log")" -eq 1 \|\| exit 1; test "$(grep -c '^earth-link-capture: 10 frames, 0 failures$' "$T/log")" -eq 1 \|\| exit 1` | rc 0 for every step. The b–e `elc-` lines equal V7/V8's. | the `a_outbound` line has `subtitle=[CNS5:3627]` → the second `test` gives rc 1 (V7) |
+| AC10 | The frame change, headless | `make runtime` (or AILANG v0.56.1) and `make import` first. Then: `T=$(mktemp -d) && trap 'rm -rf "$T"' EXIT && perl "$D/elc_probe_gen.pl" < tools/earth_link_capture.gd > "$T/p.gd" && AILANG_BIN=$PWD/runtime/bin/ailang perl -e 'alarm 600; exec @ARGV' godot --headless --audio-driver Dummy --path . --script "$T/p.gd" > "$T/log" 2>&1; rc=$?; test $rc -eq 0 \|\| exit 1; test "$(grep -cF 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly]' "$T/log")" -eq 1 \|\| exit 1; test "$(grep -c '^earth-link-capture: 10 frames, 0 failures$' "$T/log")" -eq 1 \|\| exit 1` | rc 0 for every step. The b–e `elc-` lines equal V7/V8's. | the `a_outbound` line has `subtitle=[CNS5:3627]` → the second `test` gives rc 1 (V7, V14, V16) |
 | AC11 | Mark sees the frame (attended, after merge; not a merge gate) | `make capture-earth-link` in a GPU window when the GPU is free, then open `renders/earth_link/a_outbound_map.png` and `contact_sheet.png` | `earth-link-capture: 10 frames, 0 failures`. The `a_outbound` map subtitle reads `CNS5:3627  ·  4.32 ly`. | not run: GPU window, and the GPU is busy |
 
 `$D` is a scratch directory outside the repo (for example `D=$(mktemp -d)`) holding Appendices A and B.
@@ -122,8 +122,8 @@ One milestone, **D149-1**: D1 and D2 in one commit, 2 files, +3/−6. Order: app
 
 - **Landing one edit without the other.** Each half alone fails `replay-map-index` (V10, V12). This is caught in `ci-fast`, and AC8 checks both files.
 - **Removing the mechanism hides a future wrong pair.** It does not: `assertEqual(bad, [])` is stricter than before. Every wrong pair fails, and nothing is excused. The synthetic controls and AC4 prove this.
-- **The positive control names a line number.** A future edit that moves `ALPHA` off line 16 fails the control, with a clear message. The `ui/transit_harness.gd:10` control already has the same property. This is accepted: the fix is to update the line number.
-- **Probe drift.** Appendix B checks the exact lines it replaces (`die` on mismatch), so a changed capture script fails the probe instead of silently probing something else.
+- **The positive control names a line number** (quorum r1, gemini note). This follows the existing `ui/transit_harness.gd:10` control's convention. A harmless line shift in the capture fails it loudly, with `'tools/earth_link_capture.gd:16' not found in [...]`, which lists the shifted entry. It never fails silently, and the fix is to update the number. A file-prefix check (`any(c.startswith("tools/earth_link_capture.gd:") …)`) was considered and rejected. The file holds exactly one catalogue pair today, so `blind` (AC5) would still kill it. But the prefix check would pass if a second catalogue pair appeared in the file while ALPHA's pair went unseen, so it is weaker than the line check. Kept as designed; AC4 and AC5 are unchanged.
+- **Probe drift** (revised in revision 1, quorum r1 sol). Appendix B no longer works by line number. It reads the whole capture and requires each of three exact original texts to occur **exactly once**: the complete 14-line image block (`frame_post_draw` through `frames += 1`), the `_contact_sheet()` call, and the `sheet.append` statement. Overlapping occurrences count, so adjacent duplicates are seen. The generator prints nothing until all three checks pass, and otherwise exits 255 with `elc-probe-gen: <block> found N times, want exactly 1`. V15 shows that a changed interior line, a changed last line, truncation inside the block, truncation before the final replacement, a duplicate and a removal each make it exit nonzero with empty output. The probe does **not** check the capture's other lines (the sim flow, the state checks, `DisplayBinding.audit`). Those run as written, so a change there changes the probe's own run, not a discarded block.
 
 ## Open questions for the user
 
@@ -134,6 +134,19 @@ None. D-149 is complete: the token, the guard entry and the expected frame are a
 - `tools/earth_link_capture.gd`: one token.
 - `tools/test_replay.py`: `SOURCE_PENDING` removed, the assertion rewritten, one positive control added.
 - After the evaluation passes: this doc moves to `design_docs/implemented/r1/`, and the charter rows are updated (controller).
+
+## Quorum verification log
+
+**Round 1** (artifact `m4-d149-earth-link-alpha-index-2026-11-13T04-23-53Z.json`, on revision 0, commit `1c7edb81`): **BLOCKED**.
+
+| Seat | Verdict | Finding | Disposition in revision 1 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "The headless probe does not fail closed as claimed. Appendix B silently discards lines 174–186 without verifying their contents; its only check in that range rejects a misplaced `frames += 1`. Changes to the removed rendering, save, hash, or blank-check logic can therefore pass unnoticed." | **Applied verbatim** (fix: "Replace the line-number deletion logic with exact matching of the complete original image block, `_contact_sheet()` call, and `sheet.append` statement, requiring exactly one match for each before emitting any generated script. Reject missing, changed, duplicated, or truncated blocks. Add a verification-log row showing that the pristine and fixed captures generate the expected probes, while mutations to a discarded interior line and truncation before the final replacement both make the generator exit nonzero. Revise the probe-drift claim to describe those actual checks."). Appendix B rewritten; V15 holds the positives and seven negatives (incl. `:178` interior and `head -n 188`); the Risks "Probe drift" bullet now describes those checks; AC10 re-run (V16) |
+| gemini-4-argon | PASS | non-blocking: the `:186` check should be `die "186" if ($n == 186) != ($l =~ /frames \+= 1/);` | **Subsumed**: no line-number check survives in revision 1. The block's last line is inside the exact match, and the `:186` mutation fails (V15) |
+| gemini-4-argon | PASS | note: the new positive control pins a line number | **Recorded, design kept**: see Risks, "The positive control names a line number" (same convention as `ui/transit_harness.gd:10`; a shift fails loudly; a file-prefix check would be weaker). AC4 and AC5 are unchanged, and nothing they depend on changed, so they were not re-run (V10, V11 stand) |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
+| Claude | benched | author's vendor | — |
 
 ## Verification log
 
@@ -152,7 +165,9 @@ None. D-149 is complete: the token, the guard entry and the expected frame are a
 | V11 | Drill fails closed on the pristine tree | the same drill on the clone | `mutation index did not apply` rc 3; `mutation blind did not apply` rc 3; tree clean |
 | V12 | Half-applied edit | prototype with the old `tools/test_replay.py` restored: `python3 tools/test_replay.py MapIndex` | rc 1: `FAIL: test_source_literals_match_the_map`, `AssertionError: Lists differ: ['tools/earth_link_capture.gd:16'] != []`, `FAILED (failures=1)` |
 | V13 | Prototype diff | `git diff --stat` (prototype) | `tools/earth_link_capture.gd \| 2 +-`, `tools/test_replay.py \| 7 ++-----`, `2 files changed, 3 insertions(+), 6 deletions(-)` |
-| V14 | AC10 as written | AC10's command, with Appendix B extracted from this doc (`cmp`-equal to the generator run in V7/V8), on the clone (pristine capture) and with the prototype's capture file as input | pristine: `godot_rc=0`, a_outbound hits 0 → rc 1. With the fix: rc 0, and its `elc-` lines `diff`-equal to V7/V8's index 2 run |
+| V14 | AC10 as written (revision 0 generator) | AC10's command, with revision 0's Appendix B extracted from this doc (`cmp`-equal to the generator run in V7/V8), on the clone (pristine capture) and with the prototype's capture file as input | pristine: `godot_rc=0`, a_outbound hits 0 → rc 1. With the fix: rc 0, and its `elc-` lines `diff`-equal to V7/V8's index 2 run |
+| V15 | Revision 1 generator: exact-block matching | `perl -e 'alarm 30; …' perl elc_probe_gen.pl < INPUT > OUT` (Appendix B as committed, extracted from this doc; `/tmp/iter91/r1`). Positives: the pristine capture, and the fixed capture (pristine with the one token at `:16`). Negatives, each derived from the fixed capture and each checked by `cmp`/`diff` to differ: `:178` `save_png(` → `save_jpg(` (a discarded interior line); `:186` `frames += 1` → `+= 3` (the block's last line); `head -n 180` (truncated inside the block); `head -n 188` (truncated before the final replacement, `sheet.append` at `:191`); `:191` duplicated; `:144` duplicated; `:144` removed | pristine: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 1 probe. fixed: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 2 probe. Each negative: rc 255 and **0 bytes** of output. `:178` → `image block found 0 times, want exactly 1`; `:186` → `image block found 0 times`; `head -n 180` → `image block found 0 times`; `head -n 188` → `sheet.append found 0 times`; `:191` duplicated → `sheet.append found 2 times`; `:144` duplicated → `_contact_sheet() call found 2 times`; `:144` removed → `_contact_sheet() call found 0 times`. The first draft counted non-overlapping matches and missed the adjacent `:191` duplicate (rc 0); counting overlapping matches fixed it, then all were re-run |
+| V16 | AC10 re-run with the revision 1 generator | AC10's command (generator `/tmp/iter91/r1/elc_probe_gen.pl`, the same as Appendix B) on the clone: input `tools/earth_link_capture.gd` (pristine), then the fixed capture | pristine: `godot_rc=0`, AC10 rc 1 (no `4.32 ly` line). fixed: `godot_rc=0`, AC10 rc 0. Both runs' `elc-` lines are `diff`-equal to V7/V8's index 1 and index 2 runs |
 
 **UNVERIFIED:**
 - AC11. `make capture-earth-link` (GPU window), the PNGs and the contact sheet were not run or opened.
@@ -210,19 +225,43 @@ The drill's design:
 - Counts are asserted with `test`, every check ends in `|| exit 1`, and no assertion uses `!`.
 - The whole drill is bounded by the outer `alarm 240`, and make by `alarm 120`.
 
-## Appendix B: the headless frame probe (`elc_probe_gen.pl`)
+## Appendix B: the headless frame probe (`elc_probe_gen.pl`, revision 1, sha256 `596b20d6fef7073a…`)
 
-`perl elc_probe_gen.pl < tools/earth_link_capture.gd > probe.gd`. This applies to the capture at `85ca5470` and to the capture after D1; the line numbers are the same in both.
+`perl elc_probe_gen.pl < tools/earth_link_capture.gd > probe.gd`. This applies to the capture at `85ca5470` and to the capture after D1.
 
-The generator makes three changes:
-- It removes the `_contact_sheet()` call (line 144) and `sheet.append` (line 191).
-- It replaces lines 173–186 (`frame_post_draw` and the PNG save/hash/blank loop) with prints of the map's title and subtitle, a hash of the station's labels, and a hash of the sim view with its `index` values normalised. It keeps `frames += 2` so that the summary line still counts 10.
-- It `die`s if any replaced line differs from what it expects.
+Revision 1 (quorum r1, sol's fix applied verbatim) uses no line numbers. The generator reads the whole capture and works in two steps:
 
-The probe keeps the capture's sim flow, its state checks and its `DisplayBinding.audit`.
+1. **Check.** It requires each of three exact original texts to occur exactly once, counting overlapping matches:
+   - the complete image block (`await RenderingServer.frame_post_draw` through `frames += 1`, 14 lines);
+   - the `_contact_sheet()` call;
+   - the `sheet.append([label, imgs[0], imgs[1]])` statement.
+   If any text is missing, changed, duplicated or truncated, the generator dies with exit 255 **before printing anything** (V15).
+2. **Replace.** It swaps the image block for prints of the map's title and subtitle, a hash of the station's labels, and a hash of the sim view with its `index` values normalised. It keeps `frames += 2`, so the summary line still counts 10. It deletes the other two statements.
+
+The probe keeps the capture's sim flow, its state checks and its `DisplayBinding.audit`. Its output on the pristine and the fixed capture is byte-identical to the probes run in V7/V8 (V15).
 
 ```perl
-my $block = <<'GD';
+# perl elc_probe_gen.pl < tools/earth_link_capture.gd > probe.gd   (D-149 Appendix B, revision 1)
+# Exact-block matching: each original text below must occur exactly once in the capture, or the
+# generator dies before printing anything (missing, changed, duplicated or truncated blocks fail).
+use strict; use warnings;
+my $image = <<'GD';
+	await RenderingServer.frame_post_draw
+	var imgs := []
+	for pair: Array in [["station", vp_station], ["map", vp_map]]:
+		var img: Image = (pair[1] as SubViewport).get_texture().get_image()
+		var path := "%s/%s_%s.png" % [OUT, label, pair[0]]
+		img.save_png(ProjectSettings.globalize_path(path))
+		var h := str(hash(img.get_data()))
+		if hashes.has(h):
+			fail("%s %s duplicates %s" % [label, pair[0], hashes[h]])
+		hashes[h] = "%s %s" % [label, pair[0]]
+		if _spread(img) < 0.02:
+			fail("%s %s is blank" % [label, pair[0]])
+		imgs.append(img)
+		frames += 1
+GD
+my $probe = <<'GD';
 	print("elc-probe %s title=[%s] subtitle=[%s] subtitle_text=[%s] subtitle_visible=%s target_index=%s" % [label, map._title.text, map._subtitle.text, map.subtitle_text(), map._subtitle.visible, journey().get("target", {}).get("index") if journey().get("target") is Dictionary else "-"])
 	var labs := []
 	var stack: Array = [station]
@@ -237,15 +276,21 @@ my $block = <<'GD';
 	var imgs := [null, null]
 	frames += 2
 GD
-my $n = 0;
-while (my $l = <STDIN>) {
-  $n++;
-  if ($n == 144) { $l eq "\t_contact_sheet()\n" or die "144"; next; }
-  if ($n == 191) { $l =~ /^\tsheet\.append/ or die "191"; next; }
-  if ($n == 173) { $l eq "\tawait RenderingServer.frame_post_draw\n" or die "173"; print $block; next; }
-  if ($n > 173 && $n <= 186) { $l =~ /frames \+= 1/ and $n != 186 and die "186"; next; }
-  print $l;
+my @swaps = (["image block", "\n" . $image, "\n" . $probe],
+             ["_contact_sheet() call", "\n\t_contact_sheet()\n", "\n"],
+             ["sheet.append", "\n\tsheet.append([label, imgs[0], imgs[1]])\n", "\n"]);
+my $src = do { local $/; <STDIN> };
+defined $src or die "elc-probe-gen: no input\n";
+for my $s (@swaps) {
+  my ($name, $old) = @$s;
+  my ($n, $at) = (0, 0);
+  while ((my $i = index($src, $old, $at)) >= 0) { $n++; $at = $i + 1; }  # overlapping matches count (adjacent duplicates share a newline)
+  $n == 1 or die "elc-probe-gen: $name found $n times, want exactly 1\n";
 }
+for my $s (@swaps) {
+  my ($name, $old, $new) = @$s;
+  my $i = index($src, $old);
+  substr($src, $i, length($old)) = $new;
+}
+print $src;
 ```
-
-The generator was checked to reproduce the probes run in V7/V8 byte for byte: `cmp` against the pristine capture gives the index 1 probe, and against the prototype's capture gives the index 2 probe.
