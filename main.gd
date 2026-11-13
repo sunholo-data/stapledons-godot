@@ -103,10 +103,19 @@ func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void
 	elif guided:demo.setup_options={"sky_state":"rest"}
 	demo.setup_options["civic_art"]=true
 	demo.setup_options.merge(extra,true)
+	demo.set_meta("painted_levels_pending",bool(demo.setup_options.get("painted_levels",true)))
 	get_tree().root.add_child(demo)
 	get_tree().current_scene=demo
 	if not await demo.await_civic_art():
 		push_error("current ship: civic art could not load");get_tree().quit(1);return
+	if demo.setup_options.get("painted_levels",true):
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		var painted:Dictionary=preload("res://demos/painted_levels_finish.gd").install(demo)
+		if not painted.ok:
+			push_error("painted levels: "+str(painted.errors));get_tree().quit(1);return
+		demo.set_meta("painted_levels_result",painted)
+		demo.set_meta("painted_levels_pending",false)
 	if live_start:
 		var ok:bool=demo.ready_ok and demo.journey_map!=null and demo.sky_state=="live" and demo.sky.beta==0. and demo.director.level==2 and not demo.director.overridden # R2-CAMERA: the Z2 Deck view
 		print("current-ship-startup: %s live-rest deck-view single-navigation" % ("OK" if ok else "FAIL"))
@@ -189,6 +198,8 @@ func _route_now(route: String) -> void:
 
 func _ready() -> void:
 	var args := _user_args()
+	if args.has("painted-levels-smoke"):
+		_painted_levels_smoke.call_deferred();return
 	# Deliberately supported in release and debug exports: this explicit,
 	# headless-only diagnostic validates the shipped app without source path
 	# overrides. The launcher requires fresh HOME and sandboxed network denial;
@@ -1340,4 +1351,20 @@ func _sound_smoke() -> void:
 	print("sound-smoke: %s %d/%d sounds loaded, %d QOA%s, spire_hum %s, layout %s%s" % ["OK" if ok else "FAIL", loaded, d.assets.size(), qoa,
 		" (sources)" if FileAccess.file_exists("res://" + str(d.assets.get("spire_hum", {}).get("path", ""))) else " (bundle)",
 		"playing" if hum != null and hum.playing else "silent", "ok" if SoundMix.is_layout_ok().is_empty() else "wrong", "" if errs.is_empty() else "; " + "; ".join(errs)])
+	get_tree().quit(0 if ok else 1)
+
+## CPU-only packed-art smoke for the attended painted-deck review build (D-165).
+func _painted_levels_smoke()->void:
+	var demo:Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
+	demo.setup_options={"size":Vector2i(1280,720),"stars":false,"background":false,"sound":false,"sky_state":"rest","civic_art":true,"mouse_look":false,"settings_dir":"user://painted-smoke"}
+	get_tree().root.add_child(demo);get_tree().current_scene=demo
+	var ok:bool=demo.ready_ok and await demo.await_civic_art()
+	await get_tree().physics_frame;await get_tree().physics_frame
+	var result:Dictionary=preload("res://demos/painted_levels_finish.gd").install(demo) if ok else {"ok":false,"errors":["ship not ready"]}
+	ok=ok and result.ok
+	if ok:
+		ok=result.bridge.changes.size()==141 and result.commons.changes.size()==JSON.parse_string(FileAccess.get_file_as_string("res://assets/levels/painted/commons/manifest.json")).meshes.size() and result.people.residents.size()==42 and result.people.crew.size()==2
+		for p:Vector3 in [Vector3(-6.2,82.025,-7.3),Vector3(-6.2,82.025,7.3)]:ok=ok and demo.walk_bridge.is_walkable_near(p)
+		for p:Vector3 in [Vector3(25,57.025,-11),Vector3(28,57.025,-19)]:ok=ok and demo.walk_lower.is_walkable_near(p)
+	print("painted-levels-export-smoke: ","OK bridge=141 commons=%d painted-residents=42 unchanged-routes live-shader"%result.commons.changes.size() if ok else "FAIL "+str(result.get("errors",[])))
 	get_tree().quit(0 if ok else 1)

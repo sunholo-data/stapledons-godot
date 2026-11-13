@@ -1,0 +1,77 @@
+{
+  "mode": "built-in image_gen.imagegen",
+  "authority": "D-163 whole-room scope correction; mockup review before build",
+  "status": "generated surface-coverage targets, not implemented game views",
+  "artifacts": [
+    {
+      "file": "bridge-whole-room-paintover-v1.png",
+      "refs": [
+        "art/environment-painted-pilot/scene-pilot/bridge_bow_before-cpu-v2.png",
+        "art/visual-refresh-v1/bridge-proposal.png"
+      ],
+      "prompt": "Use case: style-transfer. Asset type: whole-room material-finish mockup for an existing playable ship bridge. Image 1 is the EDIT TARGET, the actual geometry and player-camera view. Image 2 is ONLY the already accepted palette/ink/gouache/art-direction reference; do not substitute its layout. Paint over Image 1 comprehensively so every visible built surface belongs to the same beautifully illustrated, refined science-fiction comic world: matte ivory and petrol enamel, ochre/brass painted contours, subtle gouache pigment and intentional hand-drawn linework. Preserve Image 1 camera, horizon, perspective, object silhouettes, exact locations and sizes, captain identity and pose, open walking spaces, right-hand stairwell opening and unobstructed background. The floor must become a single coordinated room-scale painted composition extending all the way to the frame edges and console perimeter, with sweeping elegant botanical stems integrated into the existing curved panel divisions, broad calm petrol/ivory areas and warm ochre border bands. NOT a little square tile, loose rug or repeated decal. Retain existing structural seams and fittings in place. Paint ALL three round console bodies and their bases, the side worktables and benches, chair shell/base/cushion, rail posts and rails, stair balustrade and deck edges with coherent material-specific finished illustration: ivory shells with petrol inset fields and restrained botanical enamel on selected panels, fine ochre seams, quieter softly textured broad areas. Existing purple rectangular screen rectangles stay exactly where and as large as they are; finish their outer frames and keep dark restrained screen interiors, no new floating screens or invented readable controls. Treat existing plants in the matching painted style, without introducing new planters/furniture/lamps. Fine crafted visual interest should be distributed across the entire lower half, with strong hierarchy and uncluttered navigation; ornament is painted colour on the existing surfaces, not geometry added to conceal them. Keep the entire upper empty dark sky/background free of illustration, stars, galaxies, atmosphere, ceilings or architecture. Do not add artificial lighting, bloom, physical effects, text, labels or borders. This is a complete coherent material paintover of Image 1, not a finished engine capture.",
+      "transparent_background": false,
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-887f57a3-961b-423b-b9ee-72138f2df9c0.png",
+      "sha256": "a5cb835a633811c090ad8f516b5a31f8abdaf7b513103fee2a8543f11980fa1e",
+      "bytes": 2166168,
+      "reference_roles": [
+        {
+          "file": "art/environment-painted-pilot/scene-pilot/bridge_bow_before-cpu-v2.png",
+          "role": "edit target"
+        },
+        {
+          "file": "art/visual-refresh-v1/bridge-proposal.png",
+          "role": "accepted style reference"
+        }
+      ]
+    },
+    {
+      "file": "commons-whole-room-paintover-v1.png",
+      "refs": [
+        "art/environment-painted-pilot/scene-pilot/commons_astern_before-cpu-v2.png",
+        "art/visual-refresh-v1/commons-proposal.png"
+      ],
+      "prompt": "Use case: style-transfer. Asset type: complete visible Commons-corner surface-finish mockup on existing ship geometry. Image 1 is the EDIT TARGET: actual geometry/player-camera composition. Image 2 is ONLY the accepted hand-inked/gouache palette and botanical craft reference; do not borrow its architecture or camera. Paint the ENTIRE visible built environment in Image 1 with a coherent richly crafted science-fiction comic finish, retaining the exact positions, silhouettes, sizes and perspective of all existing objects, people and deck structures. Material palette: matte petrol enamel, warm ivory, ochre/brass contours, restrained amber and plum accents, fine ink edges and subtle hand-painted pigment. The full broad floor from foreground through middle distance becomes an intentional continuous composition of curved petrol fields, ivory walking lanes, ochre botanical sprays and boundary bands flowing around the existing furniture and planted islands. NOT a single tile/rug or isolated bench sticker. Paint both curved bench backs, all bench bases/legs and cushions, tabletop, all existing planter sides/rims, rails/posts, existing arcade fascia/columns/arch interiors and deck edges. Finish the large overhead deck top and underside and its existing supporting pieces with coordinated ivory/petrol painted panel bands and ochre edging so they feel cared for rather than raw slabs; do not add supports, canopy geometry or lighting fixtures. Give existing plain architectural patches and planter pots illustrated surface detail so no raw grey material dominates. Keep calm broad surfaces between the ornament. Retain original rail geometry, openings, access routes, floor height and outer dimensions. Existing painted captain and NPC figures retain identities, size and standing positions, with natural human proportions; do not invent extra residents or moving characters. Plants may receive matched ink/gouache treatment, no new plant geometry or objects. Preserve all empty dark sky/background regions; absolutely no painted stars, astronomical light, galaxies, enclosing walls/dome, new ceiling or external buildings. No text, labels, overlays, fake UI, bloom or new light sources. A complete material-finish paintover of the whole visible original scene, not a claim of an implemented game screenshot.",
+      "transparent_background": false,
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-12037ead-3ba9-4446-89bf-e8b62e615276.png",
+      "sha256": "0434be78ac01144a2d765e200c392e7200a803754944adbc95c081236052f450",
+      "bytes": 2371420,
+      "reference_roles": [
+        {
+          "file": "art/environment-painted-pilot/scene-pilot/commons_astern_before-cpu-v2.png",
+          "role": "edit target"
+        },
+        {
+          "file": "art/visual-refresh-v1/commons-proposal.png",
+          "role": "accepted style reference"
+        }
+      ]
+    },
+    {
+      "file": "commons-whole-room-paintover-v2.png",
+      "refs": [
+        "art/environment-painted-pilot/whole-room/commons-whole-room-paintover-v1.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Edit only the small bright magenta cylindrical placeholder on the raised landing, left of centre below the long overhead deck. Give that existing cylinder a finished matte ivory shell, petrol enamel band and fine ochre botanical painted ornament matching the rest of this illustration. Keep its size, shape and exact position; no new prop. Preserve all other composition, objects, people, floor decoration, painted architectural surfaces, palette, linework and dark empty sky. This is a surgical material-colour correction so there is no raw magenta placeholder left. No text, light sources or other additions.",
+      "transparent_background": false,
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-4a1b6535-a813-4de5-b29d-d85008f87fa7.png",
+      "sha256": "6b2dbcd60e9cee8675b8e8f5029754b945bd27368186dbd3909968d8fb32567d",
+      "bytes": 2255606,
+      "reference_roles": [
+        {
+          "file": "art/environment-painted-pilot/whole-room/commons-whole-room-paintover-v1.png",
+          "role": "edit target"
+        }
+      ]
+    }
+  ],
+  "selected": [
+    "bridge-whole-room-paintover-v1.png",
+    "commons-whole-room-paintover-v2.png"
+  ],
+  "limitations": [
+    "Generated illustrations may change local contours and framing; not geometry or physics validation",
+    "Room-wide finish not implemented; prior tile/bench proof is not completion",
+    "Background in images is a review placeholder; native sky and physical lighting stay authoritative"
+  ]
+}

@@ -138,8 +138,8 @@
     "target_loc_per_day": 160,
     "estimated_total_loc": 1950,
     "estimated_agent_days": 15.25,
-    "estimated_critical_path_days": "12\u201315 including contingency; excludes review/rig waits",
-    "note": "Provisional; original remaining LP1b\u2013LP4 estimates anchor duration. Blender authoring ~600\u20131,000 additional LOC."
+    "estimated_critical_path_days": "12–15 including contingency; excludes review/rig waits",
+    "note": "Provisional; original remaining LP1b–LP4 estimates anchor duration. Blender authoring ~600–1,000 additional LOC."
   },
   "registry_reuse": [
     {
@@ -678,5 +678,15 @@
       "Full rig,golden,performance,S3/S5 and landing gates remain pending"
     ],
     "implemented": false
+  },
+  "painted_playable_review": {
+    "authority": "D-158",
+    "bridge_meshes": 141,
+    "commons_meshes": 1000,
+    "painted_residents": 42,
+    "source_triangles": 981694,
+    "production_vertices": 854316,
+    "status": "preparing current-main packed candidate; native appearance/FPS acceptance pending",
+    "local_gpu_used": false
   }
 }

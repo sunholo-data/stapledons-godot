@@ -1,0 +1,25 @@
+{
+  "scope": "narrow painted playable candidate preflight; not full sprint or merge verdict",
+  "authority": "D-158",
+  "generator": "parent Codex",
+  "judge": "independent Codex subagent",
+  "score": 86,
+  "verdict": "PASS",
+  "blocking": [],
+  "verified": [
+    "1141 compiled mesh hashes and nine native resource hashes match",
+    "native geometry, cameras/WALK/collision/live UI preserved",
+    "deck transitions retain compiled replacements"
+  ],
+  "resolved_after_review": [
+    "Explicit authoring export exclusion",
+    "Static painted residents documented; civic smoke handles intended presentation",
+    "Late NPC rollback and painted lift round-trip tests added"
+  ],
+  "remaining": [
+    "Packed export smoke",
+    "Native appearance/FPS acceptance on laptop",
+    "Full sprint and cross-family merge evaluation"
+  ],
+  "external_review": "Automatic approval review rejected sending private code to external Claude; internal independent review used"
+}
