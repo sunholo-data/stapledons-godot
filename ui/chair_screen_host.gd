@@ -46,6 +46,7 @@ func host_navigation() -> void:
 func release_navigation() -> void:
 	var d: Node = command.consoles.demo
 	if d.journey_map != null and d.navigation_window != null and d.journey_map.get_parent() == viewport:
+		d.journey_map.close_observation()
 		d.journey_map.reparent(d.navigation_window)
 
 func finish() -> void:

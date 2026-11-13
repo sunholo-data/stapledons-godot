@@ -124,6 +124,7 @@ var archive_voice: AudioStreamPlayer ## I4: the telling's voice, played once per
 var wait_hint := Label.new() ## dev.31: one centred line while the game waits on the player (the review, the arrival card)
 var _voice_played := ""
 var journey_sim: SimBridge
+var _navigation_orders_pending := false
 var journey_map: GalaxyMap
 ## R1-ARCHIVE-VOICE: the AI wiring for this voyage (AiSession: settings, relay, service), made only
 ## for a game launched from the title screen (or a test asking for it with setup_options["ai"]), so
@@ -249,6 +250,7 @@ func setup(opts := {}) -> bool:
 	crossing_review.intents.connect(func(list:Array)->void:if journey_sim!=null:journey_sim.queue(list))
 	star_identification = Identification.new();identify_canvas.add_child(star_identification)
 	star_identification.setup(self);star_identification.open_map.connect(open_identified_star)
+	star_identification.open_telescope.connect(open_telescope_reference)
 	if opts.get("live_start",false):
 		sky_state="live";open_navigation();close_navigation()
 		if journey_map==null:sky_state="rest"
@@ -462,6 +464,7 @@ func at_helm_closeup() -> bool:
 ## Show or hide the telescope; returns whether it is now shown. It refreshes every frame while shown
 ## and hides itself when the captain leaves the helm's close-up.
 func toggle_telescope(on: Variant = null) -> bool:
+	if journey_map != null and journey_map.observation_panel != null and journey_map.observation_panel.visible: return false
 	# T cycles: off -> whole disc -> close -> off
 	var want: bool = (telescope == null or not telescope.visible or telescope.level == 1) if on == null else bool(on)
 	if on == null and telescope != null and telescope.visible and telescope.level == 1:
@@ -977,7 +980,13 @@ func _identification_smoke() -> void:
 		ok=ok and not star_identification.held and star_identification.card.visible
 		print("ship-identification-smoke-stage release: ",ok)
 		star_identification.open_map.emit(candidate.id)
-		ok=ok and journey_map!=null and journey_map.catalogue[journey_map.selected_index].id==candidate.id and not live_journey
+		ok=ok and journey_map!=null and not live_journey
+		if journey_map!=null:
+			var inspected := {"kind":"catalogue", "id":str(candidate.id)}
+			var plan: Variant = journey_sim.world.get("journey", {}).get("plan")
+			ok=ok and journey_map.mode=="chart" and journey_map.observation_selection==inspected
+			ok=ok and journey_map._pending.is_empty() and journey_map._queue.is_empty()
+			ok=ok and (plan==null or (plan is Dictionary and plan.is_empty()))
 		print("ship-identification-smoke-stage map: ",ok)
 	print("ship-star-identification-export-smoke: %s" % ("OK" if ok else "FAIL"))
 	var tree := get_tree()
@@ -994,6 +1003,8 @@ func open_navigation() -> void:
 		refuse("Navigation is for flat space: leave Sgr A* first.");return
 	_create_navigation("sol")
 	if navigation_window==null:return
+	_apply_navigation_orders()
+	journey_map.set_observer_context(sky_world, sky.system_view)
 	journey_map.set_confirm_twice(confirm_mode=="twice")
 	journey_map.set_mode("helm", not consoles.command.visible if consoles != null else true)
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
@@ -1005,8 +1016,9 @@ func open_navigation() -> void:
 func open_chart() -> void:
 	if black_hole!=null:
 		note("The star chart is for flat space; at Sgr A* the stop ladder is at the navigation station.");return
-	_create_navigation("sol")
+	_create_navigation("sol", false)
 	if navigation_window==null:return
+	journey_map.set_observer_context(sky_world, sky.system_view)
 	journey_map.set_mode("chart")
 	var entry:Control=navigation_window.find_child("SgrAEntry",true,false)
 	if entry!=null:entry.visible=false
@@ -1027,7 +1039,7 @@ func _place_navigation(rect: Rect2) -> void:
 	# The map's own panel needs about 700 units of height: scale its content to the host.
 	navigation_window.content_scale_factor=clampf(rect.size.y/600.,.56,1.)
 	navigation_window.show();navigation_window.grab_focus()
-func _create_navigation(scenario:String) -> void:
+func _create_navigation(scenario:String, initialise_plan := true) -> void:
 	if benchmark.running:return
 	if journey_map==null:
 		journey_sim=SimBridge.new();journey_sim.want_minor=SimBridge.SESSION_MINOR # R3-COMMS-V2: 2.18 (the received-frame log, the history wall); R3-EARTH-LINK: 2.16 (Earth's link, the comms station); D-113: 2.15 (the Archive's Memory Health for the spire's sound); R2-STAR-SURFACES: 2.13; R2-HOME-TIERS: 2.12; R2-CREW C4: the crew aboard (2.9); R2-INTERLUDE: the chunked crossing (2.10); R2-CREW-CONSOLE-V2: the console (2.11)
@@ -1051,7 +1063,8 @@ func _create_navigation(scenario:String) -> void:
 			refuse("Navigation unavailable: "+journey_sim.last_error)
 			journey_sim.stop();journey_sim=null;return
 		# C8: the voyage auto-runs the crew and stops only for critical moments (the lab's rules).
-		if not journey_sim.crew.is_empty():journey_sim.queue([SimBridge.crew_intent("crew_orders",{"command":"orders","preset":"critical_only"})])
+		_navigation_orders_pending = not journey_sim.crew.is_empty()
+		if initialise_plan: _apply_navigation_orders()
 		if ai_session!=null:ai_session.attach(journey_sim)
 		journey_sim.stepped.connect(archive_narration.on_events) # I4: the telling's request, answer and voice
 		if consoles!=null:consoles.follow(journey_sim) # the Voyage log and Ask the Archive read its steps
@@ -1068,6 +1081,8 @@ func _create_navigation(scenario:String) -> void:
 			if event is InputEventKey and event.pressed and not event.echo:_navigation_key(event.physical_keycode))
 		add_child(navigation_window)
 		journey_map=load("res://ui/galaxy_map.tscn").instantiate()
+		journey_map.observation_opened.connect(func():
+			if telescope != null: telescope.visible = false)
 		journey_map.auto_tick=false;journey_map.live_pacing=true
 		navigation_window.add_child(journey_map)
 		journey_map.load_catalogue("res://data/starmap/stars.json");journey_map.load_names("res://data/starmap/names.json")
@@ -1077,12 +1092,17 @@ func _create_navigation(scenario:String) -> void:
 		bh_entry.pressed.connect(func()->void:consoles.use("navigation","sgr_a"),CONNECT_DEFERRED) # helm only; the window is freed by the switch
 		journey_map.special_destinations.add_child(bh_entry)
 		var acen:=journey_map.index_of("CNS5:3627")
-		if journey_map.preselect(acen):journey_map.frame_star(acen)
+		if initialise_plan and journey_map.preselect(acen):journey_map.frame_star(acen)
 		if scenario=="sol":
 			sky_state="live"
 			_apply_journey_world()
 			journey_tick()
 		_reset_hud_session()
+func _apply_navigation_orders() -> void:
+	if not _navigation_orders_pending or journey_sim == null: return
+	journey_sim.queue([SimBridge.crew_intent("crew_orders", {"command":"orders", "preset":"critical_only"})])
+	_navigation_orders_pending = false
+
 func start_solar_departure() -> bool:
 	if benchmark.running or live_journey or (journey_sim!=null and journey_sim.world.get("journey",{}).get("state","")=="committed"):
 		refuse("Finish the committed journey first.");return false
@@ -1116,6 +1136,8 @@ func _drop_navigation() -> void:
 	if consoles!=null:consoles.archive_ask.abandon() # the question's session is gone
 func close_navigation() -> void:
 	if navigation_window==null:return
+	journey_map.close_observation()
+	journey_map.set_survey_context(false)
 	journey_map.close_commit_dialog();navigation_window.hide()
 	get_window().grab_focus()
 	# Outside the helm the map plans nothing (NT1): it rests in chart mode; any commit the
@@ -1127,6 +1149,7 @@ func close_navigation() -> void:
 ## armed press-twice confirm backs out first). V, J, H stay instant.
 func _navigation_key(key: int) -> void:
 	if journey_map==null:return
+	if key==KEY_ESCAPE and journey_map.close_observation():return
 	if key==KEY_ESCAPE and journey_map.armed:journey_map.disarm();return
 	if key==KEY_ESCAPE and journey_map.dialog.visible:journey_map.close_commit_dialog();return
 	if journey_map.mode=="chart":
@@ -1137,10 +1160,23 @@ func _navigation_key(key: int) -> void:
 	if key==KEY_V:toggle_auto_view()
 	if key==KEY_P:toggle_tour_pause()
 func open_identified_star(id: String) -> void:
-	open_chart()
-	if journey_map != null:
-		var index := journey_map.index_of(id)
-		if index >= 0 and journey_map.preselect(index):journey_map.frame_star(index)
+	if _open_observation_host():
+		journey_map.close_observation()
+		if not journey_map.focus_object({"kind":"catalogue","id":id}, true):
+			journey_map.open_observation({"kind":"catalogue","id":id}, "archive")
+func open_telescope_reference(reference: Dictionary) -> void:
+	if _open_observation_host():
+		journey_map.set_observer_context(sky_world, sky.system_view)
+		journey_map.open_observation(reference)
+func _open_observation_host() -> bool:
+	if black_hole != null:
+		refuse("The star chart is unavailable at Sgr A*.")
+		return false
+	if journey_map == null: open_chart()
+	elif consoles != null and consoles.command.visible:
+		if consoles.command.selected != "navigation": consoles.command.select_system("navigation")
+	elif not navigation_window.visible: _place_navigation(Rect2())
+	return journey_map != null
 func journey_tick() -> bool:
 	if journey_map==null:return false
 	var was_committed:=live_journey
@@ -1223,6 +1259,7 @@ func _apply_journey_world()->void:
 			tour_attitude.reset(ShipFrame.ship_basis(camera.heading))
 			camera.attitude_basis=tour_attitude.current.duplicate()
 		sky.apply(sky_world);_sync_observer()
+	if journey_map != null:journey_map.set_observer_context(sky_world, sky.system_view)
 ## view: the developer free camera's first-person look at the turn's end (tilt deg, yaw rad).
 func _begin_tour_turn(target:PackedFloat64Array,view:Vector2,mode:String)->void:
 	tour_attitude.turn_to(target,3.)

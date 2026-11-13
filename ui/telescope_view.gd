@@ -21,7 +21,9 @@ const N_MAX := 5000.0
 var sv: SystemView
 var view_fov_deg := 78.0
 var star_id := ""
+var requested_star_id := ""
 var magnification := 1.0
+var field_cropped := false
 ## 1 "whole disc" (the disc fills FILL of the panel), 2 "close" (cells CELL_PX across, or as close as
 ## N_MAX and MAX_HALF_RAD allow; the panel then shows the disc's centre).
 var level := 1
@@ -42,9 +44,12 @@ func _init() -> void:
 	box.add_child(_label)
 	var tex := TextureRect.new()
 	tex.custom_minimum_size = Vector2(PANEL_PX, PANEL_PX)
+	tex.name = "StellarDisc"
 	box.add_child(tex)
 	var hint := Label.new()
 	hint.text = "true magnification · the Bow view is true size · T: whole disc, close, off"
+	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	hint.custom_minimum_size.x = 180
 	hint.add_theme_font_size_override("font_size", 13)
 	box.add_child(hint)
 	_vp = SubViewport.new()
@@ -75,6 +80,15 @@ func _init() -> void:
 	_disc.material_override = _mat
 	_vp.add_child(_disc)
 	tex.texture = _vp.get_texture()
+	visibility_changed.connect(func(): set_active(is_visible_in_tree()))
+
+
+func set_target(id: String) -> void:
+	requested_star_id = id
+
+
+func set_active(on: bool) -> void:
+	if _vp != null: _vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS if on else SubViewport.UPDATE_DISABLED
 
 
 ## The star to show: the stop body when it is a star, else the brightest drawn star disc.
@@ -82,6 +96,7 @@ func pick_star(world: Dictionary) -> String:
 	var best := ""
 	var best_ang := 0.0
 	for b: Dictionary in world.get("system", {}).get("bodies", []):
+		if not requested_star_id.is_empty() and b.get("id") != requested_star_id: continue
 		if b.get("kind", "") != "star" or not sv.discs.has(b.id) or not (sv.discs[b.id] as MeshInstance3D).visible:
 			continue
 		var d := Planets.length64(Planets.world_of(b.rel_km))
@@ -95,11 +110,12 @@ func pick_star(world: Dictionary) -> String:
 ## Draw the star: copy the sky's material, aim the camera, set the magnification and the gate.
 ## Returns false when there is no star disc to show.
 func refresh(world: Dictionary) -> bool:
+	field_cropped = false
 	if sv == null:
 		return false
 	star_id = pick_star(world)
 	if star_id.is_empty():
-		_label.text = "telescope · no star in view"
+		_label.text = "telescope · no live resolved view" if not requested_star_id.is_empty() else "telescope · no star in view"
 		_disc.visible = false
 		return false
 	var b: Dictionary = {}
@@ -117,6 +133,7 @@ func refresh(world: Dictionary) -> bool:
 	var cells := 2.0 * float(b.radius_km) / float(surface0.cell_km) if not surface0.is_empty() else 0.0
 	var sc := scale_for(ang, level, cells, _vp.size.y)
 	var half: float = sc.half
+	field_cropped = half > deg_to_rad(FOV_DEG) * 0.5
 	magnification = sc.n
 	# Magnify by drawing the same star at N times its angular radius (the sky's material; surface
 	# brightness, colour and Doppler are unchanged, as through a real telescope)
@@ -143,8 +160,13 @@ func refresh(world: Dictionary) -> bool:
 			_mat.set_shader_parameter("lut_log_tmax", log(Blackbody.LUT_T_MAX))
 			_mat.set_shader_parameter("surf_norm", sv.surface_norm(star_id + "@telescope", u.params, u.view_star, sv.surface_norm_wait).n)
 	_disc.visible = true
-	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), "whole disc" if level == 1 else "close", str(b.get("name", star_id))]
+	_label.text = "telescope ×%s %s · %s" % [_fmt(magnification), field_label(half, level), str(b.get("name", star_id))]
 	return true
+
+
+static func field_label(half: float, lvl: int) -> String:
+	if half > deg_to_rad(FOV_DEG) * 0.5: return "native field crop"
+	return "whole disc" if lvl == 1 else "close"
 
 
 ## The magnified disc's angular radius in the panel and the true magnification N for a star of

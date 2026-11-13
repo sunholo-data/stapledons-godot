@@ -1,0 +1,227 @@
+{
+  "format_version": 1,
+  "id": "euclid-dr1-starter-2026-11-12",
+  "release": "Euclid DR1-Foundation / DR1_R2",
+  "doi": "10.57780/esa-d079c51",
+  "retrieved": "2026-11-12",
+  "objects_index": "res://data/observations/euclid_dr1/objects.json",
+  "rights_url": "https://www.cosmos.esa.int/web/euclid/dr1-data-credits",
+  "plates": [
+    {
+      "id": "abell3128-vis",
+      "name": "Abell 3128 · measured VIS field",
+      "source_url": "https://eas.esac.esa.int/sas-cutout/cutout?TAPCLIENT=ASTROQUERY&FILEPATH=%2Fdata%2Feuclid%2Frepository_dr1%2FDR1%2FR2%2FMER%2F102017310%2FVIS%2FEUC_MER_BGSUB-MOSAIC-VIS_TILE102017310-A7B894_20250804T120347.883814Z_00.00.fits&POS=CIRCLE%2C52.5%2C-52.6%2C0.01",
+      "source_sha256": "529e7a571d083d3788362700e467674fe0ee1df6098d011ce99222280221b57a",
+      "product_id": "EUC_MER_BGSUB-MOSAIC-VIS_TILE102017310-A7B894_20250804T120347.883814Z_00.00.fits",
+      "licence": "CC BY-NC 3.0 IGO",
+      "credit": "Data from ESA Euclid/Euclid Consortium/NASA/DR1-2026.",
+      "band": "VIS · monochrome",
+      "processing": "Logarithmic display stretch of calibrated ADU/s; negative background clipped for display; original science file and calibration retained. Y flipped from FITS bottom-up. Overview is half-size Lanczos. No ship-frame Doppler processing.",
+      "observation_start": "2024-07-14T04:37:08.801",
+      "observation_end": "2024-07-15T04:54:15.960",
+      "registered": true,
+      "tiles": {
+        "path": "res://data/raw/observations/tiles/abell3128-vis/tiles.json",
+        "sha256": "047504f75450b0c2963d58cca185c42ab5998604cd9182ec205d52975d203c42"
+      },
+      "registration": {
+        "projection": "TAN",
+        "frame": "ICRS",
+        "pixel_convention": "FITS one-based bottom-up; display zero-based top-down",
+        "reference_url": "https://euclid.esac.esa.int/dr/dr1/dpdd/merdpd/dpcards/mer_bksmosaic.html",
+        "reference": {
+          "path": "res://data/observations/euclid_dr1/registration-evidence.json",
+          "sha256": "7d5f15aaf659b70d5747ddf45e68ca349f1a7908cfc9c80203080217f7c27910"
+        },
+        "oracle": "Independent analytical TAN + empirical background-subtracted unweighted image centroids; no game/package import; five SNR>6 anchors, maximum residual 0.369 source pixel. Method and limitations in pinned evidence.",
+        "observed_at": "2024-07-14T06:16:15.311",
+        "arcsec_per_source_pixel": 0.1,
+        "width": 724,
+        "height": 724,
+        "wcs": {
+          "crpixX": -5951.0,
+          "crpixY": 3975.0,
+          "crvalRaDeg": 52.7887505,
+          "crvalDecDeg": -52.5,
+          "cd11": -0.00002777777777778,
+          "cd12": 0.0,
+          "cd21": 0.0,
+          "cd22": 0.00002777777777778
+        },
+        "anchors": [
+          {
+            "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524917322525922548",
+            "ra_deg": 52.49173224571941,
+            "dec_deg": -52.59225486229888,
+            "source_x": 543.6214203582722,
+            "source_y": 83.5517211253,
+            "reference_x": 543.8070890903718,
+            "reference_y": 83.23379834641901,
+            "residual_px": 0.36816812927099113
+          },
+          {
+            "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524951615526029436",
+            "ra_deg": 52.49516153451485,
+            "dec_deg": -52.602943682621635,
+            "source_x": 467.0604411137465,
+            "source_y": 468.04201615052716,
+            "reference_x": 467.05371934321306,
+            "reference_y": 468.04019138242654,
+            "residual_px": 0.006965054036053372
+          },
+          {
+            "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525046902526047878",
+            "ra_deg": 52.50469028742163,
+            "dec_deg": -52.60478789109956,
+            "source_x": 258.4614439434199,
+            "source_y": 533.5991806069496,
+            "reference_x": 258.2003523090333,
+            "reference_y": 533.7917579265129,
+            "residual_px": 0.3244300626589194
+          },
+          {
+            "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524910541526083866",
+            "ra_deg": 52.49105413229542,
+            "dec_deg": -52.60838661917309,
+            "source_x": 556.0574955302427,
+            "source_y": 664.3558472480176,
+            "reference_x": 555.9593529304384,
+            "reference_y": 664.2616647630357,
+            "residual_px": 0.13602319792491457
+          },
+          {
+            "source_id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525091456525955019",
+            "ra_deg": 52.50914561860414,
+            "dec_deg": -52.5955019864996,
+            "source_x": 162.34787393608258,
+            "source_y": 198.9259679096776,
+            "reference_x": 162.52238015875085,
+            "reference_y": 199.01096235932596,
+            "residual_px": 0.19410429727589465
+          }
+        ]
+      },
+      "levels": [
+        {
+          "path": "res://data/raw/observations/abell3128-vis/overview.png",
+          "sha256": "561a057b8329dc0ea7d9bad9da86e83c4f88326b4e890338435daa55ff94e7da",
+          "width": 362,
+          "height": 362
+        },
+        {
+          "path": "res://data/raw/observations/abell3128-vis/detail.png",
+          "sha256": "6733bd132218b80559a83a3db69cce196e940ce0d2da7710bef27b1f94b79c3d",
+          "width": 724,
+          "height": 724
+        }
+      ]
+    },
+    {
+      "id": "m81-outreach",
+      "name": "Messier 81 group",
+      "tiles": {
+        "path": "res://data/raw/observations/tiles/m81-outreach/tiles.json",
+        "sha256": "7a2f5f667b383081f925c899fdfff439886f6c1a5ef0ce9233393c3fa8c72d88"
+      },
+      "source_url": "https://media.esa.int/global/public/common/image/2026/11/4-euclid-ews-dr1-northpr-m81ngc3077-r3-equ-16k9k-4k.jpg?dl",
+      "page_url": "https://www.esa.int/media/about-us/directorates/science/euclid/euclid-views-the-core-of-the-messier-81-galaxy-group",
+      "licence": "CC BY-SA 3.0 IGO",
+      "credit": "ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
+      "band": "Published colour composite",
+      "processing": "ESA published outreach composite; unregistered plate, no pixel-to-object associations Display derivatives are resized and re-encoded as PNG tiles with one-pixel gutters; CC BY-SA terms and credit retained.",
+      "observation_start": null,
+      "observation_end": null,
+      "registered": false,
+      "levels": [
+        {
+          "path": "res://data/raw/observations/m81.jpg",
+          "sha256": "7b7fd7d5cfc2e3d0d4bdbbe78dd49b74de15283cc631e7b4fee7167de5961b03",
+          "width": 3840,
+          "height": 2160
+        }
+      ]
+    },
+    {
+      "id": "ngc1291-outreach",
+      "name": "NGC 1291",
+      "tiles": {
+        "path": "res://data/raw/observations/tiles/ngc1291-outreach/tiles.json",
+        "sha256": "ca75ef8b60cee30cc0bede3c8fc59a821c14589a82d3ab48b2c94770ae8f5075"
+      },
+      "source_url": "https://media.esa.int/global/public/common/image/2026/11/7-euclid-ews-dr1-southpr-ngc1291wide-r2-equ-16k9k-4k.jpg?dl",
+      "page_url": "https://www.esa.int/media/about-us/directorates/science/euclid/the-ring-galaxy-ngc-1291-as-seen-by-euclid",
+      "licence": "CC BY-SA 3.0 IGO",
+      "credit": "ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
+      "band": "Published colour composite",
+      "processing": "ESA published outreach composite; unregistered plate, no pixel-to-object associations Display derivatives are resized and re-encoded as PNG tiles with one-pixel gutters; CC BY-SA terms and credit retained.",
+      "observation_start": null,
+      "observation_end": null,
+      "registered": false,
+      "levels": [
+        {
+          "path": "res://data/raw/observations/ngc1291.jpg",
+          "sha256": "9474793feddade1542455767d509041bf6f81a662b6afe0dbf26e72bf0a337b2",
+          "width": 3840,
+          "height": 2160
+        }
+      ]
+    },
+    {
+      "id": "abell3128-outreach",
+      "name": "Abell 3128 · colour panorama",
+      "tiles": {
+        "path": "res://data/raw/observations/tiles/abell3128-outreach/tiles.json",
+        "sha256": "62f8de4e453b03529c6161a12cd3cc7af59381810cc93c2945a47f945974c51e"
+      },
+      "source_url": "https://media.esa.int/global/public/common/image/2026/11/9-euclid-ews-dr1-southpr-abell3128-r4-equ-5k3k-4k.jpg?dl",
+      "page_url": "https://www.esa.int/media/about-us/directorates/science/euclid/euclid-s-view-of-rich-galaxy-cluster-abell-3128",
+      "licence": "CC BY-SA 3.0 IGO",
+      "credit": "ESA/Euclid/Euclid Consortium/NASA; image processing by J.-C. Cuillandre and E. Bertin",
+      "band": "Published colour composite",
+      "processing": "ESA published outreach composite; unregistered plate, no pixel-to-object associations Display derivatives are resized and re-encoded as PNG tiles with one-pixel gutters; CC BY-SA terms and credit retained.",
+      "observation_start": null,
+      "observation_end": null,
+      "registered": false,
+      "levels": [
+        {
+          "path": "res://data/raw/observations/abell3128.jpg",
+          "sha256": "d491f3a2c757a8970d4ad488eada7322a6d6d1a5dec9bea4e30248b1e977aa75",
+          "width": 3840,
+          "height": 2160
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524917322525922548",
+      "plate_id": "abell3128-vis",
+      "ra_deg": 52.49173224571941,
+      "dec_deg": -52.59225486229888
+    },
+    {
+      "id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524951615526029436",
+      "plate_id": "abell3128-vis",
+      "ra_deg": 52.49516153451485,
+      "dec_deg": -52.602943682621635
+    },
+    {
+      "id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525046902526047878",
+      "plate_id": "abell3128-vis",
+      "ra_deg": 52.50469028742163,
+      "dec_deg": -52.60478789109956
+    },
+    {
+      "id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-524910541526083866",
+      "plate_id": "abell3128-vis",
+      "ra_deg": 52.49105413229542,
+      "dec_deg": -52.60838661917309
+    },
+    {
+      "id": "DR1_R2:dr1.mer_catalogue_wide_survey:102017310:-525091456525955019",
+      "plate_id": "abell3128-vis",
+      "ra_deg": 52.50914561860414,
+      "dec_deg": -52.5955019864996
+    }
+  ]
+}

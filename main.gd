@@ -189,6 +189,16 @@ func _route_now(route: String) -> void:
 
 func _ready() -> void:
 	var args := _user_args()
+	# Deliberately supported in release and debug exports: this explicit,
+	# headless-only diagnostic validates the shipped app without source path
+	# overrides. The launcher requires fresh HOME and sandboxed network denial;
+	# the probe rejects normal player environments before opening a new session.
+	if args.has("telescope-app-probe"):
+		set_process(false)
+		await get_tree().process_frame # The root must finish adding the main scene before the probe adds the real ship.
+		var probe = load("res://ui/telescope_app_probe.gd").new()
+		get_tree().quit(await probe.run(get_tree(), OS.get_cmdline_user_args()))
+		return
 	sound_settings.load_settings()
 	SoundMix.apply(sound_settings)
 	if args.has("sound-smoke"): # R2-SOUND AC13 (make sound-export-smoke): the export loads and plays its sounds
