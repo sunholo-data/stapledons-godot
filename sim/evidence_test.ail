@@ -1,0 +1,245 @@
+module stapledons/sim/evidence_test
+-- R3-REASONS RT2a: the detector and the evidence ledger (`make evidence-test`).
+-- Each check is named; `evidenceVm` prints "evidence-ok" or the failed names,
+-- and `ledgerVm` prints a whole ledger, both byte-identical on the strict VM
+-- and the interpreter. Distances that test a threshold sit one printed digit
+-- either side of the registry row (stapledons-design physics/observation.md).
+import ./evidence (Target, Observation, Emission, Method, DirectImaging, Transit, Radio, Quantity, QPlanet, QOxygen, QOxygenMethane, QRedEdge, QLeakage,
+ Level, Hint, Strong, observeTarget, observeAtStop, observeAtCruise, emissionAt, targetOf, targetsOf, signalUniforms, cosInclination,
+ cruiseDoppler, cruiseReadable, falsePositives, signalOf, detections, ledgerText, inSystemLy, stagesOf)
+import ./data/detect (Suite, Detect, shipSuite, largeArray, radarShare, imagingBudget, absMagV, referenceTelescope, configuredDetector, noDetector, idealDetector, leakReachLy)
+import ./worlds_model (StarRow, Planet, systemFrom)
+import ./tools/exoplanets (curatedPlanets)
+import pkg/sunholo/worlds/history (History, Sterile, Complex, Remnant, Technological, stateAt)
+import pkg/sunholo/worlds/occurrence (MDwarf)
+import pkg/sunholo/worlds/dial (zeroDial)
+import pkg/sunholo/observe/belief (HostFGK, HostM, Leakage, O2, likelihood, stateOfIndex)
+import pkg/sunholo/observe/constants (parsecM, lightYearM, pi, auM, earthRadiusM, snrHint)
+import pkg/sunholo/observe/photon (sunBlackbody, planetContrast)
+import pkg/sunholo/celestial/kepler (Vec3)
+import std/option (Option, Some, None)
+import std/list (map, filter, any, length, flatMap)
+import std/math (abs_Float, cos, pow)
+import std/string (join, contains)
+
+pure func all[a](f:a -> bool,xs:[a]) -> bool = not any(\x. not f(x),xs)
+pure func at(x:float) -> Vec3 = {x:x,y:0.0,z:0.0}
+pure func origin() -> Vec3 = at(0.0)
+pure func hours(h:float) -> float = h*3600.0
+pure func tenPcLy() -> float = 10.0*parsecM()/lightYearM()
+
+-- ---------- fixtures ----------
+pure func sterile() -> History = {biosphere:Sterile,mind:None}
+pure func living() -> History = {biosphere:Complex,mind:None}
+-- A civilisation on a living world: pre-technological from `pre`,
+-- technological from `tech` to `end`, then a remnant with traces to `traces`.
+pure func civilisation(pre:float,tech:float,end:float,traces:float) -> History =
+ {biosphere:Complex,mind:Some({preTechT:pre,techT:tech,endT:end,ending:Remnant,tracesUntilT:traces})}
+pure func always() -> History = civilisation(-2000000.0,-1000000.0,1000000.0,2000000.0)
+-- The registry's Earth twin of a Sun twin, its orbit face-on to the x axis (no transit).
+pure func twin(world:string,x:float,h:History,u:[float]) -> Target =
+ {world:world,host:"host-of-${world}",catalogued:false,pos:at(x),hostClass:HostFGK,teffK:5772.0,rSun:1.0,
+  aAu:Some(1.0),radiusEarth:Some(1.0),periodD:Some(365.25),rocky:true,normal:{x:1.0,y:0.0,z:0.0},history:h,u:u}
+-- An M dwarf's rocky planet on a 0.2 AU orbit: wide enough to image from a few light-years.
+pure func redWorld(world:string,x:float,h:History,u:[float]) -> Target =
+ {twin(world,x,h,u) | hostClass:HostM,teffK:3000.0,rSun:0.15,aAu:Some(0.2),periodD:Some(80.0)}
+-- A TRAPPIST-1 e analogue, edge-on to the x axis: inside the inner working angle at any distance in play.
+pure func compact(world:string,x:float,normal:Vec3) -> Target =
+ {twin(world,x,sterile(),quiet()) | hostClass:HostM,teffK:2566.0,rSun:0.1192,aAu:Some(0.02925),radiusEarth:Some(0.92),periodD:Some(6.101),normal:normal}
+pure func quiet() -> [float] = [0.5,0.5,0.5]
+pure func loud() -> [float] = [0.5,0.5,0.05]
+pure func suite() -> Suite = shipSuite()
+pure func look() -> float = (shipSuite()).stopLookS
+pure func see(t:Target,lookS:float) -> [Observation] = observeTarget(suite(),lookS,t,origin(),0.0)
+pure func has(rs:[Observation],q:Quantity,m:Method,seen:bool) -> bool = any(\o. o.quantity==q && o.method==m && o.detected==seen,rs)
+pure func mentions(rs:[Observation],q:Quantity) -> bool = any(\o. o.quantity==q,rs)
+pure func levelIs(rs:[Observation],q:Quantity,l:Level) -> bool = any(\o. o.quantity==q && o.detected && o.level==l,rs)
+
+-- ---------- AC2 ----------
+pure func traces() -> bool {
+ let ts=[twin("near",10.0,living(),quiet()),{twin("known-far",120.0,always(),loud()) | catalogued:true},redWorld("red",3.0,sterile(),[0.1,0.5,0.5])];
+ let rs=observeAtStop(suite(),look(),ts,origin(),0.0);
+ let ids=map(\t. t.world,ts);
+ length(rs)>=7 && all(\o. any(\i. i==o.world,ids) && o.host=="host-of-${o.world}"
+  && (o.instrument==(suite()).telescope.id || o.instrument==(suite()).receiver.id) && (o.method==Radio)==(o.instrument==(suite()).receiver.id)
+  && o.snr>=snrHint(),rs)
+}
+test "AC2 every record names a world, its host and the instrument that made it, at SNR 5 or more" {traces()}
+-- 500 ly: beyond the inner working angle and the radar's hint reach; uncatalogued, so not even a silence.
+pure func belowNoise() -> bool =
+ length(see(twin("faint",500.0,always(),loud()),look()))==0 && length(see({twin("dark",10.0,living(),quiet()) | teffK:0.0},look()))==0
+test "AC2 a world whose signals are all below the noise yields no record" {belowNoise()}
+
+-- ---------- AC3 ----------
+pure func abioticOxygen(u0:float) -> bool {
+ let rs=see(redWorld("desiccated",3.0,sterile(),[u0,0.5,0.5]),look());
+ any(\o. o.quantity==QOxygen && o.detected && o.method==DirectImaging && any(\n. contains(n,"desiccated"),o.falsePositiveNotes),rs)
+ && not mentions(rs,QOxygenMethane) && has(rs,QPlanet,DirectImaging,true)
+}
+test "AC3 abiotic O2 on a sterile M-dwarf world is an O2 record carrying the false-positive note, never O2+CH4" {
+ abioticOxygen(0.011) && abioticOxygen(0.1) && abioticOxygen(0.199)
+}
+-- The note is a function of the quantity and the host class, not of the truth.
+pure func notesBlind() -> bool {
+ let alive=see(redWorld("alive",3.0,{biosphere:Complex,mind:None},[0.75,0.5,0.5]),look());
+ let dead=see(redWorld("alive",3.0,sterile(),[0.1,0.5,0.5]),look());
+ has(alive,QOxygen,DirectImaging,true) && ledgerText(filter(\o. o.quantity==QOxygen,alive))==ledgerText(filter(\o. o.quantity==QOxygen,dead))
+ && length(falsePositives(QOxygen,HostM))==2 && length(falsePositives(QOxygen,HostFGK))==1 && length(falsePositives(QOxygenMethane,HostM))==0
+}
+test "AC3 a living and a dead M-dwarf world with O2 alone give the same O2 record, notes included" {notesBlind()}
+pure func quietMinds() -> bool {
+ -- 100 ly: inside the radar's reach, beyond the inner working angle and the TV carrier's reach.
+ let hidden=see(twin("quiet",100.0,always(),quiet()),look());
+ let known=see({twin("quiet",100.0,always(),quiet()) | catalogued:true},look());
+ let imaged=see(twin("quiet",50.0,always(),quiet()),look());
+ (emissionAt(twin("quiet",100.0,always(),quiet()),0.0)).tv && length(hidden)==0
+ && length(known)==1 && has(known,QLeakage,Radio,false) && not mentions(detections(known),QLeakage)
+ && has(imaged,QPlanet,DirectImaging,true) && has(imaged,QLeakage,Radio,false) && not mentions(detections(imaged),QLeakage)
+}
+test "AC3 a quiet technological world at distance gives no technosignature detection; a known or imaged one records the silence" {quietMinds()}
+
+-- ---------- D-68 groundwork ----------
+pure func skyWith(far:History,farU:[float],inside:History) -> string = ledgerText(observeAtStop(suite(),look(),
+ [twin("near",10.0,living(),quiet()),twin("far",500.0,far,farU),twin("too-close-to-its-star",80.0,inside,quiet())],origin(),0.0))
+pure func unreachable() -> bool =
+ skyWith(sterile(),quiet(),sterile())==skyWith(always(),loud(),living()) && skyWith(sterile(),quiet(),sterile())==skyWith(living(),[0.001,0.001,0.5],always())
+ && ledgerText(see(twin("near",10.0,living(),quiet()),look()))!=ledgerText(see(twin("near",10.0,sterile(),quiet()),look()))
+test "D-68 flipping the truth of worlds the instruments cannot reach leaves the ledger byte-identical" {unreachable()}
+pure func noSilentLeak() -> bool =
+ all(\o. o.detected,see(twin("unseen",100.0,sterile(),quiet()),look())) && length(see(twin("unseen",100.0,sterile(),quiet()),look()))==0
+test "D-68 a planet nobody has seen or catalogued gets no non-detection record" {noSilentLeak()}
+
+-- ---------- the light cone ----------
+-- Seen from the origin at year 1000, a world 100 ly away shows its year 900.
+pure func cone(h:History) -> [Observation] = observeTarget(suite(),look(),twin("cone",100.0,h,loud()),origin(),1000.0)
+pure func lightCone() -> bool {
+ let ended=civilisation(-100000.0,800.0,950.0,50000.0);
+ let later=civilisation(-100000.0,950.0,5000.0,50000.0);
+ stateAt(ended,1000.0)==Remnant && has(cone(ended),QLeakage,Radio,true)
+ && stateAt(later,1000.0)==Technological && not mentions(cone(later),QLeakage)
+ && all(\o. o.lastLightYear==900.0,cone(ended))
+}
+test "light cone: a civilisation that ended after its light left still shows; one that arose after does not" {lightCone()}
+
+-- ---------- thresholds and reach against the registry ----------
+pure func ob10() -> bool {
+ let c=planetContrast(0.2,earthRadiusM(),auM(),pi()/2.0);
+ let b=imagingBudget(referenceTelescope(),sunBlackbody(),c,tenPcLy(),1.0,1.0);
+ abs_Float(b.signal-0.002215)<0.0000005 && abs_Float(b.background-0.006633)<0.0000005 && abs_Float(absMagV(referenceTelescope(),sunBlackbody())-4.81)<0.000000000001
+}
+test "OB-10, OB-47: the ship's budget at rest is the registry's (signal, background with zodi; the Sun's M_V is 4.81)" {ob10()}
+pure func ob15() -> bool {
+ let t=twin("twin",tenPcLy(),living(),quiet());
+ let hint=see(t,hours(20.69));
+ length(see(t,hours(20.67)))==0 && levelIs(hint,QPlanet,Hint) && has(hint,QOxygenMethane,DirectImaging,true) && has(hint,QRedEdge,DirectImaging,true)
+ && levelIs(see(t,hours(82.71)),QPlanet,Strong) && levelIs(see(t,hours(82.69)),QPlanet,Hint)
+}
+test "OB-15, OB-16: an Earth twin at 10 pc is a hint after 20.68 hours and not before, strong after 82.70" {ob15()}
+-- The probe's sanity check: through the ship's own 30-day stop look, a living Earth twin of a Sun twin at 10 pc
+-- gives a strong oxygen record (with methane for these draws), and its gates read as passed.
+pure func twinInTheLook() -> bool {
+ let t=twin("twin",tenPcLy(),living(),quiet());
+ let rs=observeAtStop(suite(),look(),[t],origin(),0.0);
+ let g=stagesOf(suite(),look(),t,origin());
+ levelIs(rs,QOxygenMethane,Strong) && levelIs(rs,QPlanet,Strong) && has(rs,QRedEdge,DirectImaging,true)
+ && levelIs(observeAtStop(suite(),look(),[twin("twin",tenPcLy(),living(),[0.8,0.9,0.5])],origin(),0.0),QOxygen,Strong)
+ && g.inputs && g.iwa && g.floor && g.directSnr>=10.0 && g.directSnr==g.continuumSnr && not g.transitGeometry && not g.inSystem
+ && any(\o. o.quantity==QPlanet && o.snr==g.directSnr,rs)
+}
+test "sanity: a living Earth twin at 10 pc gives a strong oxygen record in the 30-day stop look" {twinInTheLook()}
+pure func ob24() -> bool =
+ has(see(twin("edge",59.44,living(),quiet()),hours(183.2)),QPlanet,DirectImaging,true) && length(see(twin("edge",59.44,living(),quiet()),hours(183.0)))==0
+ && length(see(twin("edge",59.46,living(),quiet()),hours(1000000.0)))==0
+test "OB-24, OB-27: nothing is directly imaged beyond 59.45 ly, however long the look; at the edge a hint takes 183.1 hours" {ob24()}
+pure func ob51() -> bool =
+ levelIs(see(twin("radar",168.2,always(),loud()),look()),QLeakage,Hint) && length(see(twin("radar",168.4,always(),loud()),look()))==0
+ && levelIs(see(twin("radar",118.9,always(),loud()),look()),QLeakage,Strong) && levelIs(see(twin("radar",119.1,always(),loud()),look()),QLeakage,Hint)
+ && abs_Float(leakReachLy((suite()).receiver,(suite()).radar,5.0)-168.3)<0.05
+test "OB-51, OB-32: the 100 m dish hears a radar as a hint to 168.3 ly and strongly to 119.0 ly" {ob51()}
+pure func ob52() -> bool {
+ let big={suite() | receiver:largeArray()};
+ let tv=\s x. observeTarget(s,look(),twin("tv",x,always(),quiet()),origin(),0.0);
+ levelIs(tv(big,5.661),QLeakage,Hint) && not has(tv(big,5.663),QLeakage,Radio,true) && not has(tv(suite(),5.661),QLeakage,Radio,true)
+ && abs_Float(leakReachLy(largeArray(),(suite()).tv,5.0)-5.662)<0.0005
+ && levelIs(tv(suite(),0.41),QLeakage,Hint) && not has(tv(suite(),0.43),QLeakage,Radio,true)
+}
+test "OB-52, OB-35: a TV carrier is a hint to 5.662 ly for the large array and to 0.42 ly for the ship's dish" {ob52()}
+test "the radar share is the belief table's leakage chance for a technological world" {
+ radarShare()==likelihood(Leakage,HostFGK,stateOfIndex(4)) && radarShare()==likelihood(Leakage,HostM,stateOfIndex(4))
+}
+
+-- ---------- transit ----------
+pure func transit() -> bool {
+ let edgeOn=compact("compact",40.0,{x:0.0,y:0.0,z:1.0});
+ let rs=see(edgeOn,look());
+ let depth=pow(0.92*earthRadiusM()/(0.1192*695700000.0),2.0);
+ -- from 2 ly off the axis the line of sight tilts 2.9 degrees: outside the 1.1 degrees that R_star / a allows
+ let tilted=observeTarget(suite(),look(),edgeOn,{x:0.0,y:0.0,z:2.0},0.0);
+ length(rs)==2 && has(rs,QLeakage,Radio,false) && any(\o. o.quantity==QPlanet && o.method==Transit && abs_Float(o.value-depth)<0.000000000001 && o.instrument==(suite()).telescope.id,rs)
+ && not mentions(rs,QOxygen) && not mentions(rs,QOxygenMethane) && not mentions(rs,QRedEdge)
+ && length(tilted)==0 && length(see(compact("face-on",40.0,{x:1.0,y:0.0,z:0.0}),look()))==0
+ && length(see(edgeOn,hours(100.0)))==0
+}
+test "transit: an edge-on world inside the inner working angle gives the census record only, and only from where it transits" {transit()}
+pure func trappistRow() -> StarRow = {id:"Gaia DR3 2635476908753563008",pos:{x:24.0,y:-30.0,z:13.0},v:18.8,teff:2566.0,starClass:MDwarf,lSun:0.000553,rSun:0.1192,mSun:0.0898}
+pure func trappist(seed:int) -> [Target] = targetsOf(seed,trappistRow(),(systemFrom(seed,zeroDial(),trappistRow(),curatedPlanets([]))).planets)
+pure func measuredInclination() -> bool {
+ let e=filter(\t. t.world=="trappist-1e",trappist(7));
+ let rs=flatMap(\t. observeTarget(suite(),look(),t,origin(),0.0),e);
+ length(e)==1 && all(\t. abs_Float(cosInclination(t,origin())-cos(89.793*pi()/180.0))<0.000000000001 && t.catalogued,e)
+ && has(rs,QPlanet,Transit,true) && not has(rs,QPlanet,DirectImaging,true) && not mentions(rs,QOxygen) && not mentions(rs,QOxygenMethane)
+ && length(trappist(7))==7 && all(\t. cosInclination(t,origin())<0.02,trappist(7))
+}
+test "transit: TRAPPIST-1 e keeps its measured inclination from Sol, transits there, and is never imaged or read for oxygen" {measuredInclination()}
+
+-- ---------- at cruise ----------
+pure func side(h:History) -> Target = {twin("abeam",0.0,h,loud()) | pos:{x:0.0,y:10.0,z:0.0},catalogued:true}
+pure func cruise() -> bool {
+ let ahead={x:0.0,y:1.0,z:0.0};
+ let across={x:1.0,y:0.0,z:0.0};
+ let rest=observeAtCruise(suite(),[side(always())],origin(),0.0,across,0.0);
+ let abeam=observeAtCruise(suite(),[side(always())],origin(),0.0,across,0.5);
+ let dAhead=cruiseDoppler((side(sterile())).pos,origin(),ahead,0.5);
+ let dAstern=cruiseDoppler((side(sterile())).pos,origin(),ahead,-0.5);
+ length(rest)==1 && all(\o. o.quantity==QPlanet && o.method==DirectImaging && o.lastLightYear== -10.0,rest)
+ && length(abeam)==1 && ledgerText(abeam)!=ledgerText(rest)
+ && ledgerText(rest)==ledgerText(observeAtCruise(suite(),[side(sterile())],origin(),0.0,across,0.0))
+ && abs_Float(dAhead-1.6487212707001282)<0.000000000001 && abs_Float(dAstern-0.6065306597126334)<0.000000000001
+ && not cruiseReadable((suite()).telescope,dAhead) && not cruiseReadable((suite()).telescope,dAstern) && cruiseReadable((suite()).telescope,1.0)
+ && length(observeAtCruise(suite(),[side(always())],origin(),0.0,ahead,0.5))==0
+ && length(observeAtCruise(suite(),[side(always())],origin(),0.0,ahead,-0.5))==0
+}
+test "cruise: the coarse census records planets only, in the frame of the moving ship; the sky beyond the design band is unread" {cruise()}
+
+-- ---------- determinism and the calibration seam ----------
+pure func deterministic() -> bool {
+ let once=ledgerText(observeAtStop(suite(),look(),trappist(7),origin(),12.5));
+ once==ledgerText(observeAtStop(suite(),look(),trappist(7),origin(),12.5))
+ && signalUniforms(7,"a","b")==signalUniforms(7,"a","b") && signalUniforms(7,"a","b")!=signalUniforms(8,"a","b") && signalUniforms(7,"a","b")!=signalUniforms(7,"a","c")
+ && all(\u. u>=0.0 && u<1.0,signalUniforms(7,"a","b")) && length(signalUniforms(7,"a","b"))==3
+ && length(see({twin("here",inSystemLy()/2.0,always(),loud()) | catalogued:true},look()))==0
+}
+test "the same seed, position and time give byte-identical records" {deterministic()}
+pure func seam() -> bool = match configuredDetector() {
+ None=>false,
+ Some(d)=>d.photonBudget && abs_Float(d.supportLy-168.3)<0.05
+  && d.response("biosphere",tenPcLy(),0.5)>=10.0 && d.response("biosphere",59.46,0.5)==0.0
+  && d.response("technology",168.2,0.05)>=5.0 && d.response("technology",168.4,0.05)==0.0 && d.response("technology",50.0,0.5)==0.0
+  && (noDetector()).supportLy==0.0 && (idealDetector(10.0)).response("biosphere",9.0,0.0)==1.0 && not (idealDetector(10.0)).photonBudget
+}
+test "the calibration seam has a photon-budget detector whose support is an output of the budgets" {seam()}
+
+pure func checks() -> [(string,bool)] = [("traces",traces()),("belowNoise",belowNoise()),
+ ("abioticOxygen",abioticOxygen(0.011) && abioticOxygen(0.1) && abioticOxygen(0.199)),("notesBlind",notesBlind()),("quietMinds",quietMinds()),
+ ("unreachable",unreachable()),("noSilentLeak",noSilentLeak()),("lightCone",lightCone()),("ob10",ob10()),("ob15",ob15()),("twinInTheLook",twinInTheLook()),("ob24",ob24()),
+ ("ob51",ob51()),("ob52",ob52()),("transit",transit()),("measuredInclination",measuredInclination()),("cruise",cruise()),
+ ("deterministic",deterministic()),("seam",seam())]
+export pure func evidenceVm() -> string = match filter(\c. match c {(_,ok)=>not ok},checks()) {
+ []=>"evidence-ok",
+ bad=>"EVIDENCE-FAIL: ${join(",",map(\c. match c {(name,_)=>name},bad))}"
+}
+-- A whole ledger, floats and all, for the VM = interpreter byte comparison.
+export pure func ledgerVm() -> string = ledgerText(observeAtStop(suite(),look(),
+ [twin("near",10.0,living(),quiet()),{twin("known-far",120.0,always(),loud()) | catalogued:true},redWorld("red",3.0,sterile(),[0.1,0.5,0.5]),
+  compact("compact",40.0,{x:0.0,y:0.0,z:1.0})]++trappist(7),origin(),12.5)
+ ++observeAtCruise(suite(),[side(always())],origin(),0.0,{x:1.0,y:0.0,z:0.0},0.5))

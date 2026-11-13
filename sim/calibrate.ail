@@ -148,7 +148,9 @@ pure func actualState(ws:[ModelWorld],id:string,t:float) -> PlanetState = match 
 }
 pure func voyage(seed:int,p:Params,s:Strategy,doom:float,d:Detect,tech:[ModelWorld],q:Progress) -> Progress =
  if q.tau>=100.0 || q.t>=doom then q else {
-  let local=localWorlds(seed,p,s.rangeLy,doom,q.pos,d.supportLy);
+  -- Background biospheres never signal (their technological epochs lie outside
+  -- the sampled envelope), so they are populated only as far as a biosphere can respond.
+  let local=localWorlds(seed,p,s.rangeLy,doom,q.pos,d.bioSupportLy);
   let ws=tech++local;
   let known=learn(q.known,map(\w. observeWorld(d,w,q.pos,q.t),ws));
   match chooseCandidate(s,q.pos,known,q.visited) {

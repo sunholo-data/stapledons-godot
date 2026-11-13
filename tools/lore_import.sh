@@ -31,6 +31,10 @@ list_at() { # sha -> "<design path> <vendored path>" lines
   if git -C "$D" cat-file -e "$1:physics/life-and-worlds.md" 2>/dev/null; then
     echo "physics/life-and-worlds.md physics/life-and-worlds.md"
   fi
+  # R3-REASONS RT0: the observation registry (OB rows) joined the design repo on 2026-11-12.
+  if git -C "$D" cat-file -e "$1:physics/observation.md" 2>/dev/null; then
+    echo "physics/observation.md physics/observation.md"
+  fi
 }
 export_at() { # sha dest-dir
   list_at "$1" | while read -r src dst; do
