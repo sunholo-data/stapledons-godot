@@ -32,10 +32,10 @@
         "sh tools/deadline.sh 300 bash $D/d7ar_drill.sh guard-lab $ROOT | tail -1 -> 'd7ar-drill: mutation guard-lab did not apply', rc 3 (V17)",
         "git status --porcelain empty at milestone end; no commit"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": false,
+      "started": true,
+      "completed": true,
+      "notes": "MS1 (iteration 92, executor, no commit). Extracted Appendix A and B to /tmp/i92_7ar (sha prefixes e55b79e3e52d828b, af21a44e875e5c88 matched). Appendix C6 helper staged in scratch: aecd62112b67616a matched. AC1 baseline rc 1: 'ai-live-guard: A mk/lab.mk:62', 'A mk/lab.mk:63', 'A mk/lab.mk:70', 'A tools/lab_probe.py:44', 'A tools/reach_probe.py:40' (five A lines, as planned). AC12 baseline: DEVIATION in the command as written. The design table escapes pipes as \\| (markdown); the literal backslash-pipe form in git grep -E matches nothing (rc 1, no output, so it passes vacuously). With plain ERE pipes it gives the four planned hits: mk/earth-link.mk:40 ctl unrefreshed ... frame=1 clocks; :41 drop_one ... frame=36 course; :42 unbound ... new=46 ... failures=46; :43 stale ... mismatches=46 ... failures=92. AC8 baseline DIFFERS from the Baseline column (STOP, tree drift or harness flake; not edited). Actual: rc=2; 'display monitor control unrefreshed: rejected'; 'display monitor controls: drop_one infrastructure failure (playthrough, log .godot/tmp/monitor-controls/monitor-drop_one.play.log)'; same for unbound and stale; 'display monitor controls: 1 rejected'. Cause in the mutant playthrough logs: 'SCRIPT ERROR: Invalid assignment of property or key 'record_sent' with value of type 'bool' on a base object of type 'Nil'. at: _run (res://tests/m4_playthrough_ship.gd:481)' (demo.journey_sim is nil); the unrefreshed run passed. Drill RED reads (rc 3 both): 'd7ar-drill: mutation guard-lab did not apply' rc=3; 'd7ar-drill: mutation static-breach did not apply' rc=3. git status clean."
     },
     {
       "id": "MS2",
@@ -64,10 +64,10 @@
         "AC20: sh tools/deadline.sh 120 bash $D/d7ar_drill.sh mutant-exit2 $ROOT -> 'guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:'; '... make_rc=2 secs=6 survivors=0 caught=0'; 'mutant-exit2 KILLED', rc 0",
         "git show --stat -> exactly the four named files; git status --porcelain empty after the drills"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": true,
+      "started": true,
+      "completed": true,
+      "notes": "MS2 (iteration 92): commit b9259b7f, mk/ai.mk mk/lab.mk tools/lab_probe.py tools/reach_probe.py. Pre-commit. AC1: rc 0, 'ai-live-guard: ok (97 make/shell/CI files, 548 test/tool scripts, launch builder, settings)'. DEVIATION from the expected 98/549: the design attributes the +1/+1 to the new helper tools/monitor_control_check.sh (V8), which MS3 adds; this milestone does not add it, so 97/548 is the pre-helper count, not drift (main still 36f4ab4c). AC2: rc 0, count 1. AC3: rc 0, 'script-gate: ai-live-guard-static ok: ai-live-guard: ok (97 make/shell/CI files, 548 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 7 s of 120 s)'. AC4: rc=0; grep -c '^guard mutant caught' = 25; 'guard mutant caught: mk/lab.mk (A mk/lab.mk)'; 'guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)'; 'script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) (rc 0, no SCRIPT ERROR, 1 s of 600 s)'; SURVIVED/infrastructure lines: 0. AC6: rc 0; 'lab-parity: scenarioVm scenario-ok (strict VM = interpreter)', 'lab-parity: scenarioProbe 18744 bytes (strict VM = interpreter)', 'lab-parity: statsVm stats-ok (strict VM = interpreter)', 'lab-parity: statsProbe 10722 bytes (strict VM = interpreter)', 'lab-parity: 4 checks NOT on the strict VM (they run under ailang test only; ...)'. AC7: rc 0 \"['env', '-u', 'AI_LIVE', 'ailang']\", 'draws n=2000 accepted=91 first=1 mix=6578220370666750'; rc 0 '0.0'. Post-commit. AC5: 'd7ar-drill: guard-lab KILLED', 'guard-reach KILLED', 'guard-labprobe KILLED' (rc 0 each). AC17: rc 0; 'script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)...'; 'd7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0'; 'd7ar-drill: stall KILLED'. AC18: rc 0; 'ai-live-guard: A mk/lab.mk:63: ...'; 'script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line ...'; 'd7ar-drill: static-breach KILLED'. AC19: rc 0; 'script-gate: ai-live-guard-static ok: ...'; 'guard mutant infrastructure failure: mk/ai.mk: the guard did not finish in 3 s (deadline, rc 124)'; 'd7ar-drill: mutant-stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=15 survivors=0 caught=0'; 'mutant-stall KILLED' (scratch tree shows 461 test/tool scripts; the drill's copy, not the gate). AC20: rc 0; 'guard mutant infrastructure failure: mk/ai.mk: the guard exited 2, want 1:'; 'd7ar-drill: mutant-exit2 before=0 control_seen=1 control_cleared=0 make_rc=2 secs=6 survivors=0 caught=0'; 'mutant-exit2 KILLED'. No sleeper left (pgrep '^sleep 319[13]$' empty); git status clean after each drill."
     },
     {
       "id": "MS3",
@@ -89,10 +89,10 @@
         "AC12: git grep -nE '(new\\|mismatches\\|failures)=(4[0-9]\\|9[0-9])\\|frame=(1\\|36) (clocks\\|course)' -- mk Makefile tests tools; test $? -eq 1 -> no output, rc 0",
         "git show --stat -> exactly the two named files; git status --porcelain empty after the drills"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": false,
+      "started": true,
+      "completed": false,
+      "notes": "MS3 NOT STARTED: stopped at the AC8 pristine baseline (see MS1 notes) per controller ruling A4 (record verbatim, stop that milestone). No edits to mk/earth-link.mk or the helper beyond the scratch copy; no commit. Its ACs AC8-AC11 are unrun."
     },
     {
       "id": "MS4",
@@ -109,10 +109,10 @@
         "AC14: test \"$(git diff --name-only 36f4ab4c HEAD -- . ':!design_docs' ':!.ailang' | tr '\\n' ' ')\" = \"mk/ai.mk mk/earth-link.mk mk/lab.mk tools/lab_probe.py tools/monitor_control_check.sh tools/reach_probe.py \" -> rc 0",
         "AC16: git status --porcelain -> empty (after every drill, and finally)"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": null
+      "passes": false,
+      "started": false,
+      "completed": false,
+      "notes": "MS4 NOT RUN: depends on MS3 (AC9-AC11, AC13 scope, AC14 needs the two MS3 files). AC16 at stop: git status --porcelain empty."
     }
   ],
   "controller_steps": [
