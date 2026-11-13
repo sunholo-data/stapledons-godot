@@ -1,0 +1,137 @@
+{
+  "sprint_id": "R1-D149-EARTH-LINK-ALPHA",
+  "status": "planned",
+  "approved": true,
+  "approved_by": "Mark's attended ruling D-149 (2026-11-12): the ALPHA target moves to alpha Cen A's real map index (2, from 1), the guard's SOURCE_PENDING entry is removed, the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance. Design revision 2 after quorum r1 (sol: exact-block probe generator) and r2 (sol: AC10 prerequisites under tools/deadline.sh) under the narrow-refinement carve-out, no round 3; approved for planning, mission iteration 91.",
+  "created": "2026-11-13",
+  "design_doc": "design_docs/planned/r1/m4-d149-earth-link-alpha-index.md",
+  "sprint_plan": "design_docs/planned/r1/m4-d149-earth-link-alpha-index-sprint.md",
+  "branch": "mission/stapledon-iter91-d149",
+  "base": "85ca5470 (origin/main = merge-base = the design's measured base; HEAD a51c1a78 is the r2 design commit; diff = the design doc alone, so every V-number applies verbatim)",
+  "implements": [
+    "D-149"
+  ],
+  "scope": "2 files, +3/-6 (V13): tools/earth_link_capture.gd one token (\"index\": 1 -> 2, +1/-1); tools/test_replay.py SOURCE_PENDING and its two-line comment deleted, the two pending-filter assertions replaced by self.assertEqual(bad, []), one D-149 positive control added (+2/-5). ONE code commit (the design's binding rule: both edits land in one commit; each half alone fails replay-map-index, V10/V12). No changelog fragment (AC8's scope check excludes it). No GPU, no make golden, no make capture, no local make test; AC11 is Mark's attended post-merge check, not a gate.",
+  "environment": "Executor clone root = ROOT. runtime/bin/ailang v0.56.1 (commit 05c860a) already provisioned; make runtime idempotent. The ailang on PATH (v0.60.0-46-g6d28e1ad5a-dirty) is never used for a gate reading; AC10 uses the pinned runtime by construction (Appendix C). godot 4.7.2.stable, python3 3.14.5, tools/deadline.sh present. Scratch: S=$PWD/.godot/tmp/d149; D=$(mktemp -d) outside the repo holds the extracted Appendices A/B/C. Sandbox note (7am D1 precedent): if /tmp refuses writes, reroot the appendices' hardcoded mktemp /tmp templates 1:1 under $S; expectations unchanged.",
+  "features": [
+    {
+      "id": "MS1",
+      "description": "RED (test-first, transient, NO commit): pristine baselines per V3 (make replay-map-index rc 0 'Ran 9 tests' OK passing only through the pending entry; python3 tools/test_replay.py 'Ran 38 tests' OK; git diff --check rc 0); Appendix A extracted (37 lines, sha256 ae32d0e1cabb93c6...) and V11 fail-closed on the pristine tree (both modes rc 3 'mutation ... did not apply', tree clean); half-A RED: the D2 guard edit alone on the pristine .gd -> make rc 2, FAIL: test_source_literals_match_the_map, AssertionError Lists differ: ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2'] != [] (sprint-measured), byte-restored; half-B RED (V12 verbatim): the .gd token alone -> rc 1, AssertionError Lists differ: ['tools/earth_link_capture.gd:16'] != [], FAILED (failures=1), byte-restored. The tree ends clean; the design forbids committing either half alone.",
+      "files": [
+        "tools/test_replay.py (transient only, byte-restored)",
+        "tools/earth_link_capture.gd (transient only, byte-restored)",
+        "$D/d149_drill.sh (scratch outside the repo, never committed)"
+      ],
+      "estimated_loc": "0 committed (transient edits +37-line extracted drill)",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "perl -e 'alarm 120; exec @ARGV' make replay-map-index -> rc 0, 'Ran 9 tests', 'OK' (AC3 baseline column, V3)",
+        "perl -e 'alarm 300; exec @ARGV' python3 tools/test_replay.py -> 'Ran 38 tests', 'OK', rc 0 (AC6 baseline, V3)",
+        "perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD -> no output, rc 0 (AC7 baseline, V3)",
+        "perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh index $ROOT -> 'd149-drill: mutation index did not apply', rc 3 (AC4 baseline, V11)",
+        "perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh blind $ROOT -> 'd149-drill: mutation blind did not apply', rc 3 (AC5 baseline, V11)",
+        "half-A (guard alone, transient): make replay-map-index rc 2, FAIL: test_source_literals_match_the_map, AssertionError: Lists differ: ['tools/earth_link_capture.gd:16 CNS5:3627 index 1, stars.json 2'] != [] (sprint-measured; derived from V2's format), FAILED (failures=1); then cmp-proved restore",
+        "half-B (token alone, transient, V12): python3 tools/test_replay.py MapIndex rc 1, AssertionError: Lists differ: ['tools/earth_link_capture.gd:16'] != [], FAILED (failures=1); then cmp-proved restore",
+        "git status --porcelain empty at milestone end; no commit"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "MS2",
+      "description": "GREEN: D1 + D2 in ONE commit (the design's binding rule). tools/earth_link_capture.gd:16 \"index\": 1 -> 2; tools/test_replay.py: delete SOURCE_PENDING + its two-line comment (:340-342), replace the two assertions at :462-463 with self.assertEqual(bad, []), add the D-149 positive control after the ui/transit_harness.gd:10 line (the design's exact text). Synthetic controls untouched. Commit (both files, message naming D-149, executor Co-Authored-By trailer), then the post-commit scope gates.",
+      "files": [
+        "tools/earth_link_capture.gd",
+        "tools/test_replay.py"
+      ],
+      "estimated_loc": "+3/-6 (V13, prototype-measured)",
+      "dependencies": [
+        "MS1"
+      ],
+      "acceptance_criteria": [
+        "git diff --shortstat 85ca5470 -- tools/ -> ' 2 files changed, 3 insertions(+), 6 deletions(-)' (V13)",
+        "AC1: test \"$(grep -c '^const ALPHA := {\"index\": 2, \"id\": \"CNS5:3627\", ' tools/earth_link_capture.gd)\" -eq 1 || exit 1 -> rc 0",
+        "AC2: test \"$(git grep -n SOURCE_PENDING -- tools | wc -l)\" -eq 0 || exit 1 -> rc 0 (baseline 3 hits)",
+        "AC3: perl -e 'alarm 120; exec @ARGV' make replay-map-index -> rc 0, 'Ran 9 tests', 'OK' (GREEN; the milestone's required end state)",
+        "AC6: perl -e 'alarm 300; exec @ARGV' python3 tools/test_replay.py -> 'Ran 38 tests', 'OK', rc 0",
+        "THE COMMIT: exactly one commit with both files; the executor never sets passes",
+        "AC7: perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD -> no output, rc 0",
+        "AC8: test \"$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' | tr '\\n' ' ')\" = \"tools/earth_link_capture.gd tools/test_replay.py \" || exit 1 -> rc 0",
+        "AC9: for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t || exit 1; done -> each '...: ok', rc 0 (V9: 'python-guard: ok (23 allowlisted, 0 awaiting AILANG port)', 'uid-guard: ok (438 .uid files)'; record actuals)"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "MS3",
+      "description": "Evidence (NO code commit): Appendices B (52 lines, sha256 596b20d6fef7073a...) and C (35 lines, sha256 a2c2693abc814416...) extracted to $D; AC4 'index' drill on the committed tree -> 'd149-drill: index make_rc=2', 'fail_lines=1 want_hits=3 summary=1', 'KILLED', rc 0, tree clean; AC5 'blind' drill -> 'make_rc=2', 'fail_lines=1 want_hits=1 summary=1', 'KILLED', rc 0, tree clean; AC10 via Appendix C under tools/deadline.sh (outer 1200; inner 180/300/30/600; step exit codes 10/11/12/13; 124 = deadline) -> all four step rc=0 lines, the elc-probe a_outbound subtitle=[CNS5:3627  ·  4.32 ly] line, 'a_outbound_4.32ly=1 summary=1 script_errors=0', 'd149-ac10: PASS', rc 0 (V17); b-e elc- lines equal V7/V8's (a_outbound station labels_sha=c4b3e05190254f4f nlabels=20 view_sans_index_sha=9ffd74fe7d35b829, index_values ['\"index\":2.0']); final re-run of AC3/AC6/AC7/AC8/AC9. Executor appends 'measured' evidence to this JSON; the controller sets passes/started/completed. AC11 (make capture-earth-link, GPU window) is Mark's attended post-merge check, NOT a gate.",
+      "files": [
+        ".ailang/state/sprints/sprint_R1-D149-EARTH-LINK-ALPHA.json (measured fields only; controller commits)"
+      ],
+      "estimated_loc": "0 committed (2 extracted scripts, 52 + 35 lines, in $D)",
+      "dependencies": [
+        "MS2"
+      ],
+      "acceptance_criteria": [
+        "AC4: perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh index $ROOT -> 'd149-drill: index make_rc=2'; 'd149-drill: index fail_lines=1 want_hits=3 summary=1'; 'd149-drill: index KILLED'; rc 0; git status --porcelain empty afterwards",
+        "AC5: perl -e 'alarm 240; exec @ARGV' bash $D/d149_drill.sh blind $ROOT -> 'd149-drill: blind make_rc=2'; 'd149-drill: blind fail_lines=1 want_hits=1 summary=1'; 'd149-drill: blind KILLED'; rc 0; tree clean",
+        "AC10: sh $ROOT/tools/deadline.sh 1200 bash $D/d149_ac10.sh $ROOT $D -> 'd149-ac10: make runtime rc=0', 'make import rc=0', 'generator rc=0', 'probe rc=0'; 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly] ...'; 'a_outbound_4.32ly=1 summary=1 script_errors=0'; 'd149-ac10: PASS', rc 0 (V17)",
+        "b-e probe lines equal V7/V8: b_top 'subtitle=[waypoint C (60 ly)]', c_replan 'title=[port B (a 30 ly turn)]', d_stale 'title=[En route to port B (a 30 ly turn)]', e_home 'subtitle=[Sol]' (record actuals; mismatch = pause point)",
+        "final re-run: AC3 'Ran 9 tests' OK; AC6 'Ran 38 tests' OK; AC7 rc 0; AC8 rc 0; AC9 all ok",
+        "evidence: measured fields appended for MS1/MS2/MS3 (both half-RED lines, the shortstat, the drill lines, AC10's full line set with wall-clock times); passes/started/completed left null for the controller"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "controller_steps": [
+    "git log --oneline 85ca5470..HEAD shows exactly one code commit touching exactly the two files (git show --stat = V13's shape) plus the planner's plan/JSON commit",
+    "re-run AC2, AC3, AC8 verbatim; confirm the JSON's measured fields hold both half-RED lines and the AC10 PASS; set passes/started/completed per milestone",
+    "the PR fires the ci.yml fast tier (make ci-fast superset replay-map-index, Makefile:482) - confirm green with 'Ran 9 tests' / 'OK' before leaving draft (the 7am/7al API-log pipeline)",
+    "after the cross-family evaluation passes and the merge: move the design doc to design_docs/implemented/r1/ and update the charter rows (design Deliverables); AC11 is Mark's attended make capture-earth-link when the GPU is free"
+  ],
+  "commit_rules": "ONE code commit (MS2) holding both edits - the design's binding rule ('Both edits must land in one commit'); MS1 and MS3 commit nothing (MS1 is transient RED byte-restored; MS3 is evidence-only). Commit message names D-149 and both halves and ends with the executor's Co-Authored-By: trailer. The executor never sets passes (the controller does).",
+  "risks": [
+    "Landing one edit without the other: impossible under the one-commit rule; AC8 re-checks the aggregate; ci-fast runs replay-map-index on the PR head",
+    "Removing the mechanism hides a future wrong pair: it does not - assertEqual(bad, []) is stricter; the synthetic controls and AC4 prove it",
+    "The positive control names a line number (quorum r1 gemini note): kept as designed; a shift fails loudly; AC4/AC5 unchanged",
+    "Probe drift (r1 sol fix): the generator fails closed (exit 255, empty output) on any missing/changed/duplicated/truncated block; AC10's generator step (exit 12) surfaces it",
+    "(planner) make runtime/import on a loaded host: warm in this clone (2-3 s / 6-7 s, V17) against 180/300 s deadlines; a network stall in gh release download is bounded (V18 proves the kill)",
+    "(planner) /tmp blocked: reroot the appendices' mktemp templates 1:1 under $S; expectations unchanged"
+  ],
+  "pause_points": [
+    "runtime/bin/ailang != v0.56.1 after make runtime, or godot != 4.7.2 -> stop; never use the PATH ailang (v0.60.0-dev) for a gate reading",
+    "a pristine baseline differs from V3 ('Ran 9 tests' OK / 'Ran 38 tests' OK) -> tree drift, stop",
+    "an appendix extraction sha mismatches -> re-extract; still mismatched -> stop, never retype design text",
+    "V11 not rc 3 with the 'did not apply' line, or either half-RED message differs -> record verbatim, stop",
+    "MS2 shortstat != '2 files changed, 3 insertions(+), 6 deletions(-)' or AC3 not 'Ran 9 tests' -> stop; never weaken the guard, never re-add SOURCE_PENDING, never split the commit",
+    "AC10 exits 10/11/12/13 -> stop with the step's log; 124/142 -> a deadline fired or a signal landed -> stop; never re-run with a longer deadline or bump a limit silently",
+    "git status --porcelain non-empty after any drill -> the restore failed (drill exit 4) -> stop; do not hand-edit",
+    "the elc-probe a_outbound subtitle is anything but 'CNS5:3627  ·  4.32 ly' -> stop (the ruling's exact string)"
+  ],
+  "local_pr_gates": [
+    "make replay-map-index (alarm 120): rc 0, 'Ran 9 tests', 'OK'",
+    "python3 tools/test_replay.py (alarm 300): 'Ran 38 tests', 'OK'",
+    "make python-guard / uid-guard / lint-precision (alarm 120 each): each '...: ok', rc 0",
+    "git diff --check 85ca5470 HEAD (alarm 30): silent, rc 0",
+    "the two Appendix-A drills (alarm 240 each): KILLED, rc 0, tree clean",
+    "Appendix C AC10 (tools/deadline.sh 1200 outer; 180/300/30/600 inner): PASS, rc 0",
+    "NO make test, NO make golden, NO GPU capture, NO rig run - the nightly covers make test; AC11 is attended"
+  ],
+  "plan_verification": "Planner, 2026-11-13, HEAD a51c1a78 (r2 design commit) on branch mission/stapledon-iter91-d149 (no git writes beyond the plan/JSON commit): merge-base with origin/main = 85ca5470 = origin/main = the design's measured base; git diff --name-only = the design doc alone, so every V-number applies verbatim; git status --porcelain empty. Edit anchors verified verbatim: tools/earth_link_capture.gd:16 ALPHA \"index\": 1; tools/test_replay.py :340-342 SOURCE_PENDING comment + entry, :462-463 the two pending-filter assertions, :464 the ui/transit_harness.gd:10 control; git grep SOURCE_PENDING -- tools = 3 hits (:342,:462,:463, V4). stars.json: 5685 stars, index 1 = HIP 71681, index 2 = CNS5:3627, CNS5:3627 at [2] only (V1). Makefile anchors: replay-map-index :479-480, ci-fast: replay-map-index :482, tools-test :293, test includes tools-test :60; capture-earth-link only mk/earth-link.mk:106-107 + tools/script-gate-baseline.txt:24. Appendix fences extracted read-only: A=37 lines sha256 ae32d0e1cabb93c66561..., B=52 lines 596b20d6fef7073a5f14..., C=35 lines a2c2693abc8144162ba9... - all match the doc's pinned prefixes. Clone: runtime/bin/ailang v0.56.1 (05c860a) provisioned; .godot imported; godot 4.7.2.stable; python3 3.14.5; tools/deadline.sh present; PATH ailang v0.60.0-46-g6d28e1ad5a-dirty (never for gates); /tmp writes refused in the planner sandbox (7am D1 precedent).",
+  "velocity": "+3/-6 across 2 files (V13). MS1 ~10-15 min (baselines in seconds; two transient edits + restores). MS2 ~15-20 min (edits, gates, the one commit). MS3 ~15-25 min: drills < 2 min each (V10), AC10 ~100 s warm (V17: runtime 2-3 s, import 6-7 s warm, probe 37-46 s; cold ~2-3 min), final gate re-run in seconds. Recent rows of this size each took one iteration (7ak ~4 LOC; 7ai ~16): one iteration, three executor runs, no day-count estimated.",
+  "ambiguities": [
+    "A1: the mission brief's MS1 parenthetical names V12 for 'apply the guard change alone', but V12 is the OTHER half (fixed .gd + old guard). Plan: MS1 records both halves transiently; half-A's expected message is derived from V2's format and marked sprint-measured.",
+    "A2: 'one commit per milestone' (mission) vs 'Both edits must land in one commit' (design, binding). Plan: one code commit (MS2); MS1/MS3 commit nothing. If the loop requires a commit per milestone, that is a controller call.",
+    "A3: no changelog fragment - the design's Deliverables name only the two files and AC8's scope check fails on anything more (recent sprints shipped one; listed for visibility).",
+    "A4: Appendices A/C hardcode mktemp /tmp templates; the planner sandbox refuses /tmp (7am D1). Plan: probe /tmp first; if blocked, reroot 1:1 under $S.",
+    "A5: AC3's 'Ran 9 tests' is stable only if main lands no new MapIndex test before execution; the pause point covers drift - do not edit the expectation."
+  ],
+  "notes": null
+}
