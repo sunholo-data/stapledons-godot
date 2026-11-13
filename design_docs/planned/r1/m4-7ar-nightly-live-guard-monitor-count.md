@@ -1,10 +1,10 @@
 # Main's nightly is green again: the live guard's five call sites, and monitor controls that read their counts from the run (row 7ar)
 
-**Status:** Planned 2026-11-13 (mission iteration 92, designer Opus 5.5). Measured at `origin/main` `36f4ab4c`. **Release:** r1. **Milestone:** none (charter clause 5, suite hygiene: restores main's nightly `rig/full`).
+**Status:** Planned 2026-11-13 (mission iteration 92, designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): `ai-live-guard-static` now runs the guard under `$(SCRIPT_GATE)` with `AI_GUARD_S ?= 120`, and a stall drill proves the bound (D2, AC17, V21). The helper also finds the integer `"frame"` key anywhere on the row (gemini-4-argon, non-blocking; D4, V23). Measured at `origin/main` `36f4ab4c`. **Release:** r1. **Milestone:** none (charter clause 5, suite hygiene: restores main's nightly `rig/full`).
 **Priority:** high. Main's nightly `make test` is red on two targets (issue #392, comment of 2026-11-13 06:11 UTC on `85ca5470`: `2 red: ai-live-guard display-audit-monitor-controls`). Both are still red at `36f4ab4c` (V1, V5).
 **Implements:** row **7ar** (charter queue). It restores AC15 of [`ai-service-foundation.md`](ai-service-foundation.md) (line 1047: "No spend in automation", checked by `make ai-live-guard`; the rules A–E are in the header of `tools/ai_live_guard.sh`) and AC6/AC14 of [`m4-7aj-monitor-face-bindings.md`](../../implemented/r1/m4-7aj-monitor-face-bindings.md) (four monitor-face mutants, each rejected by the crew audit for its own reason). No design-repo feature doc or physics-spec section applies: nothing the player sees, hears or computes changes.
 **Depends on:** nothing. It must merge before the next nightly to stop the red, but no other row waits on it.
-**Estimated LOC:** 6 files, +53 / −11 (V17, prototype commit): `mk/lab.mk` 3 lines, `tools/lab_probe.py` +2/−1, `tools/reach_probe.py` +3/−2, `mk/ai.mk` +9, `mk/earth-link.mk` +10/−5, new `tools/monitor_control_check.sh` (26 lines). No product code, no `.gd`, no `.uid`, and no `Makefile` edit (the `Makefile` is held by open PRs #435, #380 and #373, V19).
+**Estimated LOC:** 6 files, +64 / −13 (V20, revision 1 prototype commit): `mk/lab.mk` 3 lines, `tools/lab_probe.py` +2/−1, `tools/reach_probe.py` +3/−2, `mk/ai.mk` +13/−2, `mk/earth-link.mk` +10/−5, new `tools/monitor_control_check.sh` (33 lines). No product code, no `.gd`, no `.uid`, and no `Makefile` edit (the `Makefile` is held by open PRs #435, #380 and #373, V19).
 
 ## Game vision alignment
 
@@ -85,29 +85,40 @@ The other two controls pin frame numbers by the same mechanism: `unrefreshed` ex
 
 ### D2. The static guard in the fast tier (P1, "why it merged red")
 
-New target in `mk/ai.mk` (the AI targets' home; the `Makefile` is held), after `ai-test: ai-live-guard ai-settings` (`mk/ai.mk:445`):
+New target in `mk/ai.mk` (the AI targets' home; the `Makefile` is held), after `ai-test: ai-live-guard ai-settings` (`mk/ai.mk:445`), and `ai-live-guard` takes it as a prerequisite in place of its own unbounded first recipe line `@sh tools/ai_live_guard.sh .`:
 
 ```make
-# 7ar: the static rules alone (git, perl, sh; no Godot, no import; about 8 s) run in the GitHub fast tier, so
-# a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. The
-# whole target below (each rule's mutant, the launch builder under Godot) stays in make test.
+# 7ar: the static rules alone (git, perl, sh; no Godot, no import; 8 s on the Studio) run in the GitHub fast tier,
+# so a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. Bounded
+# by $(SCRIPT_GATE), as the fast tier's other non-Godot gates are (mk/observations.mk): AI_GUARD_S is 15 times the
+# measured 8 s, for a slower runner; a stall is stopped (TERM, then KILL to the process group) and fails the target.
+# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first, so make test is bounded too.
+AI_GUARD_S ?= 120
 .PHONY: ai-live-guard-static
-ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh); in ci-fast
-	@sh tools/ai_live_guard.sh .
+ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh), under a deadline; in ci-fast
+	@$(SCRIPT_GATE) ai-live-guard-static $(SCRATCH)/ai-live-guard-static.log $(AI_GUARD_S) '^ai-live-guard: ok \([1-9][0-9]* make/shell/CI files, [1-9][0-9]* test/tool scripts, launch builder, settings\)$$' -- sh tools/ai_live_guard.sh .
 ci-fast: ai-live-guard-static
+...
+ai-live-guard: import ai-live-guard-static   ## AC15: ... (its old first line, @sh tools/ai_live_guard.sh ., is removed)
 ```
 
 **Decision: add it.** Reasons:
-1. **Cost.** 8.0 s wall (3.9 s user) on the Studio at 1-min load 3.4 (V1, V8). Against a fast tier of about 10 minutes that is about 1%. It scans 98 make/shell/CI files and 549 scripts.
-2. **Dependencies.** `git`, `perl`, `sh`, `mktemp`, `sed`, `grep`. All are on `ubuntu-latest`, and `actions/checkout` gives a work tree, so the guard takes its `git ls-files` branch, as on the Studio. No AILANG, no Godot, no `import`.
+1. **Cost.** 8.0 s wall (3.9 s user) on the Studio at 1-min load 3.4 (V1, V8); 6 s through the gate (V20). Against a fast tier of about 10 minutes that is about 1%. It scans 98 make/shell/CI files and 549 scripts.
+2. **Dependencies.** `git`, `perl` (with `POSIX`, already needed by `tools/script_gate.sh` in the fast tier), `sh`, `mktemp`, `sed`, `grep`. All are on `ubuntu-latest`, and `actions/checkout` gives a work tree, so the guard takes its `git ls-files` branch, as on the Studio. No AILANG, no Godot, no `import`.
 3. **It is a policy lint,** like `python-guard`, `audio-silent-guard` and `uid-guard`, which are already in `ci-fast` for the same reason: a merge rule that skips them lets the class back in. Both of 7ar's breaches came from attended PRs that merged green on the fast tier.
-4. **It does not duplicate the mutant loop.** The mutants and the Godot launch-builder check stay in `make test` (they need `import`), and `ai-live-guard`'s recipe is unchanged, so `make test` still runs the static half too (8 s, accepted to keep `ai-live-guard` self-contained).
+4. **It does not duplicate the mutant loop.** The mutants and the Godot launch-builder check stay in `make test` (they need `import`). `ai-live-guard` now runs the static half through the same bounded target instead of its own unbounded line, so `make test` runs it once, bounded.
+
+**The bound (revision 1, quorum r1 sol).** The fast tier must not hold an unbounded wait, and the observed 8 s is not a bound.
+- **Runner.** `$(SCRIPT_GATE)` (`tools/script_gate.sh`), not a bare `tools/deadline.sh`. It is what the fast tier's other non-Godot gates use: `observation-import-parity` and `survey-footprint-parity` (`mk/observations.mk`, in `ci-fast`) run `$(SCRIPT_GATE) <name> <log> 180 '<summary>' -- sh -c …`. In `make -n ci-fast` at the base (327 lines), the only bounded steps are those two `tools/script_gate.sh` calls and one `$(SG_SUP)` supervisor (`script-gate-selftest`, the same perl process-group code); `tools/deadline.sh` appears in none, and the policy lints (`python-guard`, `uid-guard`, `audio-silent-guard`) are unbounded (V4b). The gate is a process-group supervisor: at the deadline it sends TERM to the group, waits 2 s, then KILLs the group, and exits 142. It also passes only on rc 0 *and* the guard's own summary line, with its zero probe (a summary whose counts are zeroed must not match), so a guard that printed nothing, or `ok (0 …)`, would fail. A breach still fails the target, and the gate prints the guard's `A …` lines from its log (V22).
+- **Value.** `AI_GUARD_S ?= 120`: 15× the 8.0 s measured on the loaded Studio (V1). The headroom is for GitHub's 2-core runner, which ci.yml's own comment calls slow enough to shorten the PR replay (the 10k-tick interpreter run "takes ~75 s on this 2-core runner", `ci.yml:25`); the designer has no Linux reading of the guard (AC15 is that reading). 120 s is still far below anything that would hide a hang: it is 2% of the job's enclosing bound (below). It is a variable only so the stall drill can shorten it (`AI_GUARD_S=3`); `ci-fast` runs it at the default.
+- **Enclosing bound.** `.github/workflows/ci.yml` sets **no** `timeout-minutes` on the `headless` job or on any step (`grep -n timeout-minutes .github/workflows/*.yml`: no output, V4b). The only enclosing bound is GitHub Actions' documented default for a job without one, 360 minutes, which the designer did not measure. So the repo itself bounds nothing above this step, and the gate's 120 s is the real bound. Adding a job `timeout-minutes` is a CI-wide change for every step, not this row's (follow-up F2).
+- **Measured.** A stand-in guard that ignores TERM and starts a second TERM-ignoring sleeper is stopped at `AI_GUARD_S=3`: the target fails in 5 s with `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)`, and `pgrep` finds no sleeper afterwards; the same run's positive control (a sleeper of the same command line started by the drill) is found by the same `pgrep`, so "no survivor" is a real reading (AC17, V21). With the unbounded revision 0 recipe in place, the same drill reads `SURVIVED`: only the drill's own outer 60 s deadline stops it (`make_rc=124 secs=65`, V21).
 
 Not verified by the designer: the run on GitHub's Linux runner. The PR's own fast-tier run is that measurement (AC15).
 
 ### D3. A permanent mutant row for the lab.mk shape
 
-One row in `ai-live-guard`'s mutant table (`mk/ai.mk:474`, after the `_rogue2` row, before the `include` row):
+One row in `ai-live-guard`'s mutant table (after the `_rogue2` row, `mk/ai.mk:474` at the base, before the `include` row):
 
 ```make
 	  'mk/lab.mk@\z@\nlab-mutant:\n\tfor e in x; do $$(LAB_RUN) --entry $$$$e --args-json 0 sim/$$$$e.ail; done\n@A mk/lab.mk' \
@@ -121,7 +132,7 @@ A small POSIX helper, `tools/monitor_control_check.sh AUDIT_LOG SAMPLES_NDJSON P
 1. reads `N` from the audit's own summary line `^display-audit: samples=N `; no summary line → refuse;
 2. requires `N` to equal the line count of the samples file the playthrough wrote (the audit read every row);
 3. requires `N >= MONITOR_MIN_SAMPLES` (default 10). Why 10: `drop_one` hides the course face on the tenth sampled row (`tests/m4_playthrough_ship.gd:70`), so a shorter run cannot exercise it. A vacuous run (`samples=0 … new=0 … failures=0`) would otherwise satisfy `new=N failures=N` as 0 = 0;
-4. reads `F1` and `F10`, the `"frame"` of sampled rows 1 and 10 (the encoder writes `{"frame":…` first, V5), and refuses if either is missing;
+4. reads `F1` and `F10`, the frame numbers of sampled rows 1 and 10. Revision 1 (gemini-4-argon) no longer assumes `"frame"` is the row's first key. It takes the row's integer `"frame":N` key (`"frame":[0-9]+` followed by `,` or `}`) wherever it sits, and requires exactly one. The real rows carry five `"frame"` keys: the top-level integer one and four nested ones (`"frame":"galactic"` in the view, `"frame":0.0` in the Earth-feed rows), so a plain "anywhere" match would pick a nested one: a greedy match takes the last, `0`. A row with no integer `"frame"` key, or more than one, is refused by name (`sampled row R of FILE has K integer "frame" keys, want 1`), never guessed (V23);
 5. replaces `@N@`, `@2N@`, `@F1@`, `@F10@` in each pattern and greps it as before; on the first miss it prints `missing reason <pattern as substituted>` and exits 1.
 
 The four `ctl` lines change only where a number was pinned:
@@ -137,7 +148,7 @@ The four `ctl` lines change only where a number was pinned:
 
 **A vacuous-run negative control in the recipe.** Before the four playthroughs, the recipe feeds the helper a synthetic `samples=0` log with an empty samples file and requires the refusal `samples=0, fewer than …`. It costs no Godot and about 10 ms, and it fails the target if the floor is ever deleted or the helper is missing (V16). The `grep` for the floor's own message matters. With the floor deleted, step 4 still refuses the empty file, but for the wrong reason, and the control names that (V16).
 
-**Why a helper file rather than inline make shell.** The floor and the skew check must be killable by a test that needs no Godot. A file can be driven by synthetic inputs (Appendix B: six cases, two helper mutants each caught, V15). The inline loop could only be tested by mutating the harness and running four playthroughs. It is shell, the repo's language for glue; Python would be a new pipeline step (CLAUDE.md "Python").
+**Why a helper file rather than inline make shell.** The floor and the skew check must be killable by a test that needs no Godot. A file can be driven by synthetic inputs (Appendix B: nine cases; four helper mutants, each caught, V15, V23). The inline loop could only be tested by mutating the harness and running four playthroughs. It is shell, the repo's language for glue; Python would be a new pipeline step (CLAUDE.md "Python").
 
 ### Gates: where the touched files run
 
@@ -151,7 +162,7 @@ The four `ctl` lines change only where a number was pinned:
 
 ## Exact edits
 
-The edited text of every changed region, copied from the prototype commit measured in V17, is Appendix C. In summary (line numbers at `36f4ab4c`):
+The edited text of every changed region, copied from the revision 1 prototype commit measured in V20, is Appendix C. In summary (line numbers at `36f4ab4c`):
 
 | # | File:line | Before | After |
 |---|---|---|---|
@@ -160,7 +171,8 @@ The edited text of every changed region, copied from the prototype commit measur
 | E3 | `mk/lab.mk:70` | `\t  $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} …` | `\t  env -u AI_LIVE $(LAB_RUN) --bytecode --strict-bytecode --entry $${spec#*:} …` |
 | E4 | `tools/lab_probe.py:44` | `    return [ailang(), "run", …]` | comment line + `    return ["env", "-u", "AI_LIVE", ailang(), "run", …]` |
 | E5 | `tools/reach_probe.py:39–40` | two-line `cmd = [a.ailang, "run", "--quiet"] + (["--bytecode"] if bytecode else []) + \` / `["--caps", …, PROBE]` | `vm = ["--bytecode"] if bytecode else []`, comment line, one-line `cmd = ["env", "-u", "AI_LIVE", a.ailang, "run", "--quiet", *vm, "--caps", …, PROBE]` |
-| E6 | `mk/ai.mk:446` (after `ai-test:`) | — | the D2 block (8 lines) |
+| E6 | `mk/ai.mk:446` (after `ai-test:`) | — | the D2 block (12 lines: comment, `AI_GUARD_S ?= 120`, the gated target, `ci-fast:` edge) |
+| E6b | `mk/ai.mk:449–450` (the `ai-live-guard` header) | `ai-live-guard: import   ## …` and its first recipe line `\t@sh tools/ai_live_guard.sh .` | `ai-live-guard: import ai-live-guard-static   ## …`; the line is removed |
 | E7 | `mk/ai.mk:474` (after `_rogue2`) | — | the D3 row |
 | E8 | `mk/earth-link.mk:26` (after the 7aj comment) | — | 2 comment lines naming the tokens |
 | E9 | `mk/earth-link.mk:29` (first recipe line) | — | the vacuous-run control (3 recipe lines, D4) |
@@ -175,21 +187,23 @@ Run from the clone root with the pinned runtime: `export PATH=$PWD/runtime/bin:$
 | AC | Checks | Command | Expected (built) | Baseline |
 |---|---|---|---|---|
 | AC1 | The static guard passes | `sh tools/deadline.sh 120 sh tools/ai_live_guard.sh .` | `ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings)`, rc 0 | 5 `A` lines (P1 table), rc 1 (V1) |
-| AC2 | The static guard is in the fast tier | `test "$(sh tools/deadline.sh 60 make -n ci-fast 2>/dev/null \| grep -cx 'sh tools/ai_live_guard.sh .')" -eq 1` | rc 0 | count 0, rc 1 (V4) |
-| AC3 | The new target runs alone | `sh tools/deadline.sh 120 make ai-live-guard-static` | the AC1 line, rc 0 | no such target |
+| AC2 | The static guard is in the fast tier, bounded | `test "$(sh tools/deadline.sh 60 make -n ci-fast 2>/dev/null \| grep -c '^sh tools/script_gate.sh ai-live-guard-static .* 120 .* -- sh tools/ai_live_guard.sh \.$')" -eq 1` | rc 0 | count 0, rc 1 (V4) |
+| AC3 | The new target runs alone, under its gate | `sh tools/deadline.sh 200 make ai-live-guard-static` | `script-gate: ai-live-guard-static ok: ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 6 s of 120 s)` (seconds vary), rc 0 | no such target |
 | AC4 | The whole guard, its 25 mutants and the launch builder | `sh tools/deadline.sh 900 make ai-live-guard > $D/alg.log 2>&1; echo rc=$?; grep -c '^guard mutant caught' $D/alg.log; grep -x 'guard mutant caught: mk/lab.mk (A mk/lab.mk)' $D/alg.log; tail -1 $D/alg.log` | `rc=0`; `25`; the lab.mk line; `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default) …` | rc 2 at the static step (V1) |
 | AC5 | Killing mutants: each fixed site reverted in a scratch copy is caught | `for m in guard-lab guard-reach guard-labprobe; do sh tools/deadline.sh 300 bash $D/d7ar_drill.sh $m $ROOT \| tail -1; done` | `d7ar-drill: guard-lab KILLED`, `… guard-reach KILLED`, `… guard-labprobe KILLED` | `mutation guard-lab did not apply`, rc 3 (V17) |
 | AC6 | The fixed lab lines still run | `sh tools/deadline.sh 600 make lab-parity` | 4 `lab-parity: … (strict VM = interpreter)` lines and `lab-parity: 4 checks NOT on the strict VM …`, rc 0 | the same (unchanged behaviour) (V12) |
 | AC7 | The fixed probes still spawn AILANG | `AILANG=ailang sh tools/deadline.sh 120 python3 -I -c 'import sys; sys.path.insert(0, "tools"); import lab_probe as l; p = l.start("draws", 2000); print(p.args[:4]); print(l.finish(p)[0])'` and `sh tools/deadline.sh 120 python3 -I -c 'import sys, types; sys.path.insert(0, "tools"); import reach_probe as r; print(r.ail(types.SimpleNamespace(ailang="ailang"), "drawMain", {"seed": 1, "n": 0})[0])'` | `['env', '-u', 'AI_LIVE', 'ailang']` then `draws n=2000 accepted=91 first=1 mix=6578220370666750`; and `0.0`; both rc 0 | the same values without the `env` prefix (V11) |
 | AC8 | The monitor controls are green | `sh tools/deadline.sh 590 make display-audit-monitor-controls > $D/mc.log 2>&1; echo rc=$?; grep '^display monitor' $D/mc.log` | `rc=0`; four `display monitor control <m>: rejected` lines; `display monitor controls: 4 rejected` | rc 2; `unbound missing reason …new=46…`, `stale missing reason …mismatches=46…`, `2 rejected` (V5) |
-| AC9 | Killing mutants: each control still rejects only every frame or the right frame, and the floor is live | `for m in unbound-partial stale-partial drop-row floor; do sh tools/deadline.sh 600 bash $D/d7ar_drill.sh $m $ROOT \| tail -1; done` | `d7ar-drill: unbound-partial KILLED`, `stale-partial KILLED`, `drop-row KILLED`, `floor KILLED` (the partial modes also require the other three controls still rejected: `3 rejected`) | not run: the base is already red (V5, `2 rejected`), so the partial modes cannot show `3 rejected` there and would report `SURVIVED` |
+| AC9 | Killing mutants: each control still rejects only every frame or the right frame, and the floor is live | `for m in unbound-partial stale-partial drop-row floor; do sh tools/deadline.sh 600 bash $D/d7ar_drill.sh $m $ROOT \| tail -1; done` | `d7ar-drill: unbound-partial KILLED`, `stale-partial KILLED`, `drop-row KILLED`, `floor KILLED` (the partial modes also require the other three controls still rejected: `3 rejected`; `floor` reads `…not refused by the samples floor: sampled row 1 of … has 0 integer "frame" keys, want 1`) | not run: the base is already red (V5, `2 rejected`), so the partial modes cannot show `3 rejected` there and would report `SURVIVED` |
 | AC10 | Robustness: a count change keeps the controls green | `sh tools/deadline.sh 600 bash $D/d7ar_drill.sh cadence $ROOT \| tail -1` | `d7ar-drill: cadence PASSED (samples=60)` | not run: the pins expect 46, so the base would report `FAILED` |
-| AC11 | The helper refuses a vacuous, short, skewed or summary-less run, and a partial one | `sh tools/deadline.sh 60 sh $D/d7ar_helper_cases.sh $ROOT` | six `case …: ok` lines, `d7ar helper cases: 0 wrong`, rc 0 | no helper (V15) |
+| AC11 | The helper refuses a vacuous, short, skewed or summary-less run, a partial one, and a row with zero or two integer `"frame"` keys; it accepts the frame key anywhere | `sh tools/deadline.sh 60 sh $D/d7ar_helper_cases.sh $ROOT` | nine `case …: ok` lines (vacuous, short, skew, nosummary, partial, accepted, keyorder, ambiguous, noframe), `d7ar helper cases: 0 wrong`, rc 0 | no helper (V15, V23) |
 | AC12 | No pinned count or frame remains | `git grep -nE '(new\|mismatches\|failures)=(4[0-9]\|9[0-9])\|frame=(1\|36) (clocks\|course)' -- mk Makefile tests tools; test $? -eq 1` | no output, rc 0 | the four `mk/earth-link.mk:40–43` hits |
 | AC13 | Policy lints on the touched files | `for t in python-guard uid-guard script-gate-lint; do sh tools/deadline.sh 120 make $t \|\| exit 1; done; git diff --check 36f4ab4c HEAD; sh -n tools/monitor_control_check.sh` (and `shellcheck tools/monitor_control_check.sh` where installed) | `python-guard: ok (25 allowlisted, …)`, `uid-guard: ok (470 .uid files)`, `script-gate-prereqs: ok …`; no diff-check output; rc 0 | same counts (V18) |
 | AC14 | Scope | `test "$(git diff --name-only 36f4ab4c HEAD -- . ':!design_docs' ':!.ailang' \| tr '\n' ' ')" = "mk/ai.mk mk/earth-link.mk mk/lab.mk tools/lab_probe.py tools/monitor_control_check.sh tools/reach_probe.py "` | rc 0 | empty |
 | AC15 | The GitHub fast tier on the PR, including `ai-live-guard-static` on Linux | `gh pr checks <PR>` (bounded: `sh tools/deadline.sh 60 gh pr checks <PR>`) | `fast tier … pass` | not run by the designer |
-| AC16 | Tree clean after the drills | `git status --porcelain` | empty | empty (V17) |
+| AC16 | Tree clean after the drills | `git status --porcelain` | empty | empty (V17, V20) |
+| AC17 | The fast-tier bound stops a stalled guard and leaves nothing running (quorum r1 sol) | `sh tools/deadline.sh 120 bash $D/d7ar_drill.sh stall $ROOT` | `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)…`; `d7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0` (secs below 30); `d7ar-drill: stall KILLED`, rc 0 | with revision 0's unbounded recipe: `make_rc=124 secs=65 survivors=0`, `stall SURVIVED`, rc 1 (only the drill's outer 60 s deadline stopped it, V21) |
+| AC18 | The gate still fails, and still shows the breach, on a real breach | `sh tools/deadline.sh 400 bash $D/d7ar_drill.sh static-breach $ROOT` | `ai-live-guard: A mk/lab.mk:63: …`; `script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line …`; `d7ar-drill: static-breach KILLED`, rc 0 | `mutation static-breach did not apply`, rc 3 (no `env -u AI_LIVE` to remove) |
 
 The next nightly `rig/full` on main should not name `ai-live-guard` or `display-audit-monitor-controls`. That is the outcome this row is for, but it is not a merge gate (merges never wait on the rig).
 
@@ -203,36 +217,49 @@ The next nightly `rig/full` on main should not name `ai-live-guard` or `display-
 | static guard | `reach_probe.py` with `env` on the first of two lines only | V10 `M-reach-split` (why E5 is one line) | `A tools/reach_probe.py:42: …`, rc 1 |
 | `ai-live-guard` table (D3) | a new uncleared `$(LAB_RUN) --entry $$e sim/$$e.ail` recipe in `mk/lab.mk` | AC4 | `guard mutant caught: mk/lab.mk (A mk/lab.mk)` |
 | `ci-fast` edge (D2) | the `ci-fast: ai-live-guard-static` line removed | AC2 | count 0 |
+| the bound (D2, r1) | a stand-in guard that ignores TERM and sleeps, with a TERM-ignoring child, at `AI_GUARD_S=3` | AC17 `stall` | `FAIL; timeout after 3 s (rc 142)`, `make_rc=2 secs=5 survivors=0`, positive control `control_seen=1` |
+| the bound (D2, r1) | the recipe reverted to revision 0's bare `@sh tools/ai_live_guard.sh .` | AC17 `stall` reads `SURVIVED` | `make_rc=124 secs=65`: the gate is what bounds it |
+| the gate's pass predicate | a real breach (`mk/lab.mk:63` reverted) through the gated target | AC18 `static-breach` | `A mk/lab.mk:63` shown; `FAIL; rc 1, want 0; no summary line` |
 | `unbound` (`new=@N@ failures=@N@`) | the stray label added on sampled row 2, not 1 (misses one frame) | AC9 `unbound-partial` | `new=44 failures=44` with `samples=45`: `unbound missing reason ^display-audit: samples=45 .* new=45 .* failures=45$`, `3 rejected` |
 | `stale` (`mismatches=@N@ failures=@2N@`) | the stale text skipped on the first sampled frame | AC9 `stale-partial` | `mismatches=44 failures=88`: `stale missing reason …mismatches=45 .* failures=90$`, `3 rejected` |
 | `drop_one` (`frame=@F10@`) | the face hidden on row 11, not 10 | AC9 `drop-row` | `drop_one missing reason ^FAIL monitor-coverage frame=36 course$`, `3 rejected` |
-| vacuous-run control (recipe) | the helper's floor line deleted | AC9 `floor` | `FAIL the vacuous run was not refused by the samples floor: no frame on sampled row 1 or 10 …`, in 2–3 s, before any playthrough |
+| vacuous-run control (recipe) | the helper's floor line deleted | AC9 `floor` | `FAIL the vacuous run was not refused by the samples floor: sampled row 1 of … has 0 integer "frame" keys, want 1` (revision 0's helper: `no frame on sampled row 1 or 10 …`), in 2–3 s, before any playthrough |
 | vacuous-run control | the helper missing | V16 | `FAIL the vacuous run was not refused by the samples floor: ` (empty reason) |
 | helper floor | `samples=0` / `samples=9` | AC11 `vacuous`, `short` | `samples=0, fewer than 10 (a vacuous run)` / `samples=9, …` |
 | helper skew | the audit read 11 rows of a 12-row file | AC11 `skew` | `the audit read samples=11 but … has 12 lines` |
 | helper | no summary line | AC11 `nosummary` | `no display-audit summary in …` |
 | helper | `new=11` with `samples=12` | AC11 `partial` | `missing reason ^display-audit: samples=12 .* new=12 .* failures=12$` |
-| AC11 itself | floor deleted / skew check disabled in the helper | V15 | `2 wrong` (vacuous, short) / `1 wrong` (skew) |
+| helper frame key (r1) | `"frame"` last, after nested float and string `"frame"` keys | AC11 `keyorder` | accepted, `F10` = 40 |
+| helper frame key (r1) | two integer `"frame"` keys / none | AC11 `ambiguous` / `noframe` | `has 2 integer "frame" keys, want 1` / `has 0 …` |
+| AC11 itself | floor deleted / skew check disabled / uniqueness relaxed to "first integer key" / the revision 0 helper (frame must be first) | V15, V23 | `2 wrong` (vacuous, short) / `1 wrong` (skew) / `1 wrong` (ambiguous) / `3 wrong` (keyorder, ambiguous, noframe) |
 | positive | sampling every 3rd frame (`N` 45 → 60) | AC10 `cadence` | all four rejected, rc 0, `samples=60` |
 
 ## Sub-milestones and estimates
 
-One milestone, **7ar-1**, one commit (or two: D1–D3 and D4 are independent), 6 files, +53/−11. Order: apply E1–E12; run AC1–AC4, AC6–AC8 and AC11–AC14; then the drills (AC5, AC9, AC10: about 4.5 minutes of headless playthroughs in total); then AC16. Wall time about 15 minutes; the slowest steps are `make ai-live-guard` (≈200 s) and the five control runs (≈52 s each).
+One milestone, **7ar-1**, one commit (or two: D1–D3 and D4 are independent), 6 files, +64/−13. Order: apply E1–E12 (with E6b); run AC1–AC4, AC6–AC8 and AC11–AC14; then the drills (AC5, AC9, AC10, AC17, AC18: about 4.5 minutes of headless playthroughs in total); then AC16. Wall time about 15 minutes; the slowest steps are `make ai-live-guard` (≈200 s) and the five control runs (≈52 s each).
 
 ## Risks and mitigations
 
 - **The static guard fails on Linux for a portability reason.** It uses only POSIX `sh`, `perl`, `git`, `mktemp`, `sed` and `grep -E`, and the work-tree branch (`git ls-files`). AC15 is the measurement; if it fails, the fix is in the guard's portability, not a removal from `ci-fast`.
 - **The fast tier grows by about 8 s.** Accepted (D2). It is about 1% of the tier.
+- **120 s is too tight on a slow runner.** The guard would then fail by its timeout, loudly (`timeout after 120 s (rc 142)`), not pass. The fix would be a measured new `AI_GUARD_S`, not removing the gate. At 15× the Studio reading this is not expected.
+- **The gate's Godot wording.** On a timeout `tools/script_gate.sh` adds its fixed hint `a runtime error before quit() leaves Godot running`, which is wrong for this shell guard. The same text already appears for the observation gates. The target name and `timeout after N s (rc 142)` are unambiguous. Making the hint conditional is follow-up F3, not this row's.
 - **A future walk change drops the crew playthrough below 10 samples.** The floor then fails the controls by name (`samples=9, fewer than 10`). That is correct: below 10 rows `drop_one` cannot run. The fix would be in the playthrough script, and the message says so.
-- **The samples encoder reorders keys so `"frame"` is not first.** The helper then refuses with `no frame on sampled row 1 or 10` (fails closed, by name); it never passes silently.
+- **The samples encoder reorders keys, or a nested integer `"frame"` appears.** Reordering is accepted (revision 1, `keyorder`). A second integer `"frame"` key makes the row ambiguous, and the helper refuses it by name (`ambiguous`), so it never guesses.
 - **An open attended PR adds another uncleared variable entry.** It now fails its fast tier (D2). None of the three open PRs adds one today (V19: #435's new `--entry` lines are literal).
 - **Running the drills leaves the tree dirty.** The drill restores the harness and the helper with `git checkout` on exit, and refuses (rc 3) if a mutation did not apply. AC16 checks.
+
+## Follow-ups (out of scope)
+
+- **F1.** The `ai-live-guard` mutant loop runs the guard script directly on each scratch copy, 25 times at about 7 s each. These calls are bounded only by the nightly rig's 7,200 s watchdog. They are in `make test`, not in the fast tier.
+- **F2.** `.github/workflows/ci.yml` sets no `timeout-minutes` on any job. A job-level bound for the fast tier would cap every step, not just this one. That is a CI-wide change, so it belongs to its own row.
+- **F3.** `tools/script_gate.sh`'s timeout message always names Godot. It could name the command instead.
 
 ## Open questions for the user
 
 None. The loop decided these itself (recorded here):
 1. **Fix the call sites, not the guard.** The repo's convention covers all five; widening the sim exception would loosen a security guard that was hardened against exactly this kind of exception (D1).
-2. **The static guard goes into `ci-fast`.** It is cheap, Godot-free, and a policy lint like the three already there; both of 7ar's breaches came through fast-tier merges (D2). The target lives in `mk/ai.mk` because the `Makefile` is held.
+2. **The static guard goes into `ci-fast`, under `$(SCRIPT_GATE)` with `AI_GUARD_S ?= 120`.** It is cheap, Godot-free, and a policy lint like the three already there; both of 7ar's breaches came through fast-tier merges (D2). The target lives in `mk/ai.mk` because the `Makefile` is held. The runner is the one the fast tier's other non-Godot gates use, and the bound is 15× the measurement (D2, "The bound").
 3. **Derive `frame=1` and `frame=36` too,** although they still pass. They are the same brittleness, and they would break the same way at the next walk-timing change (D4).
 4. **Floor 10, not "at least 1".** It is tied to the `drop_one` mutant's row, not to today's 45, so a shorter or longer voyage does not move it.
 
@@ -240,6 +267,17 @@ None. The loop decided these itself (recorded here):
 
 - E1–E12 (Appendix C), one PR.
 - After the evaluation passes: this doc moves to `design_docs/implemented/r1/`, the README index gains its row, and the charter row 7ar and issue #392 are updated (controller).
+
+## Quorum verification log
+
+**Round 1** (on revision 0, commit `d780b01f`; cost $0.1170): **BLOCKED**.
+
+| Seat | Verdict | Finding | Disposition in revision 1 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "D2 adds an unbounded guard invocation to the required PR fast tier: ai-live-guard-static directly executes `sh tools/ai_live_guard.sh .` without a deadline. The document verifies its observed runtime but does not verify an enclosing CI timeout or another enforced bound. Acceptance-test wrappers do not bound the production CI invocation, so bounded-waits compliance is not established." | **Applied.** `ai-live-guard-static` runs the guard under `$(SCRIPT_GATE)` (the fast tier's existing process-group runner, as `mk/observations.mk`'s gates use it) with `AI_GUARD_S ?= 120`, 15× the measured 8 s (D2, "The bound"). `ai-live-guard` uses it instead of its own unbounded line (E6b). The enclosing bound was checked: `ci.yml` sets no `timeout-minutes` (V4b), so the gate is the real bound. New stall drill AC17: a TERM-ignoring stand-in guard with a TERM-ignoring child, at `AI_GUARD_S=3`, is stopped in 5 s with no survivor, with a `pgrep` positive control in the same run; the revision 0 recipe reads `SURVIVED` under the same drill (V21). New AC18: a breach still fails through the gate and is shown (V22). |
+| gemini-4-argon | PASS | non-blocking: in `tools/monitor_control_check.sh`, match `"frame":([0-9]+)` anywhere on the line rather than assuming `"frame"` is the first key | **Applied, with one refinement.** The rows carry four nested `"frame"` keys (a string and three floats, V23), so a plain match anywhere can pick the wrong one. The helper takes the integer `"frame"` key wherever it sits and requires exactly one; zero or two are refused by name. Appendix B gains `keyorder` (accepted), `ambiguous` and `noframe` (refused); the helper stays fail-closed, and the cases are green (V23). |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
 
 ## Verification log
 
@@ -251,21 +289,26 @@ All readings are on `/Users/voightkampff/dev/sunholo-data/stapledons-godot-iter9
 | V2 | The repo's convention for variable entries | `git grep -n -- '-u AI_LIVE' -- '*.py' '*.mk' Makefile '*.sh' '*.gd'`; `git grep -n 'AI_NOKEYS' -- Makefile mk` | make: `mk/worlds.mk:12–13` (`env -u AI_LIVE $(WORLDS_RUN) … --entry $$2 sim/$$1.ail`), `Makefile:287,288,297,840,841,1484,1485`, `mk/ai.mk:72,74`, `mk/ism.mk:4` (macro form, used only with literal entries); Python: `tools/rng_ref.py:130–131`, `tools/test_catalogue_bytes.py:28–29` (`["env", "-u", "AI_LIVE", …]` + the comment). `$(AI_NOKEYS)` is used only for `ai/` runs |
 | V3 | Where the five lines came from | `git log -L62,63:mk/lab.mk`; `git log -S… -- tools/lab_probe.py tools/reach_probe.py`; `git log --first-parent 36f4ab4c` | `5007667a` (UL3a, merge #445 `2c84f2c2`), `1fd16832` (UL0a, merge #441 `85ca5470`), `442b5694` (RE0, merge #440 `c7a5815d`, after the nightly) |
 | V4 | Fast tier at HEAD | `make -n ci-fast > f; grep -c ai_live_guard f; grep -c -- --import f`; `.github/workflows/ci.yml:59–61`; `Makefile:66–70` | `0`; `0` (no Godot import in the fast tier); ci.yml runs `make ci-fast` on PRs and pushes; ci-fast edges also live in `mk/*.mk` (`mk/observations.mk:22`, `mk/star-surfaces.mk:15`, `mk/script-gates.mk:27`) |
+| V4b | Bounds in the fast tier (revision 1) | `grep -n timeout-minutes .github/workflows/*.yml`; in V4's `make -n ci-fast` output: `grep -n 'script_gate.sh\|tools/deadline.sh\|perl -e .use POSIX'` | no `timeout-minutes` in any workflow (no output). Bounded steps: `sh tools/script_gate.sh observation-import-parity … 180 …` (line 8), `sh tools/script_gate.sh survey-footprint-parity … 180 …` (line 23), and `script-gate-selftest`'s `$(SG_SUP)` perl supervisor (line 327 of 327); `tools/deadline.sh`: 0 |
 | V5 | Monitor controls at HEAD | `sh tools/deadline.sh 590 make display-audit-monitor-controls` (52 s); then `wc -l` and `sed -n 1p/10p` on each `monitor-<m>/display_samples.ndjson` | rc 2, `2 rejected`; `unbound … samples=45 … new=45 … failures=45`, `stale … mismatches=45 … failures=90`, `drop_one … failures=1` with `FAIL monitor-coverage frame=36 course`; every samples file 45 lines; row 1 `{"frame":1`, row 10 `{"frame":36` |
 | V6 | Cause of 46 → 45, first-party | `make playthrough SCRIPT=tests/playthrough_crew.json` at HEAD, then with only `assets/ship_demo/manifest.json` from `3ce93c9d^1` (the two pre-7ae `use_m` points `±12.912, 11.626`), restored after | HEAD: rc 0, 45 lines (11 s); pre-7ae working points: rc 0, **46** lines (9 s); `git status` clean after |
 | V7 | Other pins | `git grep -nE '(new\|failures\|mismatches\|samples\|frame)=[0-9]+' -- tests mk Makefile tools` (values ≠ 0, 1); `git grep -nwE '46\|92\|138\|13708' -- mk Makefile tests/*.gd tests/*.sh tests/*.json`; `git grep -n playthrough_crew -- mk Makefile tests tools` | only `mk/earth-link.mk:42,43`; the other hits are unrelated (`Makefile:671` golden help text "D-92", tests' D-92/RS-46/feed fixtures/Proxima's declination); `playthrough_crew` is consumed by `mk/earth-link.mk:33` and `mk/m45.mk:181` (`display-audit-crew`: `new=0 … failures=0`, count-free) |
-| V8 | Static guard on the candidate | E1–E7 applied in place: `sh tools/deadline.sh 120 sh tools/ai_live_guard.sh .`; `make -n ci-fast \| grep -n ai_live_guard`; `make ai-live-guard-static` | `ok (97 …, 548 …)`, rc 0, `real 8.03`; the dry run names `sh tools/ai_live_guard.sh .` once; target rc 0. With the helper tracked (V17): `ok (98 make/shell/CI files, 549 test/tool scripts, …)` |
-| V9 | Whole guard on the candidate | `sh tools/deadline.sh 900 make ai-live-guard` | rc 0 in 201 s; 25 `guard mutant caught`, including `guard mutant caught: mk/lab.mk (A mk/lab.mk)`; `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default)` (194 s and 24 caught before D3's row) |
+| V8 | Static guard on the candidate (revision 0) | E1–E7 applied in place: `sh tools/deadline.sh 120 sh tools/ai_live_guard.sh .`; `make -n ci-fast \| grep -n ai_live_guard`; `make ai-live-guard-static` | `ok (97 …, 548 …)`, rc 0, `real 8.03`; the dry run names `sh tools/ai_live_guard.sh .` once; target rc 0. With the helper tracked (V17): `ok (98 make/shell/CI files, 549 test/tool scripts, …)` |
+| V9 | Whole guard on the candidate (revision 0) | `sh tools/deadline.sh 900 make ai-live-guard` | rc 0 in 201 s; 25 `guard mutant caught`, including `guard mutant caught: mk/lab.mk (A mk/lab.mk)`; `script-gate: ai-live-guard ok: ai settings: ok (9 passed, 0 failures; launch_default)` (194 s and 24 caught before D3's row) |
 | V10 | Guard mutants on scratch copies (the mutant loop's copy recipe) | revert one fixed line in `$G`, `sh tools/ai_live_guard.sh $G` | `M-lab63`: `A mk/lab.mk:63 …`, rc 1. `M-reach`: `A tools/reach_probe.py:41 …`, rc 1. `M-labprobe`: `A tools/lab_probe.py:45 …`, rc 1. `M-reach-split` (env on the first of two lines): `A tools/reach_probe.py:42 …`, rc 1 |
 | V11 | The probes after E4/E5 | AC7's two commands; `AI_LIVE=1 sh -c 'env -u AI_LIVE sh -c "echo AI_LIVE=\${AI_LIVE-unset}"'`; `grep -c '"command"\|env' data/lab/probe*.json data/reach/*.json` | `['env', '-u', 'AI_LIVE', 'ailang']`, `('draws n=2000 accepted=91 first=1 mix=6578220370666750', 0.477777, 106.5)`; `('0.0', {… 'cpu_s': 2.465, 'peak_rss_mb': 304.5 …})`; `AI_LIVE=unset`; 0 in every probe file |
 | V12 | `lab-parity` with E1–E3 | `sh tools/deadline.sh 600 make lab-parity` | rc 0 in 88 s; `scenarioVm scenario-ok`, `scenarioProbe 18744 bytes`, `statsVm stats-ok`, `statsProbe 10722 bytes`, `4 checks NOT on the strict VM …` |
 | V13 | Controls on the candidate | `sh tools/deadline.sh 590 make display-audit-monitor-controls` (twice) | rc 0, 52 s and 50 s; `4 rejected`; the vacuous control's `why.txt`: `samples=0, fewer than 10 (a vacuous run)` |
 | V14 | Harness mutants (in place, restored with `git checkout`) | `unbound_row2`, `stale_after1`, `drop_row11`, `cadence3` (Appendix A's perl expressions), each then `make display-audit-monitor-controls` | `unbound_row2`: rc 2, unbound `new=44 failures=44` → `missing reason …samples=45 .* new=45 .* failures=45$`, 3 rejected. `stale_after1`: rc 2, `mismatches=44 failures=88` → `missing reason …failures=90$`, 3 rejected. `drop_row11`: rc 2, `missing reason ^FAIL monitor-coverage frame=36 course$`, 3 rejected. `cadence3`: rc 0, `samples=60`, unbound `new=60 failures=60`, stale `mismatches=60 failures=120`, drop_one `frame=27`, 4 rejected |
-| V15 | Helper on synthetic inputs | Appendix B on a copy of the helper; then with the floor line deleted, then with the skew check disabled | `0 wrong`, rc 0 (all six cases). Floor deleted: `2 wrong` (vacuous and short refused for `no frame on sampled row 1 or 10`, the wrong reason). Skew disabled: `1 wrong` (skew accepted, rc 0) |
-| V16 | Vacuous-run control mutants | the floor line deleted from the helper, then the helper moved away; `make display-audit-monitor-controls` | floor deleted: `FAIL the vacuous run was not refused by the samples floor: no frame on sampled row 1 or 10 …`, rc 2, 2 s. Helper missing: `FAIL the vacuous run was not refused by the samples floor: ` (empty), rc 2 |
-| V17 | Prototype commit and drills | E1–E12 committed on a temporary local branch (`9a3baa47`, `6 files changed, 53 insertions(+), 11 deletions(-)`); Appendix A, every mode; branch deleted afterwards | `guard-lab`, `guard-reach`, `guard-labprobe` KILLED; `floor` KILLED (3 s); `unbound-partial` (52 s), `stale-partial` (53 s), `drop-row` (50 s) KILLED with `3 rejected`; `cadence PASSED (samples=60)` (57 s); `git status --porcelain` empty after each. Pristine tree: `d7ar-drill: mutation guard-lab did not apply`, rc 3 |
+| V15 | Helper on synthetic inputs (revision 0 cases; superseded by V23) | Appendix B on a copy of the helper; then with the floor line deleted, then with the skew check disabled | `0 wrong`, rc 0 (all six cases). Floor deleted: `2 wrong` (vacuous and short refused for `no frame on sampled row 1 or 10`, the wrong reason). Skew disabled: `1 wrong` (skew accepted, rc 0) |
+| V16 | Vacuous-run control mutants (revision 0 helper; the revision 1 reading is in V20) | the floor line deleted from the helper, then the helper moved away; `make display-audit-monitor-controls` | floor deleted: `FAIL the vacuous run was not refused by the samples floor: no frame on sampled row 1 or 10 …`, rc 2, 2 s. Helper missing: `FAIL the vacuous run was not refused by the samples floor: ` (empty), rc 2 |
+| V17 | Revision 0 prototype commit and drills | E1–E12 committed on a temporary local branch (`9a3baa47`, `6 files changed, 53 insertions(+), 11 deletions(-)`); Appendix A, every mode; branch deleted afterwards | `guard-lab`, `guard-reach`, `guard-labprobe` KILLED; `floor` KILLED (3 s); `unbound-partial` (52 s), `stale-partial` (53 s), `drop-row` (50 s) KILLED with `3 rejected`; `cadence PASSED (samples=60)` (57 s); `git status --porcelain` empty after each. Pristine tree: `d7ar-drill: mutation guard-lab did not apply`, rc 3 |
 | V18 | Lints on the candidate | `git diff --check`; `make script-gate-lint python-guard uid-guard`; `sh -n` and `shellcheck` on the helper | rc 0; `script-gate-prereqs: ok (5 pairs …)`, `python-guard: ok (25 allowlisted, 0 awaiting AILANG port)`, `uid-guard: ok (470 .uid files)`; `sh -n` rc 0; shellcheck clean |
 | V19 | Holds | `gh pr list --state open`; `gh pr view N --json files` against the touched files; `gh pr diff 435` for new `--entry` lines | open: #435, #380, #373; each holds `Makefile`, none holds `mk/ai.mk`, `mk/lab.mk`, `mk/earth-link.mk`, `tools/lab_probe.py`, `tools/reach_probe.py` or `tools/ai_live_guard.sh`. #435's added `--entry` lines are literal (`funnel`, `cell`, `equivalence`, `funnelAt`) |
+| V20 | Revision 1 prototype commit and gates | D2's gated target, E6b and the revision 1 helper committed on a temporary local branch (`c8b60f40`, `6 files changed, 64 insertions(+), 13 deletions(-)`; deleted afterwards): `make ai-live-guard-static`; `make -n ci-fast \| grep -c '^sh tools/script_gate.sh ai-live-guard-static .* -- sh tools/ai_live_guard.sh \.$'`; `make ai-live-guard`; `make script-gate-lint python-guard uid-guard`; `git diff --check 36f4ab4c HEAD`; `make display-audit-monitor-controls`; Appendix A modes | `script-gate: ai-live-guard-static ok: ai-live-guard: ok (98 make/shell/CI files, 549 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 6 s of 120 s)`; count `1`; `ai-live-guard` rc 0 in 207 s, the gate's `ok` line first, 25 `guard mutant caught`, launch builder ok; lint rc 0, `25 allowlisted`, `470 .uid files`; diff-check rc 0; controls rc 0 in 51 s, `4 rejected`. Drills: `guard-lab` (9 s), `guard-reach` (6 s), `guard-labprobe` (7 s) KILLED; `floor` KILLED (3 s), reason now `sampled row 1 of … has 0 integer "frame" keys, want 1`; `drop-row` (53 s) and `unbound-partial` (53 s) KILLED with `3 rejected`; `cadence PASSED (samples=60)` (54 s). `stale-partial` was not re-run: its path did not change after V17. `git status --porcelain` was empty after each |
+| V21 | The stall drill (quorum r1 sol) | `bash d7ar_drill.sh stall ROOT` (Appendix A), on the uncommitted revision 1 tree and again on `c8b60f40`; then with `mk/ai.mk`'s gated line swapped back to revision 0's `@sh tools/ai_live_guard.sh .`, restored after | revision 1, both runs: `script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142): …`, `d7ar-drill: stall before=0 control_seen=1 control_cleared=0 make_rc=2 secs=5 survivors=0`, `stall KILLED`, rc 0, about 7 s in all. Revision 0 recipe: `before=0 control_seen=1 control_cleared=0 make_rc=124 secs=65 survivors=0`, `stall SURVIVED`, rc 1. `pgrep -f '^sleep 3191$' \| grep -c .` read `0` after the last run |
+| V22 | A breach through the gate | `bash d7ar_drill.sh static-breach ROOT` on `c8b60f40` | `ai-live-guard: A mk/lab.mk:63: …`, `script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line matching ^ai-live-guard: ok …`, `static-breach KILLED`, rc 0 |
+| V23 | The frame key (gemini, non-blocking) | `awk '{ n = gsub(/"frame":/, "&"); … }'` over the four control samples files; `sed -n 10p … \| grep -oE '"frame":[^,}]*'`; Appendix B on the revision 1 helper, on revision 0's helper, and on three revision 1 helper mutants; the revision 1 helper on the real `unbound` and `unrefreshed` logs | every row of all four files (45 each) has 5 `"frame":` keys: `"frame":36` (row 10, top level), `"frame":"galactic"` and three `"frame":0.0`. Revision 1: 9 cases ok, `0 wrong`, rc 0. Revision 0's helper: `3 wrong` (keyorder refused, ambiguous accepted, noframe refused for the old reason). Floor deleted: `2 wrong`. Skew check disabled: `1 wrong`. Uniqueness relaxed to the first integer key: `1 wrong` (ambiguous accepted). Real logs: rc 0 for both |
 
 Every tracked file mutated for measurement was restored with `git checkout`; the temporary branch was deleted. At the end, `git status --porcelain`, `git diff --stat` and `git diff --cached --stat` are empty. `make import` left no untracked files in this clone.
 
@@ -273,7 +316,9 @@ Every tracked file mutated for measurement was restored with `git checkout`; the
 - AC15, the GitHub fast tier on Linux with the new step.
 - The controller's bisect points other than HEAD and the 7ae working points (V6 confirms the cause directly on HEAD).
 
-## Appendix A: the drill (`d7ar_drill.sh`, sha256 `137537ba34afbb56…`)
+## Appendix A: the drill (`d7ar_drill.sh`, revision 1, sha256 `ea8bfdeee19b7329…`)
+
+Revision 1 adds the `stall` and `static-breach` modes; the other modes are unchanged from revision 0 (`137537ba34afbb56…`).
 
 ```bash
 #!/bin/bash
@@ -282,6 +327,10 @@ Every tracked file mutated for measurement was restored with `git checkout`; the
 #   unbound-partial | stale-partial | drop-row : a monitor mutant that hits fewer frames, or another row
 #   floor : the samples floor deleted from tools/monitor_control_check.sh
 #   cadence : POSITIVE, the harness samples every 3rd frame (N changes); the controls must stay green
+#   stall : a stand-in guard that ignores TERM and sleeps (with a child) past AI_GUARD_S=3 in a scratch copy;
+#           ai-live-guard-static must fail by its timeout within 30 s and leave no sleeper (pgrep, with a
+#           positive control in the same run)
+#   static-breach : mk/lab.mk:63 reverted in a scratch copy; ai-live-guard-static must fail and show the A line
 # Prints "d7ar-drill: MODE KILLED" (or "PASSED" for cadence) and exits 0; 1 if the mutant survived;
 # 3 if the mutation did not apply. Every tracked file it touches is restored (git checkout) on exit.
 MODE=${1:?MODE}; ROOT=${2:?ROOT}
@@ -330,16 +379,40 @@ cadence) mutate $H 's/if frame % 4 != 0 and not changed: return/if frame % 3 != 
 	n=$(sed -nE 's/.*monitor-unbound ok: display-audit: samples=([0-9]+) .*/\1/p' "/tmp/d7ar-$MODE.log")
 	if [ $rc -eq 0 ] && grep -q '^display monitor controls: 4 rejected$' "/tmp/d7ar-$MODE.log" && [ -n "$n" ] && [ "$n" != 45 ]; then echo "d7ar-drill: cadence PASSED (samples=$n)"; exit 0; fi
 	echo "d7ar-drill: cadence FAILED (make rc $rc, samples=$n)"; exit 1 ;;
+stall) S=$(mktemp -d)/g; mkdir -p "$S"
+	git ls-files Makefile mk tools | grep -v '\.uid$' | tar -cf - -T - | tar -xf - -C "$S"
+	tok=3191; pat="^sleep $tok\$"
+	printf '#!/bin/sh\ntrap "" TERM\nsleep %s &\nsleep %s\n' $tok $tok > "$S/tools/ai_live_guard.sh"
+	before=$(pgrep -f "$pat" | grep -c .)
+	sleep $tok & ctl=$!; sleep 0.5; seen=$(pgrep -f "$pat" | grep -c .); kill $ctl; wait $ctl 2>/dev/null
+	cleared=$(pgrep -f "$pat" | grep -c .)
+	t0=$(date +%s); $DL 60 make -C "$S" --no-print-directory ai-live-guard-static AI_GUARD_S=3 > "$S.out" 2>&1; rc=$?; secs=$(($(date +%s) - t0))
+	sleep 1; after=$(pgrep -f "$pat" | grep -c .)
+	grep 'script-gate:' "$S.out"
+	echo "d7ar-drill: stall before=$before control_seen=$seen control_cleared=$cleared make_rc=$rc secs=$secs survivors=$after"
+	if [ "$before" = 0 ] && [ "$seen" -ge 1 ] && [ "$cleared" = 0 ] && [ $rc -ne 0 ] && [ $secs -lt 30 ] && [ "$after" = 0 ] \
+	  && grep -qF 'script-gate: ai-live-guard-static FAIL; timeout after 3 s (rc 142)' "$S.out"; then echo "d7ar-drill: stall KILLED"; exit 0; fi
+	echo "d7ar-drill: stall SURVIVED"; exit 1 ;;
+static-breach) S=$(mktemp -d)/g; mkdir -p "$S"
+	git ls-files Makefile mk .github tests tools bridge ui | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$' | tar -cf - -T - | tar -xf - -C "$S"
+	cp "$S/mk/lab.mk" "$S/lab.orig"; perl -pi -e 's/^\t  env -u AI_LIVE (\$\(LAB_RUN\) --entry \$\$e )/\t  $1/' "$S/mk/lab.mk"
+	cmp -s "$S/mk/lab.mk" "$S/lab.orig" && { echo "d7ar-drill: mutation $MODE did not apply"; exit 3; }; rm -f "$S/lab.orig"
+	$DL 300 make -C "$S" --no-print-directory ai-live-guard-static > "$S.out" 2>&1; rc=$?
+	grep -E '^ai-live-guard: A |^script-gate:' "$S.out" | cut -c1-160
+	if [ $rc -ne 0 ] && grep -Eq '^ai-live-guard: A mk/lab\.mk:63:' "$S.out" && grep -q '^script-gate: ai-live-guard-static FAIL; rc 1, want 0; no summary line' "$S.out"; then echo "d7ar-drill: static-breach KILLED"; exit 0; fi
+	echo "d7ar-drill: static-breach SURVIVED (make rc $rc)"; exit 1 ;;
 *) echo "d7ar-drill: unknown mode $MODE"; exit 2 ;;
 esac
 ```
 
-## Appendix B: the helper cases (`d7ar_helper_cases.sh`, sha256 `9bb22c0192eb52ca…`)
+## Appendix B: the helper cases (`d7ar_helper_cases.sh`, revision 1, sha256 `af21a44e875e5c88…`)
+
+Revision 1 adds `keyorder`, `ambiguous` and `noframe`; the six revision 0 cases (`9bb22c0192eb52ca…`) are unchanged.
 
 ```sh
 #!/bin/sh
 # 7ar helper cases. usage: sh d7ar_helper_cases.sh ROOT   (no Godot; synthetic inputs in a temp dir)
-# Each refused case must exit 1 with its own reason; the accepted case must exit 0.
+# Each refused case must exit 1 with its own reason; each accepted case must exit 0.
 cd "${1:?ROOT}" || exit 2
 H=tools/monitor_control_check.sh; T=$(mktemp -d); bad=0
 P='^display-audit: samples=@N@ .* new=@N@ .* failures=@N@$'
@@ -362,12 +435,20 @@ sum 12 11 11 > $T/partial.log; rows 12 > $T/partial.nd
 case_ partial 1 '^missing reason \^display-audit: samples=12 \.\* new=12 \.\* failures=12\$$' $T/partial.log $T/partial.nd "$P"
 sum 12 12 12 > $T/ok.log; rows 12 > $T/ok.nd; printf 'FAIL monitor-coverage frame=40 course\n' >> $T/ok.log
 case_ accepted 0 '^$' $T/ok.log $T/ok.nd "$P" '^FAIL monitor-coverage frame=@F10@ course$'
+# Revision 1 (quorum r1, gemini): the integer "frame" key may sit anywhere; nested float/string "frame" keys
+# (the real rows carry four) are not it; a row with two integer ones is refused, not guessed.
+i=1; while [ $i -le 12 ]; do printf '{"view":{"feed":{"frame":0.0},"frame":"galactic"},"frame":%d}\n' $((i * 4)); i=$((i + 1)); done > $T/late.nd
+case_ keyorder 0 '^$' $T/ok.log $T/late.nd "$P" '^FAIL monitor-coverage frame=@F10@ course$'
+i=1; while [ $i -le 12 ]; do printf '{"frame":%d,"crew":{"frame":7}}\n' $((i * 4)); i=$((i + 1)); done > $T/two.nd
+case_ ambiguous 1 '^sampled row 1 of .* has 2 integer "frame" keys, want 1$' $T/ok.log $T/two.nd "$P"
+i=1; while [ $i -le 12 ]; do printf '{"view":{"feed":{"frame":0.0}}}\n'; i=$((i + 1)); done > $T/noint.nd
+case_ noframe 1 '^sampled row 1 of .* has 0 integer "frame" keys, want 1$' $T/ok.log $T/noint.nd "$P"
 rm -rf "$T"; echo "d7ar helper cases: $bad wrong"; [ $bad -eq 0 ]
 ```
 
-## Appendix C: the edited text (prototype `9a3baa47`, against `36f4ab4c`)
+## Appendix C: the edited text (revision 1 prototype `c8b60f40`, against `36f4ab4c`; helper sha256 `aecd62112b67616a…`)
 
-Each block is the text after the edit, copied from the prototype (V17). Context lines are included where they locate the edit.
+Each block is the text after the edit, copied from the prototype (V20). Context lines are included where they locate the edit.
 
 ### C1. `mk/lab.mk` (lines 62, 63 and 70 after the edit)
 
@@ -396,21 +477,26 @@ def ail(a, entry, args, bytecode=True):
     return child(cmd)
 ```
 
-### C4. `mk/ai.mk`: the D2 block (lines 447–454) and the D3 row (line 483, between the `_rogue2` row and the `include` row)
+### C4. `mk/ai.mk`: the D2 block (lines 447–456), the `ai-live-guard` header without its old first recipe line (line 460), and the D3 row (line 485, between the `_rogue2` row and the `include` row)
 
 ```make
 ai-test: ai-live-guard ai-settings
 
-# 7ar: the static rules alone (git, perl, sh; no Godot, no import; about 8 s) run in the GitHub fast tier, so
-# a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. The
-# whole target below (each rule's mutant, the launch builder under Godot) stays in make test.
+# 7ar: the static rules alone (git, perl, sh; no Godot, no import; 8 s on the Studio) run in the GitHub fast tier,
+# so a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. Bounded
+# by $(SCRIPT_GATE), as the fast tier's other non-Godot gates are (mk/observations.mk): AI_GUARD_S is 15 times the
+# measured 8 s, for a slower runner; a stall is stopped (TERM, then KILL to the process group) and fails the target.
+# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first, so make test is bounded too.
+AI_GUARD_S ?= 120
 .PHONY: ai-live-guard-static
-ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh); in ci-fast
-	@sh tools/ai_live_guard.sh .
+ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh), under a deadline; in ci-fast
+	@$(SCRIPT_GATE) ai-live-guard-static $(SCRATCH)/ai-live-guard-static.log $(AI_GUARD_S) '^ai-live-guard: ok \([1-9][0-9]* make/shell/CI files, [1-9][0-9]* test/tool scripts, launch builder, settings\)$$' -- sh tools/ai_live_guard.sh .
 ci-fast: ai-live-guard-static
 
 AI_G := $(SCRATCH)/ai-live-guard
 ai_guard_scan = Makefile mk .github tests tools bridge ui
+ai-live-guard: import ai-live-guard-static   ## AC15: no target, test, CI job or launch path can start a live provider; each rule's mutant is caught
+	@set -e; for m in \
 …
 	  'ui/ui_scale.gd@\z@\nfunc _rogue2() -> void:\n\tOS.execute("ailang", ["run", "--entry", "live", "ai/service.ail"])\n@A ui/ui_scale.gd' \
 	  'mk/lab.mk@\z@\nlab-mutant:\n\tfor e in x; do $$(LAB_RUN) --entry $$$$e --args-json 0 sim/$$$$e.ail; done\n@A mk/lab.mk' \
@@ -461,7 +547,9 @@ ship-demo-ci: display-audit-monitor-controls
 # and be at least MONITOR_MIN_SAMPLES (10: drop_one hides a face on the tenth sampled row, so a
 # shorter run cannot exercise it, and a vacuous run, samples=0, cannot pass new=N as 0=0).
 # Each PATTERN is an ERE with these tokens replaced first: @N@ and @2N@ (N, 2N); @F1@ and @F10@
-# (the frame numbers of sampled rows 1 and 10).
+# (the frame numbers of sampled rows 1 and 10: the row's one integer "frame" key, wherever it sits; the
+# rows also carry nested "frame" keys that are floats or strings, and a row with no integer one, or
+# more than one, is refused).
 # Usage: tools/monitor_control_check.sh AUDIT_LOG SAMPLES_NDJSON PATTERN...
 #   exit 0 silently when every pattern matches; else exit 1 with one line saying why.
 set -u
@@ -472,9 +560,14 @@ case "$n" in ''|*[!0-9]*) echo "no display-audit summary in $log"; exit 1;; esac
 lines=$(wc -l < "$samples" 2>/dev/null | tr -d ' ')
 [ "$n" = "$lines" ] || { echo "the audit read samples=$n but $samples has ${lines:-no} lines"; exit 1; }
 [ "$n" -ge "$min" ] || { echo "samples=$n, fewer than $min (a vacuous run)"; exit 1; }
-f1=$(sed -n 1p "$samples" | sed -nE 's/^\{"frame":([0-9]+),.*/\1/p')
-f10=$(sed -n 10p "$samples" | sed -nE 's/^\{"frame":([0-9]+),.*/\1/p')
-[ -n "$f1" ] && [ -n "$f10" ] || { echo "no frame on sampled row 1 or 10 of $samples"; exit 1; }
+frame() { # ROW: the row's one integer "frame" value; else the reason, and exit 1
+	hits=$(sed -n "$1p" "$samples" | grep -oE '"frame":[0-9]+[,}]')
+	k=$(printf '%s' "$hits" | grep -c .)
+	[ "$k" = 1 ] || { echo "sampled row $1 of $samples has $k integer \"frame\" keys, want 1"; exit 1; }
+	printf '%s\n' "$hits" | tr -cd '0-9'
+}
+f1=$(frame 1) || { echo "$f1"; exit 1; }
+f10=$(frame 10) || { echo "$f10"; exit 1; }
 for p in "$@"; do
 	q=$(printf '%s\n' "$p" | sed "s/@2N@/$((2 * n))/g; s/@N@/$n/g; s/@F10@/$f10/g; s/@F1@/$f1/g")
 	grep -Eq -- "$q" "$log" || { echo "missing reason $q"; exit 1; }
