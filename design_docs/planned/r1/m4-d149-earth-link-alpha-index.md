@@ -1,6 +1,6 @@
 # The Earth-link capture plans alpha Cen A at its real map index (D-149)
 
-**Status:** Planned 2026-11-13 (mission iteration 91, designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): Appendix B's probe generator now matches exact blocks instead of line numbers (V15, V16). Measured at `origin/main` `85ca5470`. **Release:** r1. **Milestone:** none (charter queue: "D-149's one-token fix", row 7am's held pair).
+**Status:** Planned 2026-11-13 (mission iteration 91, designer Opus 5.5). **Revision 2** (narrow-refinement carve-out) answers quorum round 2 (BLOCKED: gpt6-1-sol REJECT): AC10 is now one script (Appendix C) in which `make runtime`, `make import`, the generator and the probe each run under the repo's process-group deadline `tools/deadline.sh`; V17 measures the steps and V18 shows that a stalled prerequisite is stopped. **Revision 1** answers design-quorum round 1 (BLOCKED: gpt6-1-sol REJECT; see "Quorum verification log"): Appendix B's probe generator now matches exact blocks instead of line numbers (V15, V16). Measured at `origin/main` `85ca5470`. **Release:** r1. **Milestone:** none (charter queue: "D-149's one-token fix", row 7am's held pair).
 **Priority:** low. Nothing is red. Mark ruled on it (D-149, attended 2026-11-12), so the loop may land it.
 **Implements:** ledger row **D-149** (`design_docs/stapledon-mission.md`, Decision ledger), verbatim: *"Yes: tools/earth_link_capture.gd's ALPHA target moves to alpha Cen A's real map index (2, from 1) and the guard's SOURCE_PENDING entry is removed; the a_outbound review frame's subtitle becomes CNS5:3627 with its 4.32 ly distance, as the live map shows."* It closes OQ1 of [`m4-7am-alpha-index-literals.md`](../../implemented/r1/m4-7am-alpha-index-literals.md) (V4, V5). The capture is AC11 of [`r3/earth-link.md`](../../implemented/r3/earth-link.md). That design implements the design repo's [signals-and-instruments.md](https://github.com/sunholo-data/stapledons-design/blob/main/features/next/signals-and-instruments.md) §2–§3.1. No physics-spec section applies, because the sim never reads the index (7am V7).
 **Depends on:** nothing.
@@ -107,10 +107,10 @@ Run from the clone root, `ROOT=/Users/voightkampff/dev/sunholo-data/stapledons-g
 | AC7 | Whitespace | `perl -e 'alarm 30; exec @ARGV' git diff --check 85ca5470 HEAD` | no output, rc 0 | rc 0 (V3) |
 | AC8 | Scope | `test "$(git diff --name-only 85ca5470 HEAD -- . ':!design_docs' ':!.ailang' \| tr '\n' ' ')" = "tools/earth_link_capture.gd tools/test_replay.py " \|\| exit 1` | rc 0 | empty → rc 1 (V13 on the prototype: those 2 files) |
 | AC9 | Policy gates on the touched files | `for t in python-guard uid-guard lint-precision; do perl -e 'alarm 120; exec @ARGV' make $t \|\| exit 1; done` | each `…: ok`, rc 0 (`438 .uid files`; `23 allowlisted`) | same (V9 on the prototype; neither file is new) |
-| AC10 | The frame change, headless | `make runtime` (or AILANG v0.56.1) and `make import` first. Then: `T=$(mktemp -d) && trap 'rm -rf "$T"' EXIT && perl "$D/elc_probe_gen.pl" < tools/earth_link_capture.gd > "$T/p.gd" && AILANG_BIN=$PWD/runtime/bin/ailang perl -e 'alarm 600; exec @ARGV' godot --headless --audio-driver Dummy --path . --script "$T/p.gd" > "$T/log" 2>&1; rc=$?; test $rc -eq 0 \|\| exit 1; test "$(grep -cF 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly]' "$T/log")" -eq 1 \|\| exit 1; test "$(grep -c '^earth-link-capture: 10 frames, 0 failures$' "$T/log")" -eq 1 \|\| exit 1` | rc 0 for every step. The b–e `elc-` lines equal V7/V8's. | the `a_outbound` line has `subtitle=[CNS5:3627]` → the second `test` gives rc 1 (V7, V14, V16) |
+| AC10 | The frame change, headless, every step deadline-bounded | `sh "$ROOT/tools/deadline.sh" 1200 bash "$D/d149_ac10.sh" "$ROOT" "$D"` (Appendix C). The script runs `make runtime` (deadline 180 s), `make import` with the pinned runtime on PATH (300 s), the Appendix B generator (30 s) and the headless probe (600 s), each through `tools/deadline.sh`. `tools/deadline.sh` is the repo's tracked process-group runner, used by `capture-m4-publish` (`Makefile:422`) and `tools/test_m4_publish.sh`: it runs the command in its own process group, sends TERM to the group at the deadline and KILL 5 s later, and returns 124. A timeout or nonzero exit ends acceptance at once: exit 10 for runtime, 11 for import, 12 for the generator, 13 for the probe, so no later step runs. The outer `deadline.sh 1200` covers the sum (1,110 s) with slack, and its TERM reaches each inner supervisor, which KILLs its own group. | `d149-ac10: make runtime rc=0`, `make import rc=0`, `generator rc=0`, `probe rc=0`; the `elc-probe a_outbound … subtitle=[CNS5:3627  ·  4.32 ly]` line; `a_outbound_4.32ly=1 summary=1 script_errors=0`; `d149-ac10: PASS`, rc 0 (V17, on a cold scratch clone with the fix). The b–e `elc-` lines equal V7/V8's. | every step rc 0, then `a_outbound_4.32ly=0 summary=1 script_errors=0` → rc 1 (V17; V7, V14, V16 earlier) |
 | AC11 | Mark sees the frame (attended, after merge; not a merge gate) | `make capture-earth-link` in a GPU window when the GPU is free, then open `renders/earth_link/a_outbound_map.png` and `contact_sheet.png` | `earth-link-capture: 10 frames, 0 failures`. The `a_outbound` map subtitle reads `CNS5:3627  ·  4.32 ly`. | not run: GPU window, and the GPU is busy |
 
-`$D` is a scratch directory outside the repo (for example `D=$(mktemp -d)`) holding Appendices A and B.
+`$D` is a scratch directory outside the repo (for example `D=$(mktemp -d)`) holding Appendices A, B and C (`d149_drill.sh`, `elc_probe_gen.pl`, `d149_ac10.sh`). `ROOT` is the build's clone.
 
 AC11 is the acceptance path Mark's ruling describes ("you see the new frame in the next dev build"). It does not block the merge. Nothing shipped in the game changes visually, and merges never wait on the GPU (CLAUDE.md, Merges §2).
 
@@ -148,6 +148,16 @@ None. D-149 is complete: the token, the guard entry and the expected frame are a
 | oc-kimi-k3 | absent | unreachable | — |
 | Claude | benched | author's vendor | — |
 
+**Round 2** (artifact `m4-d149-earth-link-alpha-index-2026-11-13T04-29-39Z.json`, on revision 1, commit `4565f610`): **BLOCKED** by one seat. No round 3 will run; revision 2 is a **narrow-refinement carve-out: sol's fix applied verbatim, no round 3**.
+
+| Seat | Verdict | Finding | Disposition in revision 2 |
+|---|---|---|---|
+| gpt6-1-sol | REJECT (blocking) | "AC10 requires running `make runtime` and `make import` before its timed probe, but gives neither prerequisite a deadline. The unattended acceptance path therefore has unbounded waits, contrary to the bounded-waits axiom. V6's report that earlier provisioning runs were alarm-bounded does not bound the commands prescribed to the implementer." | **Applied verbatim** (fix: "Replace AC10's prerequisite instructions with explicit deadline-enforced commands for both `make runtime` and `make import`, each terminating acceptance on timeout or nonzero exit. Use a process-group-aware timeout so spawned build/import processes are also terminated. Add a verification-log row demonstrating that a deliberately stalled prerequisite exits within its deadline, leaves no child process running, and prevents the probe from executing."). AC10 is now Appendix C: both prerequisites (and the generator and probe) run under the tracked process-group runner `tools/deadline.sh`, reused rather than reinvented; a timeout or nonzero rc exits 10/11 before the probe. The deadlines come from V17's measurements. V18 stalls each prerequisite with a TERM-ignoring child: each exits within its deadline (185 s / 305 s), no stall process survives (pgrep with a firing control, plus `kill -0` on both recorded pids), and the probe never runs (marker absent; control: the marker appears when nothing stalls) |
+| gemini-4-argon | PASS | repeats the line-number note on the positive control and accepts the Risks reasoning | No change (see round 1) |
+| oc-glm-5-3 | absent | unreachable | — |
+| oc-kimi-k3 | absent | unreachable | — |
+| Claude | benched | author's vendor | — |
+
 ## Verification log
 
 | V | What | Ran (where) | Reading |
@@ -168,6 +178,8 @@ None. D-149 is complete: the token, the guard entry and the expected frame are a
 | V14 | AC10 as written (revision 0 generator) | AC10's command, with revision 0's Appendix B extracted from this doc (`cmp`-equal to the generator run in V7/V8), on the clone (pristine capture) and with the prototype's capture file as input | pristine: `godot_rc=0`, a_outbound hits 0 → rc 1. With the fix: rc 0, and its `elc-` lines `diff`-equal to V7/V8's index 2 run |
 | V15 | Revision 1 generator: exact-block matching | `perl -e 'alarm 30; …' perl elc_probe_gen.pl < INPUT > OUT` (Appendix B as committed, extracted from this doc; `/tmp/iter91/r1`). Positives: the pristine capture, and the fixed capture (pristine with the one token at `:16`). Negatives, each derived from the fixed capture and each checked by `cmp`/`diff` to differ: `:178` `save_png(` → `save_jpg(` (a discarded interior line); `:186` `frames += 1` → `+= 3` (the block's last line); `head -n 180` (truncated inside the block); `head -n 188` (truncated before the final replacement, `sheet.append` at `:191`); `:191` duplicated; `:144` duplicated; `:144` removed | pristine: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 1 probe. fixed: rc 0, 9,940 bytes, `cmp`-equal to V7/V8's index 2 probe. Each negative: rc 255 and **0 bytes** of output. `:178` → `image block found 0 times, want exactly 1`; `:186` → `image block found 0 times`; `head -n 180` → `image block found 0 times`; `head -n 188` → `sheet.append found 0 times`; `:191` duplicated → `sheet.append found 2 times`; `:144` duplicated → `_contact_sheet() call found 2 times`; `:144` removed → `_contact_sheet() call found 0 times`. The first draft counted non-overlapping matches and missed the adjacent `:191` duplicate (rc 0); counting overlapping matches fixed it, then all were re-run |
 | V16 | AC10 re-run with the revision 1 generator | AC10's command (generator `/tmp/iter91/r1/elc_probe_gen.pl`, the same as Appendix B) on the clone: input `tools/earth_link_capture.gd` (pristine), then the fixed capture | pristine: `godot_rc=0`, AC10 rc 1 (no `4.32 ly` line). fixed: `godot_rc=0`, AC10 rc 0. Both runs' `elc-` lines are `diff`-equal to V7/V8's index 1 and index 2 runs |
+| V17 | AC10 as revised: step times and both readings | `tools/deadline.sh` timings of `make runtime` and `make import` (cold: `.godot` removed; warm: again) in the clone; then `perl -e 'alarm 1200; …' bash d149_ac10.sh ROOT D` on a fresh scratch clone with the fix (`runtime/` and `.godot` removed first, so cold) and on the pristine clone | Measured: `make runtime` 2–3 s (`gh release download` plus `ailang lock`; network dependent); `make import` 24 s cold, 6–7 s warm; probe 37–46 s. Deadlines (headroom): runtime **180 s** (≥60×), import **300 s** (12× cold), generator 30 s, probe 600 s (13×). Built (cold): `make runtime rc=0 at=2s`, `make import rc=0 at=26s`, `generator rc=0`, `probe rc=0 at=72s`, `subtitle=[CNS5:3627  ·  4.32 ly]`, `a_outbound_4.32ly=1 summary=1 script_errors=0`, `PASS`, rc 0. Pristine: `make runtime rc=0 at=3s`, `make import rc=0 at=7s`, `probe rc=0 at=52s`, `subtitle=[CNS5:3627]`, `a_outbound_4.32ly=0 summary=1 script_errors=0`, rc 1. The clone's `git status --porcelain` is empty afterwards |
+| V18 | A stalled prerequisite is stopped (sol's fix) | `perl -e 'alarm 280; …' bash d149_stall_demo.sh ROOT D runtime` and `… 'alarm 400; …' … import` (Appendix D) on the clone, each at AC10's real deadline. A stub `make` on PATH: for the stalled target it starts a child `perl` that ignores TERM and sleeps 3,600 s, then itself `exec`s a TERM-ignoring 3,600 s sleep; both carry a unique token in argv and their pids are recorded. A stub `godot` only touches a marker. Positive controls: a token-carrying TERM-ignoring process is seen by `pgrep -f` (`control pgrep=1`) before each run; with stub `make` that does not stall, AC10 reaches the stub `godot` and the marker appears (rc 1 at the checks, `marker present`) | runtime: `make runtime rc=124 at=185s`, `ac10_rc=10 secs=185 limit=180 stall_pids=2 alive=0 pgrep_left=0 probe_ran=0 calls=[make runtime;]`, `STOPPED`, rc 0. import: `make runtime rc=0`, `make import rc=124 at=305s`, `ac10_rc=11 secs=305 limit=300 stall_pids=2 alive=0 pgrep_left=0 probe_ran=0 calls=[make runtime;make import;]`, `STOPPED`, rc 0. 185 = 180 + the 5 s TERM→KILL grace, because the stall ignores TERM. A `pgrep -fl d149stall` afterwards is empty |
 
 **UNVERIFIED:**
 - AC11. `make capture-earth-link` (GPU window), the PNGs and the contact sheet were not run or opened.
@@ -293,4 +305,106 @@ for my $s (@swaps) {
   substr($src, $i, length($old)) = $new;
 }
 print $src;
+```
+
+## Appendix C: AC10 (`d149_ac10.sh`, revision 2, sha256 `a2c2693abc814416…`)
+
+```bash
+#!/bin/bash
+# D-149 AC10: the a_outbound map frame, headless, with every step under a process-group deadline.
+# usage: bash d149_ac10.sh ROOT D   (D holds elc_probe_gen.pl, Appendix B)
+# Deadlines (seconds, measured in V17 with headroom): runtime 180, import 300, generator 30, probe 600.
+ROOT=${1:?ROOT}; D=${2:?D}
+cd "$ROOT" || exit 1
+test -f tools/deadline.sh || exit 1
+test -f "$D/elc_probe_gen.pl" || exit 1
+dl() { sh "$ROOT/tools/deadline.sh" "$@"; }  # rc of the command; 124 on expiry (TERM, then KILL, to its process group)
+T=$(mktemp -d /tmp/d149_ac10.XXXXXX) || exit 1
+t0=$(date +%s)
+trap 'rm -rf "$T"' EXIT
+trap 'exit 142' INT TERM HUP
+dl 180 make runtime > "$T/runtime.log" 2>&1; rc=$?
+echo "d149-ac10: make runtime rc=$rc at=$(($(date +%s) - t0))s"
+test "$rc" -eq 0 || exit 10
+dl 300 env PATH="$ROOT/runtime/bin:$PATH" make import > "$T/import.log" 2>&1; rc=$?
+echo "d149-ac10: make import rc=$rc at=$(($(date +%s) - t0))s"
+test "$rc" -eq 0 || exit 11
+dl 30 sh -c 'perl "$1" < "$2"' _ "$D/elc_probe_gen.pl" tools/earth_link_capture.gd > "$T/p.gd" 2> "$T/gen.err"; rc=$?
+echo "d149-ac10: generator rc=$rc $(cat "$T/gen.err")"
+test "$rc" -eq 0 || exit 12
+test -s "$T/p.gd" || exit 12
+dl 600 env AILANG_BIN="$ROOT/runtime/bin/ailang" godot --headless --audio-driver Dummy --path . --script "$T/p.gd" > "$T/log" 2>&1; rc=$?
+echo "d149-ac10: probe rc=$rc at=$(($(date +%s) - t0))s"
+grep '^elc-probe a_outbound ' "$T/log"
+test "$rc" -eq 0 || exit 13
+n=$(grep -cF 'elc-probe a_outbound title=[En route to CNS5:3627] subtitle=[CNS5:3627  ·  4.32 ly]' "$T/log")
+s=$(grep -c '^earth-link-capture: 10 frames, 0 failures$' "$T/log")
+e=$(grep -c 'SCRIPT ERROR' "$T/log")
+echo "d149-ac10: a_outbound_4.32ly=$n summary=$s script_errors=$e"
+test "$n" -eq 1 || exit 1
+test "$s" -eq 1 || exit 1
+test "$e" -eq 0 || exit 1
+echo "d149-ac10: PASS"
+```
+
+This uses the repo's `tools/deadline.sh` (process group; TERM, then KILL after 5 s; rc 124). Its limit is the same as `tools/script_gate.sh`'s: a child that calls `setsid`/`setpgrp` itself leaves the group. `make runtime` (gh, tar, ailang) and `make import` (Godot) do not. Every step's rc is captured with no pipe, counts are asserted with `test`, and no assertion uses `!`.
+
+## Appendix D: the stall demonstration (`d149_stall_demo.sh`, sha256 `91c8b4baad59e582…`)
+
+V18 evidence only; the build does not need to run it.
+
+```bash
+#!/bin/bash
+# V17: a stalled AC10 prerequisite. usage: bash d149_stall_demo.sh ROOT D STALL (STALL: runtime | import)
+# Stub make and godot on PATH: make STALL starts a TERM-ignoring child and itself ignores TERM and sleeps;
+# godot only touches a marker. Proves AC10 exits within the deadline, no stall process survives, no probe ran.
+ROOT=${1:?ROOT}; D=${2:?D}; STALL=${3:?STALL}
+case "$STALL" in runtime) want_rc=10; limit=180 ;; import) want_rc=11; limit=300 ;; *) exit 2 ;; esac
+S=$(mktemp -d /tmp/d149_stall.XXXXXX) || exit 1
+TOKEN=d149stall-$$-$RANDOM
+cleanup() { pkill -KILL -f "$TOKEN" 2>/dev/null; rm -rf "$S"; }
+trap cleanup EXIT
+trap 'exit 142' INT TERM HUP ALRM
+mkdir "$S/bin" || exit 1
+cat > "$S/bin/make" <<STUB || exit 1
+#!/bin/sh
+echo "make \$*" >> "$S/calls"
+case " \$* " in *" $STALL "*) ;; *) exit 0 ;; esac
+perl -e '\$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-child" &
+echo \$! >> "$S/pids"
+echo \$\$ >> "$S/pids"
+exec perl -e '\$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-parent"
+STUB
+printf '#!/bin/sh\ntouch "%s/godot-ran"\nexit 0\n' "$S" > "$S/bin/godot" || exit 1
+chmod +x "$S/bin/make" "$S/bin/godot" || exit 1
+# positive control: pgrep sees a process carrying the token
+perl -e '$SIG{TERM}="IGNORE"; sleep 3600' "$TOKEN-control" &
+cpid=$!
+sleep 1
+c=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+echo "d149-stall: control pgrep=$c"
+test "$c" -ge 1 || exit 1
+kill -KILL "$cpid"; wait "$cpid" 2>/dev/null
+c=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+test "$c" -eq 0 || exit 1
+t0=$(date +%s)
+PATH="$S/bin:$PATH" bash "$D/d149_ac10.sh" "$ROOT" "$D" > "$S/out" 2>&1; rc=$?
+secs=$(($(date +%s) - t0))
+sed 's/^/  | /' "$S/out"
+sleep 1
+left=$(pgrep -f "$TOKEN" | wc -l | tr -d ' ')
+npids=$(wc -l < "$S/pids" | tr -d ' ')
+alive=0; for p in $(cat "$S/pids"); do kill -0 "$p" 2>/dev/null && alive=$((alive + 1)); done
+ran=0; test -e "$S/godot-ran" && ran=1
+calls=$(tr '\n' ';' < "$S/calls")
+echo "d149-stall: $STALL ac10_rc=$rc secs=$secs limit=$limit stall_pids=$npids alive=$alive pgrep_left=$left probe_ran=$ran calls=[$calls]"
+test "$rc" -eq "$want_rc" || exit 1
+test "$secs" -ge "$limit" || exit 1
+test "$secs" -le $((limit + 10)) || exit 1
+test "$npids" -eq 2 || exit 1
+test "$alive" -eq 0 || exit 1
+test "$left" -eq 0 || exit 1
+test "$ran" -eq 0 || exit 1
+grep -q "make $STALL rc=124" "$S/out" || exit 1
+echo "d149-stall: $STALL STOPPED"
 ```
