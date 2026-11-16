@@ -3,14 +3,17 @@
 # characters), keep the log pointer in a failure description whenever it fits, and report a
 # refused failure or success post on stdout with a nonzero exit. No network: gh, git and make
 # are stubs on PATH; the stub gh refuses a long description the way GitHub does (HTTP 422).
+# 1e (M1b): the profiled make is a gmake stub too, so the real gmake is never reached; the profiler cases are below.
 #   sh tools/test_rig_check.sh [path/to/rig_check.sh]
 set -eu
-unset RIG_TEST_S RIG_GOLDEN_S RIG_SETUP_S RIG_DL_S   # hermetic: a caller's watchdog override must not reach the cases (iteration 52)
+unset RIG_TEST_S RIG_GOLDEN_S RIG_SETUP_S RIG_DL_S RIG_PROFILE RIG_TRACE SUITE_TOP_TARGET   # hermetic: a caller's watchdog or profile override must not reach the cases (iteration 52, M1b)
 RIG=$(cd "$(dirname "${1:-tools/rig_check.sh}")" && pwd -P)/$(basename "${1:-tools/rig_check.sh}")
+TOOLS=$(cd "$(dirname "$0")" && pwd -P)   # the real instrument (suite_profile.sh, timed_recipe_shell.sh) the stub git clone copies
 T=$(mktemp -d "${TMPDIR:-/tmp}/rig-check-control.XXXXXX")
 trap 'rm -rf "$T"' EXIT
 test "${#T}" -le 100   # the clone-red-pointer case needs a log path short enough for the pointer to fit
 export STUB_POSTS="$T/posts" STUB_SHA=0123456789abcdef0123456789abcdef01234567 STUB_MAKES="$T/makes" STUB_CHILD="$T/child"
+export STUB_GMAKES="$T/gmakes" STUB_TOOLS="$TOOLS"
 mkdir "$T/bin"
 cat > "$T/bin/gh" <<'STUB'
 #!/bin/sh
@@ -27,6 +30,8 @@ cat > "$T/bin/git" <<'STUB'
 for d; do :; done
 mkdir -p "$d/runtime/bin"; echo 'AILANG_RELEASE ?= v0.54.14' > "$d/Makefile"
 printf '#!/bin/sh\necho "%s"\n' "$STUB_VERSION" > "$d/runtime/bin/ailang"; chmod +x "$d/runtime/bin/ailang"
+# 1e: the PR head carries the instrument (the real scripts); STUB_NO_TOOLS=1 is an older head without it.
+if [ "${STUB_NO_TOOLS:-0}" != 1 ]; then mkdir -p "$d/tools"; cp "$STUB_TOOLS/suite_profile.sh" "$STUB_TOOLS/timed_recipe_shell.sh" "$d/tools/"; fi
 STUB
 # The stub make logs each call to $STUB_MAKES; for the target named in $STUB_MAKE_HANG it hangs with a 20 s child
 # whose pid goes to $STUB_CHILD, so a mutant that loses a bound ends red after about 20 s and never hangs the control.
@@ -39,7 +44,35 @@ case " $* " in *" ${STUB_MAKE_HANG:-none} "*)
   if [ "${STUB_CHILD_IGNORE_TERM:-0}" = 1 ]; then sh -c 'trap "" TERM; exec sleep 20' & else sleep 20 & fi
   echo $! > "$STUB_CHILD"; wait ;; esac
 STUB
-chmod +x "$T/bin/gh" "$T/bin/git" "$T/bin/make"
+# 1e: the profiled make is a gmake stub. Its own argv goes to $STUB_GMAKES; its transcript line goes to $STUB_MAKES with
+# the profiler's words (-j 1, SHELL=, SUITE_TARGET=) left out, so the make-call expectations read as they do for make.
+# It answers the closure query and --version as make does, runs the SHELL wrapper once (one profile row), and fails or
+# hangs by the same STUB_MAKE_FAIL and STUB_MAKE_HANG knobs as make.
+cat > "$T/bin/gmake" <<'STUB'
+#!/bin/sh
+case "${1:-}" in --version) echo 'GNU Make 4.4.1 (stub)'; exit 0 ;; esac
+case " $* " in *" -pq "*) exit 0 ;; esac
+echo "$*" >> "$STUB_GMAKES"
+line=; skip=0; shell=
+for a; do
+  if [ "$skip" = 1 ]; then skip=0; continue; fi
+  case "$a" in
+    -j) skip=1 ;;
+    SHELL=*) shell=${a#SHELL=} ;;
+    SUITE_TARGET=*) ;;
+    *) line="${line:+$line }$a" ;;
+  esac
+done
+echo "$line" >> "$STUB_MAKES"
+if [ -n "$shell" ]; then sh "$shell" -c true; fi
+case " $* " in *" $STUB_MAKE_FAIL "*) exit 1 ;; esac
+case " $* " in *" ${STUB_MAKE_HANG:-none} "*) sleep 20 & echo $! > "$STUB_CHILD"; wait ;; esac
+exit 0
+STUB
+chmod +x "$T/bin/gh" "$T/bin/git" "$T/bin/make" "$T/bin/gmake"
+# 1e: the gmake-missing case runs under this PATH: the stubs gh, git and make, then the system tools, and no gmake.
+mkdir "$T/nogmake"; cp "$T/bin/gh" "$T/bin/git" "$T/bin/make" "$T/nogmake/"
+NOGMAKE="$T/nogmake:/usr/bin:/bin:/usr/sbin"
 long=$(printf '%0200d' 0)
 pad="$T/rig-check/"; while [ ${#pad} -lt 100 ]; do pad="${pad}x"; done   # the rig's 104-character log path
 fails=0
@@ -145,13 +178,72 @@ order runtime-hang --golden-only hang:runtime 1 'runtime' failure '01234567: rig
 # so only the KILL escalation ends it: a bound without KILL leaves it alive and the case fails.
 order test-hang "" hang:test 1 'sky-assets -k test' failure '01234567: make test ran over 2s; no failing target in the log$' "" "" 'AILANG v0.54.14' 2
 order golden-hang --golden-only hang-term:golden 1 'sky-assets deps starmap-assets planet-assets import golden' failure '01234567: make golden failed or ran over 2s$' "" "" 'AILANG v0.54.14' "" 2
-# caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52).
-n=18
+# 1e: the profiler. prun <case> <gmake|nogmake> <copy|none> <unset|0>: one rig run under that PATH, with that PR head
+# (copy: the real instrument; none: an older head) and that RIG_PROFILE. rc is left in $rc; the log is $pad<case>.log.
+prun() {
+  : > "$STUB_POSTS"; : > "$STUB_MAKES"; : > "$STUB_GMAKES"; rc=0
+  p="$T/bin:$PATH"; if [ "$2" = nogmake ]; then p=$NOGMAKE; fi
+  no=0; if [ "$3" = none ]; then no=1; fi
+  # The fallback cases carry a long version (the 140-character clamp); profile-on keeps a short one, so the clamp drill
+  # names the fallback cases only.
+  v="AILANG v0.54.14"; if [ "$1" != profile-on ]; then v="AILANG v0.54.14 $long"; fi
+  ( if [ "$4" = 0 ]; then RIG_PROFILE=0; export RIG_PROFILE; fi
+    STUB_NO_TOOLS=$no STUB_VERSION=$v STUB_MAKE_FAIL=none STUB_MAKE_HANG=none RIG_NO_STATUS=0 RIG_DIR="$pad$1" PATH=$p
+    export STUB_NO_TOOLS STUB_VERSION STUB_MAKE_FAIL STUB_MAKE_HANG RIG_NO_STATUS RIG_DIR PATH
+    sh "$RIG" 7 ) > "$T/out" 2>&1 || rc=$?
+}
+# pcase <case> <want rc> <FALLBACK reason, or none> <gmake called: 1|0> <success description ERE> <make transcript ERE>
+# Checks the rc, the posts (pending, then one success of at most 140 characters), the log's fallback line and the make calls
+# (STUB_MAKES then STUB_GMAKES). Sets $why; preport prints the case's verdict.
+pcase() {
+  why=
+  test "$rc" = "$2" || why="rc $rc, want $2"
+  test "$(cut -d' ' -f1 "$STUB_POSTS" | tr '\n' ' ')" = 'pending success ' || why="$why; posts: $(cut -d' ' -f1-2 "$STUB_POSTS" | tr '\n' ' ')"
+  n=$(sed -n 's/^success \([0-9]*\) .*/\1/p' "$STUB_POSTS")
+  if [ -n "$n" ] && [ "$n" -le 140 ]; then :; else why="$why; success description length ${n:-none}"; fi
+  grep -Eq "^success [0-9]+ $5" "$STUB_POSTS" || why="$why; no success description /$5/"
+  if [ "$3" = none ]; then
+    if grep -Eq 'FALLBACK|SERIAL' "$STUB_POSTS" "$pad$1.log"; then why="$why; a fallback in a profiled run"; fi
+  else
+    grep -qx "rig-check FALLBACK $3" "$pad$1.log" || why="$why; no log line 'rig-check FALLBACK $3'"
+    grep -q "SERIAL FALLBACK: $3" "$STUB_POSTS" || why="$why; no 'SERIAL FALLBACK: $3' in the post"
+  fi
+  if [ "$4" = 1 ]; then
+    if [ ! -s "$STUB_GMAKES" ]; then why="$why; gmake was not called"; fi
+  elif [ -s "$STUB_GMAKES" ]; then why="$why; gmake was called"; fi
+  if ! cat "$STUB_MAKES" "$STUB_GMAKES" | grep -Eq "$6"; then
+    why="$why; make calls [$(tr '\n' ' ' < "$STUB_MAKES")] [$(tr '\n' ' ' < "$STUB_GMAKES")], want /$6/"
+  fi
+  case "$3" in profile-off|profile-absent) if grep -q 'SHELL=' "$STUB_MAKES"; then why="$why; the profiler ran"; fi ;; esac
+}
+preport() { if [ -z "$why" ]; then echo "rig-check control $1: ok"; else why=${why#; }; echo "rig-check control $1: FAIL ($why)"; fails=$((fails + 1)); fi; }
+# profile-on: the default. The PR head has the instrument and gmake is on PATH: the profiled run writes its raw rows beside
+# the log and the summary into it, and no fallback line.
+prun profile-on gmake copy unset
+pcase profile-on 0 none 1 'make test green on the Studio in ' 'SHELL=[^ ]*timed_recipe_shell\.sh .*-k test$'
+if [ -f "$pad"profile-on.profile/profile.tsv ] && grep -q '^totals' "$pad"profile-on.log; then :; else why="$why; no profile.tsv or summary in the log"; fi
+preport profile-on
+# profile-off: RIG_PROFILE=0 is plain make -k test, the fallback line, and a marked success.
+prun profile-off gmake copy 0
+pcase profile-off 0 profile-off 0 'make test green \(SERIAL FALLBACK: profile-off\) on the Studio in ' '^-k test$'
+preport profile-off
+# profile-absent: an older PR head without the instrument is plain make -k test, with its own fallback line and marker.
+prun profile-absent gmake none unset
+pcase profile-absent 0 profile-absent 0 'make test green \(SERIAL FALLBACK: profile-absent\) on the Studio in ' '^-k test$'
+preport profile-absent
+# gmake-missing: the instrument is present and no gmake is on PATH; the profiler runs on the system make (3.81).
+prun gmake-missing nogmake copy unset
+pcase gmake-missing 0 gmake-missing 0 'make test green \(SERIAL FALLBACK: gmake-missing\) on the Studio in ' 'SHELL=[^ ]*timed_recipe_shell\.sh SUITE_TARGET=\$@ -k test$'
+if (PATH=$NOGMAKE; command -v gmake) >/dev/null 2>&1; then why="$why; gmake is on the PATH of this case"; fi
+preport gmake-missing
+# caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52). The profile
+# overrides (RIG_PROFILE, RIG_TRACE) and the profiler's top-target variable are caller values too.
+n=22
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=19; nrc=0
-  RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
+  n=23; nrc=0
+  RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 RIG_PROFILE=0 RIG_TRACE=1 SUITE_TOP_TARGET=poison sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 18 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 18 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 22 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 22 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### r1-rig-test-speed-m1b (2026-11-16)
+
+#### Added
+
+- **The rig's nightly `make test` runs profiled** (R1-RIG-TEST-SPEED M1b, design 1d/1e; D-129 A). The make-test half of `tools/rig_check.sh` runs serially under `tools/suite_profile.sh` with gmake, the raw rows land in `<sha>.profile/` beside the log, and the log ends with the summary's top 10; `RIG_TRACE=1` adds `--trace`. Three loud fallbacks log `rig-check FALLBACK <reason>` and mark the success status: `profile-off` (`RIG_PROFILE=0`, plain make), `profile-absent` (plain make), `gmake-missing` (the profiler on the system make). The baseline runs (three comparable serial gmake runs, plus the system-make fallback run) are still owed to the controller.
+
 ### m4-7ar-nightly-live-guard-monitor-count (2026-11-16)
 
 #### Fixed
