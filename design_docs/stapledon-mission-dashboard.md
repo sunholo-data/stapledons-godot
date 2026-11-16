@@ -1,21 +1,21 @@
 # Mission dashboard — Stapledon
 
-Updated 2026-11-13, iteration 91. LANDED: D-149 (PR #446, merge `dba1c17c`).
+Updated 2026-11-16, iteration 93. LANDED: row 7ar (PR #448, merge `ba3be980`), iteration 92's orphaned build, judged and landed.
 R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, needs a quiet rig); clause 5 ongoing; goal unmoved.
 Latest release: no release tag this iteration; game/runtime pins unchanged (AILANG v0.56.1, Godot 4.7.2).
-Current: the Earth-link review capture now plans alpha Cen A at its real map index (2), so its `a_outbound` map frame reads `CNS5:3627  ·  4.32 ly` like the live map. The source-literal guard has no pending list any more: every wrong hand-written `{index, id}` pair fails `replay-map-index`. 2 files, +3/−6.
-Visible: one developer review frame (`make capture-earth-link`, GPU window); Mark sees it in the next combined dev build. The loop does not publish.
-Nightly: no `rig/full` has run since `b96b2d60`; the next one is the first read of iteration 90's `bridge-operator-test` fix and the 129 targets after it. Expect new reds there.
-Watch: Ollama cloud's weekly quota is empty (429) for the third fire running: two quorum seats absent, the planner on the OpenRouter twin ($0.87).
-Next: read the nightly on main; L11 waits on attended #435 (RT2a, blocked on `sunholo/observe` 0.2.0), then RT2b; 7m AC1 on a quiet rig (D-147); L4 (D-129 A). Guard rows 7ao–7aq after these.
-Critical path: 7m AC1 (clause 4) is routable only on a quiet rig; at this pick the GPU read 100 % with Screen Sharing active.
+Current: main's nightly loses two of its three reds. The live guard's five `--entry` call sites clear `AI_LIVE`, a bounded `ai-live-guard-static` joins `ci-fast`, and the monitor-face controls read their sample count from the run (45 since #443). Six files, test and tooling only.
+Visible: nothing; no dev build needed for this row.
+Nightly: the last `rig/full` (`36f4ab4c`, 2026-11-13 23:13) had 3 reds. Expect 1 at the next run: `ui-theme-check`, from the attended telescope merge #438 (row 7as, handed to its owner).
+Watch: iteration 92 died during evaluation, and five fires (2026-11-14 20:25 to 2026-11-16 02:35) found every controller rung spent. The pi cross-vendor judge failed twice in a row (empty, then a wall timeout).
+Next: read the nightly on main; L11 waits on attended #435 (RT2a), then RT2b; 7m AC1 on a quiet rig (D-147); L4 (D-129 A). Guard rows 7ao–7aq after these.
+Critical path: 7m AC1 (clause 4) is routable only on a quiet rig; at this pick the GPU read 94 % with Screen Sharing active.
 Human gates: none OPEN (ledger valid, no row changed this fire).
-Action for Mark (not a ledger decision): codex login still reads "quota UNREADABLE" in the driver; Ollama weekly limit.
-Routing this fire: controller Opus 5.5; designer Opus (Agent, one revision plus one carve-out resume); planner kimi-k3 (pi; Ollama dead → OpenRouter); executor Haiku (Agent); judges Sonnet (Agent) + MiniMax M3 (pi, cross-vendor, one tool_hang retry).
-Quorum: r1 and r2 BLOCKED by sol alone (probe fail-closure, then prerequisite deadlines), gemini passed both; r2 closed by the carve-out with sol's fix verbatim. glm and kimi absent.
-Review: Sonnet 93 PASS, MiniMax M3 88 PASS; non-blocking findings in the charter's iteration-91 backlog line.
-CI: fast tier green on PR heads `97833536` and `cbc3e284`; merge `dba1c17c` fast tier green (run 43373290636); no GPU run.
+Action for Mark (not a ledger decision): row 7as (telescope's theme lint, `ui/survey_map_layer.gd:114`); codex login still reads "quota UNREADABLE"; controller rungs were spent for five fires.
+Routing this fire: controller Opus 5.5; designer, planner and executor not spawned (iteration 92's work inherited); judges Sonnet (Agent) + MiniMax M3 (pi, cross-vendor, wall_timeout, no verdict).
+Quorum: none this fire (iteration 92's design rounds stand).
+Review: Sonnet 90 PASS, 0 blocking, 3 non-blocking survivors (charter backlog line, iteration 93). No cross-vendor verdict (FLAG).
+CI: fast tier green on PR heads `bb613f79` and `c2e6da50`; merge `ba3be980` fast tier green (run 43844634663); no GPU run.
 Cadence: armed six-hour driver.
-Metered cost: $1.26 of $5 (quorum $0.13, planner $0.87, MiniMax $0.26). Quota: Anthropic subscription (Opus, Haiku, Sonnet); Ollama cloud weekly bucket empty.
-Canonical checkout untouched (attended `feat/captain-command`); record from clone `stapledons-godot-iter91-record`.
-Full history: stapledon-mission-log.md, entry 91.
+Metered cost: $0.71 of $5 (MiniMax). Quota: Anthropic subscription (Opus, Sonnet).
+Canonical checkout untouched (attended `feat/captain-command`); record from clone `stapledons-godot-iter93`.
+Full history: stapledon-mission-log.md, entry 93.
