@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT",
-  "status": "planned",
+  "status": "completed",
   "approved": true,
   "approved_by": "Design revision 2 (commit 5572504b): pillar table net 0 (suite hygiene, restores main's nightly rig/full; issue #392). Quorum r1 BLOCKED (gpt6-1-sol REJECT: unbounded fast-tier guard) -> r1: ai-live-guard-static under $(SCRIPT_GATE) with AI_GUARD_S ?= 120, stall drill AC17. Quorum r2 BLOCKED (gpt6-1-sol REJECT: unbounded mutant-loop guard runs) -> r2 narrow-refinement carve-out, sol's fix verbatim: every mutant-loop and rule-E guard run under tools/deadline.sh $(AI_GUARD_RUN_S), AI_GUARD_RUN_S ?= 60, caught only on rc 1 with the rule's line, drills AC19/AC20; no round 3. 'Open questions for the user: None.' Approved for planning, mission iteration 92.",
   "created": "2026-11-13",
-  "design_doc": "design_docs/planned/r1/m4-7ar-nightly-live-guard-monitor-count.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7ar-nightly-live-guard-monitor-count-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7ar-nightly-live-guard-monitor-count.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ar-nightly-live-guard-monitor-count-sprint.md",
   "branch": "mission/stapledon-iter92-7ar",
   "base": "36f4ab4c (origin/main = merge-base = the design's measured base; HEAD 5572504b is the r2 design commit; diff = the design doc alone, so every V-number applies verbatim)",
   "implements": [
@@ -159,5 +159,5 @@
     "A5: no changelog fragment - the design's Deliverables name only E1-E12 and AC14's scope check fails on anything more (recent sprints shipped one; listed for visibility).",
     "A6: the drills hardcode pgrep tokens 'sleep 3191'/'sleep 3193' and mktemp -d; on a heavily loaded host the 'secs below 30/60' bounds in AC17/AC19 could in principle be tight - the design measured secs=5 and secs=14 (V21, V26). Not resolved; if a drill reads SURVIVED solely on secs, record verbatim and stop for the controller."
   ],
-  "notes": "Planner: plan and JSON written, jq-validated, committed as the plan commit. Executor: append measured outputs per milestone (MS4 evidence: AC13/AC14/AC16 verbatim) to the features' notes fields; do not set passes - the controller does."
+  "notes": "Planner: plan and JSON written, jq-validated, committed as the plan commit. Executor: append measured outputs per milestone (MS4 evidence: AC13/AC14/AC16 verbatim) to the features' notes fields; do not set passes - the controller does. Iteration 93 (2026-11-16): iteration 92 died before any judge reported. Independent evaluation Sonnet 5.5 90/100 PASS (Agent tool, own clone, 20 mutants: 16 killed, 3 survivors non-blocking: floor boundary -ge->-gt, the vacuous-reason recipe line, the rule-E rc-1 branch). Cross-vendor MiniMax M3 (pi) wall_timeout rc 13 with no report; its partial mutant readings agree with Sonnet's two monitor survivors; its three SURVIVED drill readings were the sandbox's pgrep blindness (control_seen=0), refuted by the controller's out-of-sandbox reruns (stall, mutant-stall, mutant-exit2 KILLED). Controller: tools/ai_live_guard.sh rc 0 at bb613f79 (98 files, 549 scripts), rc 1 with the five A lines at main 36f4ab4c. MS1 passes stays false (the iteration-92 controller's ruling: its executor baseline reading was a one-off infrastructure failure)."
 }

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### m4-7ar-nightly-live-guard-monitor-count (2026-11-16)
+
+#### Fixed
+
+- **Main's nightly `make test` loses two of its reds** (row 7ar, issue #392; built in mission iteration 92, judged and landed in iteration 93; sprint R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT). `ai-live-guard`: the five `--entry` call sites from the universe-lab and reach merges (`mk/lab.mk` lines 62, 63 and 70, `tools/lab_probe.py`, `tools/reach_probe.py`) now clear `AI_LIVE` with `env -u AI_LIVE`; a new `ai-live-guard-static` target runs the static rules under `$(SCRIPT_GATE)` (120 s) and joins `ci-fast`, so this class fails at PR time; every guard run in the mutant loop is bounded (`tools/deadline.sh`, 60 s) and a mutant counts as caught only on rc 1 plus its rule line; a new mutant row covers the `mk/lab.mk` shape. `display-audit-monitor-controls`: the `unbound` and `stale` controls pinned 46 samples, and the crew playthrough gives 45 since #443 (D-148 A); the new `tools/monitor_control_check.sh` reads the count from the run, requires at least 10 samples and fills in the expected counts and frames.
+- Evaluation: Sonnet 5.5 90/100 PASS. The cross-vendor MiniMax M3 run timed out without a verdict; its partial readings agree with Sonnet's. Known gaps (non-blocking): no case tests exactly 10 samples (`-ge` to `-gt` survives); removing the recipe line that requires the vacuous run be refused for the samples-floor reason survives the target (only the floor drill catches it); the rule-E runs' rc-1 branch has no drill. Not in this row: the third red at `36f4ab4c`, `ui-theme-check` (a hard-coded colour override in `ui/survey_map_layer.gd` from the attended telescope merge, #438), is handed to its owner.
+
 ### m4-d149-earth-link-alpha-index (2026-11-13)
 
 #### Fixed
