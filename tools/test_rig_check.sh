@@ -184,11 +184,13 @@ prun() {
   : > "$STUB_POSTS"; : > "$STUB_MAKES"; : > "$STUB_GMAKES"; rc=0
   p="$T/bin:$PATH"; if [ "$2" = nogmake ]; then p=$NOGMAKE; fi
   no=0; if [ "$3" = none ]; then no=1; fi
-  # The fallback cases carry a long version (the 140-character clamp); profile-on keeps a short one, so the clamp drill
-  # names the fallback cases only.
-  v="AILANG v0.54.14"; if [ "$1" != profile-on ]; then v="AILANG v0.54.14 $long"; fi
+  # The fallback cases carry a long version (the 140-character clamp); the others keep a short one, so the clamp drill
+  # names the fallback cases only. $5=1 sets RIG_TRACE; PRUN_FAIL (if set) is the target the stub gmake fails.
+  case "$1" in profile-off|profile-absent|gmake-missing) v="AILANG v0.54.14 $long" ;; *) v="AILANG v0.54.14" ;; esac
+  tr=0; if [ "${5:-0}" = 1 ]; then tr=1; fi
   ( if [ "$4" = 0 ]; then RIG_PROFILE=0; export RIG_PROFILE; fi
-    STUB_NO_TOOLS=$no STUB_VERSION=$v STUB_MAKE_FAIL=none STUB_MAKE_HANG=none RIG_NO_STATUS=0 RIG_DIR="$pad$1" PATH=$p
+    if [ "$tr" = 1 ]; then RIG_TRACE=1; export RIG_TRACE; fi
+    STUB_NO_TOOLS=$no STUB_VERSION=$v STUB_MAKE_FAIL=${PRUN_FAIL:-none} STUB_MAKE_HANG=none RIG_NO_STATUS=0 RIG_DIR="$pad$1" PATH=$p
     export STUB_NO_TOOLS STUB_VERSION STUB_MAKE_FAIL STUB_MAKE_HANG RIG_NO_STATUS RIG_DIR PATH
     sh "$RIG" 7 ) > "$T/out" 2>&1 || rc=$?
 }
@@ -236,14 +238,36 @@ prun gmake-missing nogmake copy unset
 pcase gmake-missing 0 gmake-missing 0 'make test green \(SERIAL FALLBACK: gmake-missing\) on the Studio in ' 'SHELL=[^ ]*timed_recipe_shell\.sh SUITE_TARGET=\$@ -k test$'
 if (PATH=$NOGMAKE; command -v gmake) >/dev/null 2>&1; then why="$why; gmake is on the PATH of this case"; fi
 preport gmake-missing
+# profile-trace: RIG_TRACE=1 on the profiled path adds --trace to the gmake run (the traced baseline, AC3, depends on it).
+prun profile-trace gmake copy unset 1
+pcase profile-trace 0 none 1 'make test green on the Studio in ' 'SHELL=[^ ]*timed_recipe_shell\.sh .*--trace -k test$'
+preport profile-trace
+# profile-red: a red profiled run still closes its log with the summary, and posts the failure.
+PRUN_FAIL='test'; prun profile-red gmake copy unset; PRUN_FAIL=none
+why=
+test "$rc" = 1 || why="rc $rc, want 1"
+test "$(cut -d' ' -f1 "$STUB_POSTS" | tr '\n' ' ')" = 'pending failure ' || why="$why; posts: $(cut -d' ' -f1-2 "$STUB_POSTS" | tr '\n' ' ')"
+grep -Eq '^failure [0-9]+ 01234567: make test failed \(rc 1; bound 7200s\); no failing target in the log' "$STUB_POSTS" || why="$why; no failure description"
+grep -q '^totals' "$pad"profile-red.log || why="$why; no summary totals in the log"
+preport profile-red
+# golden-keeps-profile: the nightly runs the full make test, then --golden-only, on the same commit and RIG_DIR. The golden
+# half must not delete the full half's <dir>.profile/ (the raw rows).
+prun golden-keeps-profile gmake copy unset
+gk=
+test "$rc" = 0 || gk="full rc $rc"
+if [ -f "$pad"golden-keeps-profile.profile/profile.tsv ]; then :; else gk="$gk; no profile after the full run"; fi
+rc=0; ( STUB_VERSION="AILANG v0.54.14" STUB_MAKE_FAIL=none STUB_MAKE_HANG=none RIG_NO_STATUS=0 RIG_DIR="$pad"golden-keeps-profile PATH="$T/bin:$PATH" sh "$RIG" 7 --golden-only ) > "$T/out" 2>&1 || rc=$?
+test "$rc" = 0 || gk="$gk; golden rc $rc"
+if [ -f "$pad"golden-keeps-profile.profile/profile.tsv ]; then :; else gk="$gk; the golden half deleted <dir>.profile"; fi
+why=$gk; preport golden-keeps-profile
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52). The profile
 # overrides (RIG_PROFILE, RIG_TRACE) and the profiler's top-target variable are caller values too.
-n=22
+n=25
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=23; nrc=0
+  n=26; nrc=0
   RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 RIG_PROFILE=0 RIG_TRACE=1 SUITE_TOP_TARGET=poison sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 22 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 22 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 25 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 25 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0

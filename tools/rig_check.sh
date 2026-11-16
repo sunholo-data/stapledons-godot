@@ -72,7 +72,9 @@ fail() {
   exit 1
 }
 
-rm -rf "$dir" "$dir.profile"; mkdir -p "$(dirname "$dir")"
+rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
+# Only the make test run writes <sha>.profile/: a --golden-only run (the nightly's rig/golden half, same sha) must not delete it.
+if [ $tests = 1 ]; then rm -rf "$dir.profile"; fi
 # The clone goes when the run ends, pass or fail; the log ($dir.log) stays. 41 kept clones once
 # filled 40 GB (2026-11-03). RIG_KEEP=1 keeps it for debugging.
 [ "${RIG_KEEP:-0}" = 1 ] || trap 'cd / && rm -rf "$dir"' EXIT
