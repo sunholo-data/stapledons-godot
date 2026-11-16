@@ -1,0 +1,50 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED",
+  "milestone": "M1b",
+  "round": 2,
+  "reviewed_head": "31f7055598be789915f0dd3588f9589632852c83",
+  "evaluator": "claude-sonnet-5-5 (Agent tool)",
+  "score": 88,
+  "verdict": "PASS",
+  "rubric": {
+    "design_1d_conformance (30)": 29,
+    "design_1e_control_quality (25)": 21,
+    "gates_and_ac (20)": 20,
+    "mutation_resistance (15)": 9,
+    "changelog_and_notes_honesty (10)": 9
+  },
+  "blocking_findings": [],
+  "b1_status": "FIXED. rig_check.sh now removes <sha>.profile/ only when tests=1. Reverting the fix (G1) or inverting it (G4) fails golden-keeps-profile with 'the golden half deleted <dir>.profile'. The case is not vacuous: it first asserts the full run exited 0 and wrote profile.tsv, then runs --golden-only on the same RIG_DIR.",
+  "non_blocking_findings": [
+    {"id": "N1", "status": "CLOSED", "note": "profile-trace sets RIG_TRACE=1 and asserts '--trace -k test' reaches the gmake stub. Mutant T1 (trace=) KILLED."},
+    {"id": "N2", "status": "PARTLY OPEN", "note": "profile-red kills the red-run summary survivor (R1 KILLED). Still open: top-10 truncation (NR <= 11 -> NR <= 3) and the totals alternative are not pinned on the one-row fixture; the failed-summary one-liner and the gmake-missing summary are unpinned."},
+    {"id": "N3", "status": "OPEN", "note": "The gmake-missing branch's bounded wrapper (m13) and the profile-absent single-file test remain unpinned. Low."},
+    {"id": "N4", "status": "PARTLY OPEN", "note": "The stale-profile cleanup for the make-test run (G3: if tests=1 ... replaced by ':') is unpinned. keep-going still only exercises the plain-make fallback; the profiled path is covered by the prun cases and I checked it by hand with real make 3.81 and gmake 4.4.1 in round 1."},
+    {"id": "N5", "status": "OPEN", "note": "<sha>.profile/ is never pruned. The rig control also runs real make and gmake in keep-going and suite-profile, by design."},
+    {"id": "N6", "status": "NEW, trivial", "note": "The profile-red and golden-keeps-profile cases bypass pcase, so they do not check the 140-character bound on the failure description or the gmake call. Acceptable."},
+    {"id": "N7", "status": "NEW, trivial", "note": "The controller edit, PRUN_FAIL='test' (quoting for shellcheck SC2209), is behaviour-neutral. shellcheck -S warning now returns no output, and the case it drives (profile-red) fails and passes correctly."}
+  ],
+  "mutants": [
+    {"id": "G1", "mutation": "stale-profile rm unconditional again (B1 reverted)", "expected_case": "golden-keeps-profile", "result": "KILLED", "fail_set": "golden-keeps-profile, caller-poison (24 of 25 ok)"},
+    {"id": "G4", "mutation": "stale-profile rm only when tests=0", "expected_case": "golden-keeps-profile", "result": "KILLED", "fail_set": "golden-keeps-profile, caller-poison"},
+    {"id": "T1", "mutation": "trace=--trace -> trace=", "expected_case": "profile-trace", "result": "KILLED", "fail_set": "profile-trace, caller-poison (the make-call mismatch, no --trace)"},
+    {"id": "R1", "mutation": "summary suppressed when trc != 0", "expected_case": "profile-red", "result": "KILLED", "fail_set": "profile-red ('no summary totals in the log'), caller-poison"},
+    {"id": "G3", "mutation": "stale-profile cleanup replaced by ':'", "expected_case": "none", "result": "SURVIVED", "matters": "low"},
+    {"id": "m03", "mutation": "awk NR <= 11 -> NR <= 3", "expected_case": "summary row count (absent)", "result": "SURVIVED", "matters": "low to medium"},
+    {"id": "m19", "mutation": "awk drops /^totals/", "expected_case": "totals on a long summary (absent)", "result": "SURVIVED", "matters": "low to medium"},
+    {"id": "m13", "mutation": "gmake-missing branch without bounded", "expected_case": "a NOGMAKE hang case (absent)", "result": "SURVIVED", "matters": "low to medium"}
+  ],
+  "gates": [
+    {"command": "env -u ... sh tools/test_rig_check.sh tools/rig_check.sh (two runs)", "rc": 0, "key": "rig-check control: 26 cases, 0 failures (both)"},
+    {"command": "grep -c -E '^rig-check control (profile-off|profile-absent|gmake-missing): ok$'", "rc": 0, "key": "3"},
+    {"command": "make rig-check-control (3.81)", "rc": 0, "key": "26 cases, 0 failures"},
+    {"command": "gmake rig-check-control (4.4.1)", "rc": 0, "key": "26 cases, 0 failures"},
+    {"command": "sh tools/test_suite_profile.sh", "rc": 0, "key": "40 cases, 0 failures"},
+    {"command": "AC13 held-file and .py greps on origin/main...HEAD", "rc": 1, "key": "0 and 0"},
+    {"command": "sh -n both scripts; shellcheck -S warning both", "rc": 0, "key": "clean, no output"},
+    {"command": "make python-guard; make uid-guard", "rc": 0, "key": "ok (25 allowlisted); ok (470 .uid files)"},
+    {"command": "git status --porcelain | grep -v '^??'; git diff --quiet in the eval clone at 31f70555", "rc": 0, "key": "tracked tree clean before and after"}
+  ],
+  "regression_check": "Diff 58419ddb..31f70555 touches only the stale-profile rm in rig_check.sh (line 75-77), the prun parameters in test_rig_check.sh, three new cases and the n/nok counts (25/26), plus sprint JSON notes. All 23 round-1 cases still pass with their assertions unchanged. The nested caller-poison count 25 is consistent with 26 total. No flake in 4 control runs through the harness (two direct, one make, one gmake).",
+  "unmeasured": ["Real rig run of the profiled path on the Studio (controller-owned).", "Executor's revision drill M1 not rerun."]
+}
