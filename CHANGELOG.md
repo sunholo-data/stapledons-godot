@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### r1-rig-test-speed-m1b (2026-11-16)
+
+#### Added
+
+- **The rig's nightly `make test` runs profiled** (R1-RIG-TEST-SPEED M1b, design 1d/1e; D-129 A). The make-test half of `tools/rig_check.sh` runs serially under `tools/suite_profile.sh` with gmake, the raw rows land in `<sha>.profile/` beside the log, and the log ends with the summary's top 10; `RIG_TRACE=1` adds `--trace`. Three loud fallbacks log `rig-check FALLBACK <reason>` and mark the success status: `profile-off` (`RIG_PROFILE=0`, plain make), `profile-absent` (plain make), `gmake-missing` (the profiler on the system make). The baseline runs (three comparable serial gmake runs, plus the system-make fallback run) are still owed to the controller.
+- Evaluation: Sonnet 5.5 66/100 FAIL in round 1 (blocking: a `--golden-only` run deleted the same commit's `<sha>.profile/`, so the nightly's golden half would have erased every night's rows), fixed in revision 1 with new cases `golden-keeps-profile`, `profile-trace` and `profile-red` (26 cases); round 2 88/100 PASS. The cross-vendor MiniMax M3 judge timed out without a verdict. Known gaps (non-blocking): the summary's top-10 cut and totals line, the `bounded` wrapper on the `gmake-missing` branch and the stale-profile removal are not pinned by a case; the control reads the host load through the real profiler, so it fails where `sysctl` is denied (the M1a control stubs it). One real `rig/full` of the profiled path on the Studio (mission iteration 94, sampled load median 15.9) ran over its 7,200 s watchdog with load timeouts; it showed gmake, the rows, the named failing targets and the closing summary working end to end, and it is not a baseline run.
+
 ### m4-7ar-nightly-live-guard-monitor-count (2026-11-16)
 
 #### Fixed

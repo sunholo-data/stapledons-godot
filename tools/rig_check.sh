@@ -17,6 +17,10 @@
 # RIG_NO_STATUS=1 skips the status posts (a dry run on someone else's PR, say).
 # --golden and --golden-only first run the golden setup, the makes that make test used to provide (7af), each
 # bounded; every make call in the run is bounded, so a hang is a named failure, not a stuck nightly.
+# The make test run (M1b) is still serial, but profiled: tools/suite_profile.sh runs it with gmake, its raw rows land in
+# <sha>.profile/ beside the log, and the log ends with the summary's top 10. RIG_TRACE=1 adds --trace. Three loud
+# fallbacks log 'rig-check FALLBACK <reason>' and mark the success: RIG_PROFILE=0 (plain make), profile-absent (plain
+# make), gmake-missing (the profiler on the system make).
 set -eu
 REPO=sunholo-data/stapledons-godot
 TEST_S=${RIG_TEST_S:-7200}   # make test is 66-90 min on the Studio; D-126 C (Mark, 2026-10-28)
@@ -69,6 +73,8 @@ fail() {
 }
 
 rm -rf "$dir"; mkdir -p "$(dirname "$dir")"
+# Only the make test run writes <sha>.profile/: a --golden-only run (the nightly's rig/golden half, same sha) must not delete it.
+if [ $tests = 1 ]; then rm -rf "$dir.profile"; fi
 # The clone goes when the run ends, pass or fail; the log ($dir.log) stays. 41 kept clones once
 # filled 40 GB (2026-11-03). RIG_KEEP=1 keeps it for debugging.
 [ "${RIG_KEEP:-0}" = 1 ] || trap 'cd / && rm -rf "$dir"' EXIT
@@ -91,12 +97,36 @@ case "$have" in *"${pin#v}"*) ;; *) fail "runtime is '$have', pin is $pin" ;; es
 PATH=$PWD/runtime/bin:$PATH; export PATH
 bounded "$DL_S" make sky-assets >> "$log" 2>&1 || fail "rig setup: make sky-assets failed or ran over ${DL_S}s"
 
-start=$(date +%s)
+start=$(date +%s); mark=
 if [ $tests = 1 ]; then
   # Row 7ag: -k runs every make test target, so one known red cannot hide the rest; make -k still exits 2 if any
   # target failed. The failing targets are the top-level make error lines this run appended to the log.
-  n0=$(wc -l < "$log"); trc=0
-  bounded "$TEST_S" make -k test >> "$log" 2>&1 || trc=$?
+  # 1d (M1b): the profiled run needs the instrument on the PR head and gmake on PATH; the fallbacks log their reason.
+  n0=$(wc -l < "$log"); trc=0; fb=
+  if [ "${RIG_PROFILE:-1}" = 0 ]; then fb=profile-off
+  elif [ ! -f tools/suite_profile.sh ] || [ ! -f tools/timed_recipe_shell.sh ]; then fb=profile-absent
+  elif ! command -v gmake >/dev/null 2>&1; then fb=gmake-missing
+  fi
+  trace=; if [ "${RIG_TRACE:-0}" = 1 ]; then trace=--trace; fi
+  case "$fb" in
+    '')
+      bounded "$TEST_S" sh tools/suite_profile.sh run --make gmake --out "$dir.profile" -- $trace -k test >> "$log" 2>&1 || trc=$? ;;
+    profile-off)
+      echo "rig-check FALLBACK profile-off" >> "$log"; mark='(SERIAL FALLBACK: profile-off)'
+      bounded "$TEST_S" make -k test >> "$log" 2>&1 || trc=$? ;;
+    profile-absent)
+      echo "rig-check FALLBACK profile-absent" >> "$log"; mark='(SERIAL FALLBACK: profile-absent)'
+      bounded "$TEST_S" make -k test >> "$log" 2>&1 || trc=$? ;;
+    gmake-missing)
+      echo "rig-check FALLBACK gmake-missing" >> "$log"; mark='(SERIAL FALLBACK: gmake-missing)'
+      bounded "$TEST_S" sh tools/suite_profile.sh run --make make --out "$dir.profile" -- $trace -k test >> "$log" 2>&1 || trc=$? ;;
+  esac
+  case "$fb" in '' | gmake-missing)
+    # The profiled run's summary (its top 10 rows and the totals) closes the log, pass or fail; a failed summary is one line.
+    srcs=0; sumout=$(sh tools/suite_profile.sh summary "$dir.profile/profile.tsv" 2>&1) || srcs=$?
+    if [ "$srcs" = 0 ]; then printf '%s\n' "$sumout" | awk 'NR <= 11 || /^totals/' >> "$log"
+    else echo "rig-check: profile summary failed (rc $srcs)" >> "$log"; fi ;;
+  esac
   if [ "$trc" != 0 ]; then
     red=$(tail -n +"$((n0 + 1))" "$log" | sed -nE "s/^g?make: \*\*\* \[([^]]*: )?([^]]+)\] .*/\2/p; s/^g?make: \*\*\* No rule to make target .([^']+)'.*/\1/p" | awk '!s[$0]++' | tr '\n' ' ' | sed 's/ $//')
     n=$(echo $red | wc -w | tr -d ' ')
@@ -119,4 +149,4 @@ if [ $golden = 1 ]; then
 fi
 mins=$(( ($(date +%s) - start + 59) / 60 ))
 echo "rig-check: ok, $short green ($suite, ${mins} min)"
-status success "$suite green on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))" || { echo "rig-check: could not post the success status"; exit 1; }
+status success "$suite green${mark:+ $mark} on the Studio in ${mins} min ($(ailang --version 2>&1 | head -1))" || { echo "rig-check: could not post the success status"; exit 1; }
