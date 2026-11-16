@@ -444,10 +444,24 @@ ai-core-publish:   ## AI.8 maintainers (gcloud auth): upload the pinned core blo
 .PHONY: ai-live-guard ai-settings ai-runtime ai-export-smoke ai-loopback-mutants
 ai-test: ai-live-guard ai-settings
 
+# 7ar: the static rules alone (git, perl, sh; no Godot, no import; 8 s on the Studio) run in the GitHub fast tier,
+# so a PR that adds a line able to run the service live without clearing AI_LIVE fails before it merges. Bounded
+# by $(SCRIPT_GATE), as the fast tier's other non-Godot gates are (mk/observations.mk): AI_GUARD_S is 15 times the
+# measured 8 s, for a slower runner; a stall is stopped (TERM, then KILL to the process group) and fails the target.
+# ai-live-guard (each rule's mutant, the launch builder under Godot) runs it first. Row 7ar r2 (quorum carve-out): every
+# other guard run in ai-live-guard (one per mutant, and the two rule-E runs) is bounded by tools/deadline.sh at
+# AI_GUARD_RUN_S, 7.5 times the slowest measured scan (8.0 s whole tree; 5.4-5.6 s on a mutant scratch copy). A mutant
+# is caught only on the guard's rc 1 with its rule's line; a timeout (124) or any other rc is an infrastructure failure.
+AI_GUARD_S ?= 120
+AI_GUARD_RUN_S ?= 60
+.PHONY: ai-live-guard-static
+ai-live-guard-static: ## AC15 rules A-E over the tracked tree (tools/ai_live_guard.sh), under a deadline; in ci-fast
+	@$(SCRIPT_GATE) ai-live-guard-static $(SCRATCH)/ai-live-guard-static.log $(AI_GUARD_S) '^ai-live-guard: ok \([1-9][0-9]* make/shell/CI files, [1-9][0-9]* test/tool scripts, launch builder, settings\)$$' -- sh tools/ai_live_guard.sh .
+ci-fast: ai-live-guard-static
+
 AI_G := $(SCRATCH)/ai-live-guard
 ai_guard_scan = Makefile mk .github tests tools bridge ui
-ai-live-guard: import   ## AC15: no target, test, CI job or launch path can start a live provider; each rule's mutant is caught
-	@sh tools/ai_live_guard.sh .
+ai-live-guard: import ai-live-guard-static   ## AC15: no target, test, CI job or launch path can start a live provider; each rule's mutant is caught
 	@set -e; for m in \
 	  'mk/ai.mk@\z@\nai-mutant:\n\t$$(AILANG) run --quiet --package-dir ai --provider gemini ai/service.ail\n@A mk/ai.mk' \
 	  'mk/ai.mk@\z@\nai-mutant:\n\t$$(AILANG) run --quiet --package-dir ai --provider openrouter ai/service.ail\n@A mk/ai.mk' \
@@ -472,20 +486,30 @@ ai-live-guard: import   ## AC15: no target, test, CI job or launch path can star
 	  'mk/ai.mk@\z@\nai-mutant:\n\tenv -u AI_LIVE_OLD $$(AILANG) run --entry live ai/service.ail\n@A mk/ai.mk' \
 	  'ui/ui_scale.gd@\z@\nfunc _rogue() -> void:\n\tOS.set_environment("AI_LIVE", "1")\n@B ui/ui_scale.gd' \
 	  'ui/ui_scale.gd@\z@\nfunc _rogue2() -> void:\n\tOS.execute("ailang", ["run", "--entry", "live", "ai/service.ail"])\n@A ui/ui_scale.gd' \
+	  'mk/lab.mk@\z@\nlab-mutant:\n\tfor e in x; do $$(LAB_RUN) --entry $$$$e --args-json 0 sim/$$$$e.ail; done\n@A mk/lab.mk' \
 	  'Makefile@\z@\ninclude infra/live.mk\n@A Makefile: include outside mk/'; do \
 	  file=$${m%%@*}; rest=$${m#*@}; from=$${rest%%@*}; rest=$${rest#*@}; to=$${rest%%@*}; want=$${rest#*@}; \
 	  rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
 	  FROM="$$from" TO="$$to" perl -0pi -e '$$t = $$ENV{TO}; $$t =~ s/\\n/\n/g; $$t =~ s/\\t/\t/g; $$t =~ s/\\x40/chr(64)/ge; s/$$ENV{FROM}/$$t/m or die "anchor not found: $$ENV{FROM}\n"' $(AI_G)/$$file; \
-	  if sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt; then echo "guard mutant SURVIVED: $$file $$to"; exit 1; fi; \
+	  rc=0; sh tools/deadline.sh $(AI_GUARD_RUN_S) sh tools/ai_live_guard.sh $(AI_G) > $(AI_G)/out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) echo "guard mutant SURVIVED: $$file $$to"; exit 1;; 1) ;; \
+	    124) echo "guard mutant infrastructure failure: $$file: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard mutant infrastructure failure: $$file: the guard exited $$rc, want 1:"; cat $(AI_G)/out.txt; exit 1;; esac; \
 	  grep -qF "ai-live-guard: $$want" $(AI_G)/out.txt || { echo "guard mutant in $$file did not fail '$$want':"; cat $(AI_G)/out.txt; exit 1; }; \
 	  echo "guard mutant caught: $$file ($$want)"; \
 	done
 	@# Rule E reads tracked files only: an untracked checkout under the root (.claude/worktrees/*)
 	@# writing live_allowed changes nothing; the same file tracked is caught.
 	@rm -rf $(AI_G) && mkdir -p $(AI_G) && git ls-files $(ai_guard_scan) ui bridge | grep -v '^tests/replays/\|^tests/ai/\|^tests/fixtures/\|\.uid$$' | tar -cf - -T - | tar -xf - -C $(AI_G); \
-	  cd $(AI_G) && git init -q && git add -A && mkdir -p .claude/worktrees/w/ui && printf '\tbridge.live_allowed = true\n' > .claude/worktrees/w/ui/x.gd && \
-	  sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt || { echo "guard: an untracked worktree file changed rule E:"; cat out.txt; exit 1; }; \
-	  git add .claude/worktrees/w/ui/x.gd; if sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt; then echo "guard mutant SURVIVED: tracked live_allowed writer"; exit 1; fi; \
+	  cd $(AI_G) && git init -q && git add -A && mkdir -p .claude/worktrees/w/ui && printf '\tbridge.live_allowed = true\n' > .claude/worktrees/w/ui/x.gd || { echo "guard: rule E infrastructure failure: setup in $(AI_G) failed"; exit 1; }; \
+	  rc=0; sh $(CURDIR)/tools/deadline.sh $(AI_GUARD_RUN_S) sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) ;; 1) echo "guard: an untracked worktree file changed rule E:"; cat out.txt; exit 1;; \
+	    124) echo "guard: rule E infrastructure failure: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard: rule E infrastructure failure: the guard exited $$rc, want 0:"; cat out.txt; exit 1;; esac; \
+	  git add .claude/worktrees/w/ui/x.gd; rc=0; sh $(CURDIR)/tools/deadline.sh $(AI_GUARD_RUN_S) sh $(CURDIR)/tools/ai_live_guard.sh . > out.txt 2>&1 || rc=$$?; \
+	  case $$rc in 0) echo "guard mutant SURVIVED: tracked live_allowed writer"; exit 1;; 1) ;; \
+	    124) echo "guard: rule E infrastructure failure: the guard did not finish in $(AI_GUARD_RUN_S) s (deadline, rc 124)"; exit 1;; \
+	    *) echo "guard: rule E infrastructure failure: the guard exited $$rc, want 1:"; cat out.txt; exit 1;; esac; \
 	  grep -qF "ai-live-guard: E live_allowed written outside AiSettings.apply" out.txt && echo "guard: rule E reads git ls-files (untracked .claude/worktrees ignored, tracked writer caught)"
 	@$(SCRIPT_GATE) ai-live-guard $(SCRATCH)/ai-live-guard.log 600 '^ai settings: ok \([1-9][0-9]* passed, 0 failures; launch_default\)$$' -- env -u AI_LIVE -u GOOGLE_API_KEY -u OPENROUTER_API_KEY $(GODOT_SIM) --headless --path . --script tests/test_ai_settings.gd -- --launch-default
 

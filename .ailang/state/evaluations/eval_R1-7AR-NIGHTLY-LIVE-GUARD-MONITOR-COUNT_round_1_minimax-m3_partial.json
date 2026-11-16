@@ -1,0 +1,56 @@
+{
+  "sprint": "R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT",
+  "judge": "openrouter/minimax/minimax-m3 (pi lane, scripts/mission_pi_run.sh), Stapledon iteration 93",
+  "commit": "bb613f79",
+  "score": null,
+  "verdict": "NO VERDICT: lane wall_timeout (rc 13, 3609 s, 117 tool executions, no report written); salvaged by the controller from /tmp/pi_run_iter93_evalmm.ndjson",
+  "salvaged_mutants": [
+    {
+      "id": "H1",
+      "description": "tools/monitor_control_check.sh floor boundary -ge -> -gt",
+      "result": "SURVIVED (agrees with Sonnet M6)"
+    },
+    {
+      "id": "H1b",
+      "description": "floor weakened to >=1",
+      "result": "KILLED"
+    },
+    {
+      "id": "H2",
+      "description": "frame-key uniqueness relaxed to >=1",
+      "result": "KILLED"
+    },
+    {
+      "id": "H3",
+      "description": "skew check removed",
+      "result": "KILLED"
+    },
+    {
+      "id": "H4",
+      "description": "@2N@ substitution yields 1",
+      "result": "KILLED (gate rc 2)"
+    },
+    {
+      "id": "A4",
+      "description": "mk/ai.mk ci-fast edge removed",
+      "result": "KILLED"
+    },
+    {
+      "id": "A5",
+      "description": "ai-live-guard-static prerequisite removed",
+      "result": "KILLED"
+    },
+    {
+      "id": "L1",
+      "description": "env -u AI_LIVE dropped from mk/lab.mk:70",
+      "result": "KILLED"
+    },
+    {
+      "id": "E2",
+      "description": "mk/earth-link.mk: vacuous control no longer requires the samples-floor reason",
+      "result": "SURVIVED make display-audit-monitor-controls; KILLED only by drill floor (agrees with Sonnet M13)"
+    }
+  ],
+  "sandbox_readings_refuted": "Inside the pi sandbox the drills stall, mutant-stall and mutant-exit2 read SURVIVED with control_seen=0, because pgrep cannot read the process table there ('pgrep: Cannot get process list', 32 occurrences; the iteration-64 process fix). The controller re-ran all three out of the sandbox on bb613f79 (sha256 of Appendix A e55b79e3e52d828b): stall KILLED (secs=5), mutant-stall KILLED (secs=14), mutant-exit2 KILLED (secs=6), control_seen=1 each, tree clean.",
+  "notes": "A leftover mutant (the D3 lab.mk row removed from mk/ai.mk) was in the judge's clone at the timeout; the controller restored it with git checkout. Not counted as a verdict; the iteration's independent verdict is Sonnet's 90 PASS."
+}
