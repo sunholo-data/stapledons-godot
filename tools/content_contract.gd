@@ -2,6 +2,7 @@ extends RefCounted
 ## Offline evidence only. Existing type loaders remain the runtime authority.
 const CATALOG := "res://art/content-pipeline/catalog.json"
 const KINDS := ["captain", "npc", "painted_deck"]
+const BUNDLE_IDS := ["captain", "painted-npcs", "painted-bridge", "painted-commons"]
 const RUNTIME_ROOTS := ["assets/", "data/", "shaders/", "interior/", "ship_demo_bundle/", "ship_commons_bundle/"]
 
 static func doc(path: String) -> Dictionary:
@@ -23,6 +24,7 @@ static func catalog_errors(catalog: Dictionary) -> PackedStringArray:
 		if not entry is Dictionary or not entry.get("id") is String or entry.id.is_empty(): errors.append("invalid_id"); continue
 		if ids.has(entry.id): errors.append("duplicate_id")
 		ids[entry.id] = true
+	if ids.size() != BUNDLE_IDS.size() or not BUNDLE_IDS.all(func(id: String) -> bool: return ids.has(id)): errors.append("catalog_inventory")
 	return errors
 
 static func input_errors(inputs: Array) -> PackedStringArray:
@@ -130,7 +132,7 @@ static func check_entry(entry: Dictionary, mode: String = "runtime", fixture: bo
 	var provenance: Variant = entry.get("provenance")
 	var review: Variant = entry.get("review")
 	if not provenance is Dictionary or not ["tool", "model", "seed", "processing"].all(func(k: String) -> bool: return provenance.get(k) is String and not provenance[k].is_empty()): out.errors.append("provenance_schema")
-	if not review is Dictionary or not review.get("appearance") is String or not review.get("production") is String: out.errors.append("review_schema")
+	if not review is Dictionary or not ["appearance", "production"].all(func(k: String) -> bool: return review.get(k) is String and not review[k].is_empty()): out.errors.append("review_schema")
 	if mode == "authoring":
 		if not entry.get("inputs") is Array or entry.inputs.is_empty(): out.errors.append("source_schema")
 		else: out.errors.append_array(input_errors(entry.inputs))

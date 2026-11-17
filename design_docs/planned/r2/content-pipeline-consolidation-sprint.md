@@ -1,6 +1,6 @@
-# Proposed sprint: CONTENT-PIPELINE-CONSOLIDATION
+# Sprint: CONTENT-PIPELINE-CONSOLIDATION
 
-**Status:** Proposed / unapproved, 2026-11-17. Planning only. **No executor handoff.**
+**Status:** Approved by Mark, attended 2026-11-17; CP1–CP3 pilot completed, awaiting independent integration/evaluation. Real-pack AC9 remains pending. See [execution report](content-pipeline-consolidation-report.md).
 **Design:** [content-pipeline-consolidation.md](content-pipeline-consolidation.md).
 **Tracking:** `.ailang/state/sprints/sprint_CONTENT-PIPELINE-CONSOLIDATION.json`.
 **Goal:** Verify four current bundles through three explicit adapters, retaining their typed loaders/gates; prove one additional fixture asset passes the same lifecycle.
@@ -76,7 +76,7 @@ Completion means CP1–CP3 pass their focused controls and the report states the
 
 ## Approval and stop behavior
 
-There are no unresolved canon decisions. This sprint itself is unapproved under CLAUDE.md's “Sprint plan … Stop for approval before executing.” Do not launch an executor from these planning artifacts. If an unattended executor receives them while `approved` is false: **STOP: report `BLOCKED: sprint approval pending` and end the run without mutations.** Do not create a commit merely to document that no implementation was authorized.
+There are no unresolved canon decisions. Mark approved CP1–CP3 on 2026-11-17 (tracking JSON approval). The historical pre-execution rule was CLAUDE.md's “Sprint plan … Stop for approval before executing.” That gate was satisfied before execution. If an unattended executor receives them while `approved` is false: **STOP: report `BLOCKED: sprint approval pending` and end the run without mutations.** Do not create a commit merely to document that no implementation was authorized.
 
 If implementation discovers different asset bytes/base ownership or a necessary visual behavior change, stop the affected slice, preserve current work and report the concrete conflict. Approval of this plan must not be interpreted as approval to overwrite other work, regenerate art, alter a cap silently or publish a build.
 
@@ -84,4 +84,4 @@ If implementation discovers different asset bytes/base ownership or a necessary 
 
 - [x] CP1: 25 contract checks pass through SCRIPT_GATE, including four real bundle source/closure checks. Red first: absent shared helper failed the gate. Added one retained captain test-image fixture; no new art generated. Runtime mode ignores absent source inputs; authoring mode fails by name. Existing ship-demo/Commons stages were invoked explicitly once to prepare ignored `.bin` witnesses; checks do not stage them. Base refreshed to `ec415f33` before implementation.
 - [x] CP2 core: budget30/0, scratch-stage7/0, real authoring check4/0 (92 s), captain-anim87/0. Same-input scratch staging is byte-identical and face-identical; no production output changed. Broader typed regressions are recorded in final evidence.
-- [ ] CP3: pack controls and wiring.
+- [x] CP3: pack19/0; export audit159 literals/0 failures and16 inherited mutants killed; level-export4/0; UID/Python guards and script-gate lint pass. Narrow inherited painted-path classifications added. Top Makefile include is an integrator action; no native export performed.
