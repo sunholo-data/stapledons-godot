@@ -71,7 +71,7 @@ Source it once per shell, from the repo root; it cuts the two fences from the co
 dependence on `/tmp`):
 
 ```sh
-D=design_docs/planned/r1/m4-7ap-source-literal-guard-edges.md
+D=design_docs/implemented/r1/m4-7ap-source-literal-guard-edges.md
 W=$(mktemp -d "${TMPDIR:-/tmp}/7ap.XXXXXXXX") || exit 1
 # fence NAME: the body of the fence opened by a line "```<lang> NAME" in this doc
 fence() { awk -v n="$1" '$0 ~ "^```[a-z]+ " n "$" { f = 1; next } f && /^```$/ { exit } f' "$D"; }

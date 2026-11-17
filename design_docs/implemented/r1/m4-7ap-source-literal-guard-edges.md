@@ -147,7 +147,7 @@ All checks are headless and run in the executor's full clone. Appendix A must be
 **Preamble** (source it once per shell, from the repo root):
 
 ```sh
-D=design_docs/planned/r1/m4-7ap-source-literal-guard-edges.md
+D=design_docs/implemented/r1/m4-7ap-source-literal-guard-edges.md
 W=$(mktemp -d "${TMPDIR:-/tmp}/7ap.XXXXXXXX") || exit 1
 # fence NAME: the body of the fence opened by a line "```<lang> NAME" in this doc
 fence() { awk -v n="$1" '$0 ~ "^```[a-z]+ " n "$" { f = 1; next } f && /^```$/ { exit } f' "$D"; }
