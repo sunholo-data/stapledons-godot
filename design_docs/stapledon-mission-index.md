@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 96 | 2026-11-17 | Row 7ao LANDED (PR #456, merge `7a011303`): the session-minor guard refuses a downgrade, a self-floor, a commented floor, three more test spellings... |
 | 95 | 2026-11-17 | Nightly `rig-check-control` red FIXED FORWARD (PR #453, merge `afff5571`): iteration 94's profiler gave the control a 115-character TMPDIR and it e... |
 | 94 | 2026-11-16 | L4 M1b code half LANDED (PR #451, merge `2bb77da7`): the nightly `rig/full` runs `make test` profiled on gmake with three loud fallbacks; round-1 j... |
 | 93 | 2026-11-16 | Row 7ar LANDED (PR #448, merge `ba3be980`): iteration 92's orphaned build judged and landed; main's nightly loses its `ai-live-guard` and `display-... |
