@@ -156,11 +156,16 @@ func test_sim_warm() -> void:
 		return
 	var pid := w.child_pid
 	SimBridge.offer_warm(w)
-	var other := SimBridge.new() # a different protocol minor never takes it
+	var other := SimBridge.new() # 7ao: another protocol minor alone, no override, never takes it
 	other.want_minor = SimBridge.PROTO_MINOR
-	other.launch_override = {"bin": "/bin/false", "args": []}
-	other.start()
-	check(SimBridge.has_warm(), "a start() with a launch override or another minor leaves the warm sim")
+	check(not other._adopt_warm() and SimBridge.has_warm(), "a start() asking another minor leaves the warm sim")
+	other.stop() # a no-op unless it took the child
+	var ovr := SimBridge.new() # the same minor with a launch override never takes it
+	ovr.want_minor = SimBridge.DEPARTURE_MINOR
+	ovr.launch_override = {"bin": "/bin/false", "args": []}
+	ovr.start()
+	check(SimBridge.has_warm(), "a start() with a launch override leaves the warm sim")
+	ovr.stop()
 	var b := SimBridge.new()
 	b.want_minor = SimBridge.DEPARTURE_MINOR
 	check(b.start() and b.child_pid == pid and not SimBridge.has_warm(), "the next default start() takes the warm sim (same child)")
