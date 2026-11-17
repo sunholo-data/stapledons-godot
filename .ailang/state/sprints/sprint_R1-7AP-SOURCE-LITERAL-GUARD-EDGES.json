@@ -1,0 +1,287 @@
+{
+  "sprint_id": "R1-7AP-SOURCE-LITERAL-GUARD-EDGES",
+  "status": "approved",
+  "approved": true,
+  "approved_by": "mission controller iteration 97 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; quorum r1 BLOCKED 2/3 (kimi, sonnet; gemini pass) -> designer revision 1 (GLM 5.3); r2 BLOCKED 3/3, all with concrete fixes, none disputing the direction -> controller revision 2 under the narrow-refinement carve-out, fixes verbatim; no round 3; plan by Kimi K3 (OpenRouter) after the Ollama lane hit its session limit)",
+  "created": "2026-11-17",
+  "design_doc": "design_docs/planned/r1/m4-7ap-source-literal-guard-edges.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7ap-source-literal-guard-edges-sprint.md",
+  "branch": "mission/stapledon-iter97-7ap",
+  "base_commit": "1e839e2e",
+  "implements": [
+    "7ap"
+  ],
+  "scope": "82 changed lines in four files, applied byte-exactly from Appendix A of the design doc (git apply --numstat, planner-replicated: 63 7 tools/test_replay.py / 5 2 tools/script_gate_prereqs.sh / 3 2 mk/script-gates.mk / 2 0 tests/fixtures/script_gate/prereq_negative.mk.txt; 4 files changed, 73 insertions(+), 11 deletions(-); fence 148 lines, sha256 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39), plus changelogs/unreleased/2026-11-17-source-literal-guard-edges.md. No Makefile line is edited (the new SG_PREREQS pairs only read make's database); no product, asset, shader, golden or *.ail change; no new script -> no new .uid; no new *.py -> no allowlist row (tools/test_replay.py already registered, tools/python-allowlist.txt:24). Planner note: the doc's Estimated LOC paragraph says +61 -7 for tools/test_replay.py; the fence measures 63 7; the binding AC1 total 73 11 matches.",
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "(a) the scan reads the four spellings; every grammar edge gets a control (design Milestones table M1, order 1: SOURCE_TOKEN alternatives + the nine-text control test_the_7ap_spellings_fail + the comment block; the design row says eight-text, revision 2 added ampsq.gd — nine texts, V24)",
+      "files": [
+        "tools/test_replay.py"
+      ],
+      "loc": "part of the single byte-exact apply with M2: 63 7 tools/test_replay.py (planner-replicated numstat; fence 148 lines, sha256 66f65140...)",
+      "depends_on": [],
+      "acceptance": [
+        "AC2",
+        "AC6",
+        "AC7"
+      ],
+      "commands": [
+        "byte-for-byte: source the doc's preamble (fence/mut/7ap_mut.py/PAIRS); fence 7ap.patch -> $W/7ap.patch; wc -l = 148; shasum -a 256 = 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39; git apply --check clean; git apply --numstat = 63 7 tools/test_replay.py / 5 2 tools/script_gate_prereqs.sh / 3 2 mk/script-gates.mk / 2 0 tests/fixtures/script_gate/prereq_negative.mk.txt; git apply $W/7ap.patch — a mismatch means re-extract, never retype (AC1 commits, executed first, recorded under M5)",
+        "AC2: make -s --no-print-directory replay-map-index 2>&1 | tail -3; echo rc=$?",
+        "AC6: for m in unclosed minus cross ampid sqindex sqid sqstr ampsqid; do mut \"$m\" | grep -m1 \"^FAIL: test_the_7ap\" | sed \"s/^/$m /\"; done",
+        "AC7: the doc's AC block — write the four drill files with the runtime A1 (alpha Cen A's stars.json index + 1), git add them, python3 tools/test_replay.py MapIndex > $W/ac7.log 2>&1; echo rc=$?; grep -o the drill paths; then unstage and delete the drills"
+      ],
+      "expectations": "AC2: blank, Ran 11 tests ..., OK, rc=0 (base Ran 9 tests in 0.183s / OK — planner-replicated). AC6: eight lines, unclosed/minus/cross/ampid/sqindex/sqid/sqstr/ampsqid each FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail) (doc-quoted expected table; base survival V4/V7 doc-quoted). AC7: rc=1, then exactly four lines tools/_7ap_drill_comment.gd:2, tools/_7ap_drill_flank.gd:1, tools/_7ap_drill_flank.py:1, tools/_7ap_drill_string.py:1 (doc-quoted).",
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "measured": null,
+      "notes": null
+    },
+    {
+      "id": "M2",
+      "title": "the meta test: the guard's own assertions must be able to fail (fold-in, G13) — test_the_7ap_guard_test_can_fail, four sub-cases (design Milestones table M2: with M1, same file)",
+      "files": [
+        "tools/test_replay.py"
+      ],
+      "loc": "part of the same 63 7 apply (the meta test at patched line 540; plain unittest, no mock, no subprocess, no file writes)",
+      "depends_on": [],
+      "acceptance": [
+        "AC3",
+        "AC4",
+        "AC5"
+      ],
+      "commands": [
+        "AC3: python3 tools/test_replay.py 2>&1 | tail -3; echo rc=$?",
+        "AC4: mut foldin",
+        "AC5: for m in assertin assertin1 assertin2; do mut \"$m\" | grep -m1 \"^FAIL: test_the_7ap_guard_test_can_fail\" | sed \"s/^/$m /\"; done"
+      ],
+      "expectations": "AC3: Ran 40 tests ..., blank, OK, rc=0 (base Ran 38 tests in 2.971s / OK — planner-replicated). AC4: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail), Ran 11 tests ..., FAILED (failures=1), and NO FAIL for test_source_literals_match_the_map (doc-quoted; the controller's fold-in scenario made permanent; base survival V4). AC5: three lines assertin/assertin1/assertin2 each FAIL: test_the_7ap_guard_test_can_fail (doc-quoted).",
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "measured": null,
+      "notes": null
+    },
+    {
+      "id": "M3",
+      "title": "(e) the four 7ah/7al ci-fast edges join SG_PREREQS: pin 5 -> 9, negative fixture gains the merged rule line (design Milestones table M3: independent)",
+      "files": [
+        "mk/script-gates.mk",
+        "tests/fixtures/script_gate/prereq_negative.mk.txt"
+      ],
+      "loc": "3 2 mk/script-gates.mk / 2 0 tests/fixtures/script_gate/prereq_negative.mk.txt (planner-replicated numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC8",
+        "AC9"
+      ],
+      "commands": [
+        "AC8: make -s --no-print-directory script-gate-lint 2>&1 | tail -1; echo rc=$?",
+        "AC9: the doc's AC block — cp Makefile $W/Makefile.keep; delete the 'ci-fast: similar-main-guard similar-guard-controls' rule line with perl; make -s script-gate-lint > $W/ac9a.log 2>&1; echo rc=$?; grep -c \"lost its prerequisite similar-\" $W/ac9a.log; restore; drop one pair from SG_PREREQS; make -s script-gate-lint > $W/ac9b.log 2>&1; echo rc=$?; grep -c the pin message; git checkout -- mk/script-gates.mk; re-run; echo restored=$?"
+      ],
+      "expectations": "AC8: script-gate-prereqs: ok (9 pairs hold in Makefile: ... ci-fast:session-minor-guard-controls), rc=0 (base ok (5 pairs ...) — planner-replicated). AC9: rc=2, 2 (both 7ah refusals by name); then rc=2, 1 (SG_PREREQS holds 8 pairs (8 distinct) but SG_PREREQS_PAIRS is 9); then restored=0 (doc-quoted expected table; base survival V19 doc-quoted, its positive half planner-replicated PV8).",
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "measured": null,
+      "notes": null
+    },
+    {
+      "id": "M4",
+      "title": "(f) both make-database consumers drain the pipe: grep -q -> grep >/dev/null, awk exit -> awk !seen; verdicts untouched (design Milestones table M4: independent)",
+      "files": [
+        "tools/script_gate_prereqs.sh"
+      ],
+      "loc": "5 2 tools/script_gate_prereqs.sh (planner-replicated numstat; two one-line changes + a three-line comment)",
+      "depends_on": [],
+      "acceptance": [
+        "AC10"
+      ],
+      "commands": [
+        "AC10: the doc's AC block — python3 $W/7ap_mut.py sigpipe; dash -c 'trap \"\" PIPE; exec dash tools/script_gate_prereqs.sh Makefile '\"$PAIRS\" 2>$W/ac10a.err >/dev/null; echo rc=$?; grep -c \"printf: I/O error\" $W/ac10a.err; git checkout -- tools/script_gate_prereqs.sh; the same again -> $W/ac10b.err; then dash tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_negative.mk.txt $PAIRS missing-target:x > $W/ac10c.out 2> $W/ac10c.err; echo rc=$?; grep -c the refusal lines and the I/O errors"
+      ],
+      "expectations": "rc=0, 10 (pre-fix noise); then rc=0, 0; then rc=1, 2, 0 (the negative control keeps its exactly-two named refusals with no I/O error) — doc-quoted expected table (mechanism V12). If dash is absent: print 'dash absent', run the three with sh; the verdict columns (rc=..., the 2) still hold, the two I/O-error counts are skipped — say so in the evidence (design AC table). dash present on the executor's host (planner-verified PV10).",
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "measured": null,
+      "notes": null
+    },
+    {
+      "id": "M5",
+      "title": "Evidence and changelog: AC1-AC15 assembled, the fragment, the JSON (design Milestones table M5: last; cross-cutting verification — patch identity, hygiene, scope, the real-tree pin, the oracle, the PR re-check, cleanliness)",
+      "files": [
+        "changelogs/unreleased/2026-11-17-source-literal-guard-edges.md",
+        ".ailang/state/sprints/sprint_R1-7AP-SOURCE-LITERAL-GUARD-EDGES.json"
+      ],
+      "loc": "~6 lines of fragment + the JSON evidence",
+      "depends_on": [
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC11",
+        "AC12",
+        "AC13",
+        "AC14",
+        "AC15"
+      ],
+      "commands": [
+        "AC1 (first in execution order): shasum -a 256 $W/7ap.patch | cut -d' ' -f1; git apply --check $W/7ap.patch && git apply $W/7ap.patch && git add tools/test_replay.py tools/script_gate_prereqs.sh mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt && git commit -q -m \"7ap: source-literal guard lexical edges, meta test, SG_PREREQS 9, pipe drain\" && echo committed; git diff --numstat 1e839e2e HEAD -- tools mk tests | awk '{ i += $1; d += $2 } END { print i, d }'",
+        "AC11: make -s --no-print-directory python-guard uid-guard >/dev/null 2>&1; echo guards=$?; shellcheck tools/script_gate_prereqs.sh && shellcheck -s dash tools/script_gate_prereqs.sh && echo shellcheck=clean; git diff --check 1e839e2e HEAD -- tools mk tests; echo check=$?; git diff --name-only 1e839e2e HEAD -- tools mk tests",
+        "AC12: the doc's inline Python (source_index_pairs over m.sources(), m.stars(); count, sorted names, sha256)",
+        "AC13: fence 7ap.oracle > $W/7ap.oracle.py; python3 $W/7ap.oracle.py",
+        "AC14: for n in 435 380 373: gh pr diff $n --repo sunholo-data/stapledons-godot --name-only under a 30 s perl-alarm; print pr<n> files=... and makefile=<count>; halt on any 7ap-file hit or gh failure (blocking; network + gh auth)",
+        "fragment: changelogs/unreleased/2026-11-17-source-literal-guard-edges.md (### Changed, the 7am/7ao shape); commit it",
+        "AC15 (last): rm -rf $W; git status --porcelain --untracked-files=all"
+      ],
+      "expectations": "AC1: 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39, committed, 73 11 (planner-replicated on the extracted fence). AC11: guards=0, shellcheck=clean, check=0, then the four paths mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt tools/script_gate_prereqs.sh tools/test_replay.py. AC12: 16 [], the sorted 16 names, sha 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 (planner-replicated at the base, valid by V8; a legitimate new tracked pair moves the pin — name the delta; a shrunk/changed set with no new pair is a blinding regression: stop). AC13: files 503 (planner-replicated), old_pairs 41 new_pairs 41, blinded [], gained [], neg_index_pairs [], amp_or_caret_tokens 0, levels_with_second_token [], comment_line_tokens [('tools/bright_star_audit.gd', 8)] (doc-quoted). AC14: pr435/pr380/pr373 files=... makefile=1 (counts re-measured at landing; pick time 27/31/57, V21 doc-quoted), rc 0; any hit or gh failure halts and is recorded. AC15: empty.",
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "measured": null,
+      "notes": null
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "The patch is Appendix A, byte for byte, applies to 1e839e2e, and is committed",
+      "command": "shasum -a 256 \"$W/7ap.patch\" | cut -d' ' -f1; git apply --check \"$W/7ap.patch\" && git apply \"$W/7ap.patch\" && git add tools/test_replay.py tools/script_gate_prereqs.sh mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt && git commit -q -m \"7ap: source-literal guard lexical edges, meta test, SG_PREREQS 9, pipe drain\" && echo committed; git diff --numstat 1e839e2e HEAD -- tools mk tests | awk '{ i += $1; d += $2 } END { print i, d }'",
+      "expected": "66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39, committed, 73 11 (fence 148 lines — planner-replicated)"
+    },
+    {
+      "id": "AC2",
+      "criterion": "The guard passes the patched tree; 9 -> 11 tests",
+      "command": "make -s --no-print-directory replay-map-index 2>&1 | tail -3; echo rc=$?",
+      "expected": "blank, Ran 11 tests ..., OK, rc=0 (base Ran 9 tests in 0.183s / OK — planner-replicated)"
+    },
+    {
+      "id": "AC3",
+      "criterion": "The whole harness file passes; 38 -> 40 tests",
+      "command": "python3 tools/test_replay.py 2>&1 | tail -3; echo rc=$?",
+      "expected": "Ran 40 tests ..., blank, OK, rc=0 (base Ran 38 tests in 2.971s / OK — planner-replicated)"
+    },
+    {
+      "id": "AC4",
+      "criterion": "The fold-in double mutation is killed: the weakened assertion with the wrong pair restored goes red on the meta test only",
+      "command": "mut foldin",
+      "expected": "FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail), Ran 11 tests ..., FAILED (failures=1) — and NO FAIL for test_source_literals_match_the_map (doc-quoted; base survival V4: Ran 9 tests ... OK)"
+    },
+    {
+      "id": "AC5",
+      "criterion": "G13's mutations are killed: both assertIns deleted, and each single-line deletion, the meta test goes red",
+      "command": "for m in assertin assertin1 assertin2; do mut \"$m\" | grep -m1 \"^FAIL: test_the_7ap_guard_test_can_fail\" | sed \"s/^/$m /\"; done",
+      "expected": "three lines: assertin FAIL: ..., assertin1 FAIL: ..., assertin2 FAIL: ..., each FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail) (doc-quoted)"
+    },
+    {
+      "id": "AC6",
+      "criterion": "Each grammar edge is pinned: all eight mutations die on the spellings test",
+      "command": "for m in unclosed minus cross ampid sqindex sqid sqstr ampsqid; do mut \"$m\" | grep -m1 \"^FAIL: test_the_7ap\" | sed \"s/^/$m /\"; done",
+      "expected": "eight lines: unclosed FAIL: ..., minus FAIL: ..., cross FAIL: ..., ampid FAIL: ..., sqindex FAIL: ..., sqid FAIL: ..., sqstr FAIL: ... (the r0 consumption re-added), ampsqid FAIL: ... (the [&^]? on a single-quoted id dropped), each FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail) (doc-quoted)"
+    },
+    {
+      "id": "AC7",
+      "criterion": "Both false positives still fail closed: the comment pair, the string pair, and the apostrophe-flanked pair in both languages — nothing is silently consumed",
+      "command": "the doc's AC7 block (runtime A1 = alpha Cen A's stars.json index + 1; four drill files created, added, scanned, then unstaged and deleted)",
+      "expected": "rc=1, then exactly four lines: tools/_7ap_drill_comment.gd:2, tools/_7ap_drill_flank.gd:1, tools/_7ap_drill_flank.py:1, tools/_7ap_drill_string.py:1 (doc-quoted)"
+    },
+    {
+      "id": "AC8",
+      "criterion": "The lint holds all nine pairs and its negative control",
+      "command": "make -s --no-print-directory script-gate-lint 2>&1 | tail -1; echo rc=$?",
+      "expected": "script-gate-prereqs: ok (9 pairs hold in Makefile: ... ci-fast:session-minor-guard-controls), rc=0 (base ok (5 pairs ...) — planner-replicated)"
+    },
+    {
+      "id": "AC9",
+      "criterion": "(e) The new pairs are load-bearing",
+      "command": "the doc's AC9 block (Makefile rule-line deletion on a copy, then one pair dropped from SG_PREREQS, each followed by make -s script-gate-lint; then restore)",
+      "expected": "rc=2, 2 (both 7ah refusals by name); then rc=2, 1 (the pin message SG_PREREQS holds 8 pairs (8 distinct) but SG_PREREQS_PAIRS is 9); then restored=0 (doc-quoted; base survival V19 doc-quoted, its positive half planner-replicated PV8)"
+    },
+    {
+      "id": "AC10",
+      "criterion": "(f) The pre-fix noise returns with the mutation and is gone with the fix; verdicts never move",
+      "command": "the doc's AC10 block (sigpipe mutation applied without mut, dash with SIGPIPE ignored, restore, negative fixture under dash)",
+      "expected": "rc=0, 10; then rc=0, 0; then rc=1, 2, 0 (doc-quoted, V12). If dash is absent: print 'dash absent', run the three commands with sh — the verdict columns (rc=..., the 2) still hold, the two I/O-error counts are skipped, say so in the evidence (design AC table)"
+    },
+    {
+      "id": "AC11",
+      "criterion": "Hygiene gates pass, the code adds no whitespace error, shellcheck is silent, the scope is the four files",
+      "command": "make -s --no-print-directory python-guard uid-guard >/dev/null 2>&1; echo guards=$?; shellcheck tools/script_gate_prereqs.sh && shellcheck -s dash tools/script_gate_prereqs.sh && echo shellcheck=clean; git diff --check 1e839e2e HEAD -- tools mk tests; echo check=$?; git diff --name-only 1e839e2e HEAD -- tools mk tests",
+      "expected": "guards=0, shellcheck=clean, check=0, then the four paths: mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt tools/script_gate_prereqs.sh tools/test_replay.py (the code pathspec excludes the design doc's own diff-context whitespace — design note, 7am precedent; the patch's added lines measured clean: 0 trailing whitespace, 0 space+tab — planner-replicated PV2)"
+    },
+    {
+      "id": "AC12",
+      "criterion": "The real-tree checked set is pinned at landing time (quorum r1: only 2 of the 16 entries were pinned by assertIn)",
+      "command": "the doc's AC12 inline Python (source_index_pairs over m.sources(), m.stars(): count and bad, the sorted names, the sha256)",
+      "expected": "16 [], then the sorted 16 names of V9 (tests/test_bridge_monitors.gd:15 ... ui/transit_harness.gd:10), then 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 — planner-replicated at the base (valid by V8: identical pair sets). A legitimate new tracked pair moves the pin — name the delta and move it; a shrunk or changed set with no new pair is a blinding regression"
+    },
+    {
+      "id": "AC13",
+      "criterion": "The V3/V8 tree measurement is re-runnable (Appendix B oracle) and the revised grammar blinds nothing, finds nothing new",
+      "command": "fence 7ap.oracle > \"$W/7ap.oracle.py\"; python3 \"$W/7ap.oracle.py\"",
+      "expected": "files 503 (planner-replicated); old_pairs 41 new_pairs 41; blinded []; gained []; neg_index_pairs []; amp_or_caret_tokens 0; levels_with_second_token []; comment_line_tokens [('tools/bright_star_audit.gd', 8)] (doc-quoted)"
+    },
+    {
+      "id": "AC14",
+      "criterion": "The pre-landing PR re-check halts on any hit (blocking; needs network + gh auth — the executor's host)",
+      "command": "for n in 435 380 373: perl -e 'alarm shift; exec @ARGV' 30 gh pr diff $n --repo sunholo-data/stapledons-godot --name-only > $W/pr$n.txt (exit 2 with the named line on timeout/failure); echo pr$n files=$(wc -l < $W/pr$n.txt | tr -d ' '); grep -qxE the four 7ap paths -> halt exit 1; echo pr$n makefile=$(grep -cx Makefile $W/pr$n.txt)",
+      "expected": "pr435 files=... makefile=1, pr380 files=... makefile=1, pr373 files=... makefile=1 (counts re-measured at landing; at pick time 27 / 31 / 57, V21 doc-quoted controller measurement), rc 0; any 7ap-file hit prints 'AC14: PR n touches a 7ap file — halt, rebase onto it' and exits 1; a stall prints the timeout line (rc 142 inside, exit 2); any other gh failure prints 'AC14: gh failed for PR n, rc ...' (exit 2). Record which one occurred"
+    },
+    {
+      "id": "AC15",
+      "criterion": "No evidence file is left in the clone",
+      "command": "rm -rf \"$W\"; git status --porcelain --untracked-files=all",
+      "expected": "empty (the four patch files committed at AC1, the fragment committed at M5; $W and the AC7 drills gone; no .uid, no patch residue)"
+    }
+  ],
+  "local_pr_gates": [
+    "M1 on record: AC2's blank / Ran 11 tests / OK / rc=0; AC6's eight kill lines on test_the_7ap_spellings_fail; AC7's rc=1 and the four drill-file lines.",
+    "M2 on record: AC3's Ran 40 tests / OK / rc=0; AC4's single meta FAIL + FAILED (failures=1) with NO test_source_literals_match_the_map FAIL; AC5's three meta FAIL lines.",
+    "M3 on record: AC8's ok (9 pairs hold ...) / rc=0; AC9's rc=2 / 2, rc=2 / 1, restored=0.",
+    "M4 on record: AC10's rc=0 / 10, rc=0 / 0, rc=1 / 2 / 0 (or the recorded dash degradation with the verdict columns intact).",
+    "M5 on record: AC1's sha256 + committed + 73 11; AC11's guards=0, shellcheck=clean, check=0 and the four paths; AC12's 16 [], the 16 names and the sha256; AC13's oracle output (files 503, 41/41, blinded [], gained []); AC14's three pr<n> files=... makefile=1 lines or its recorded halt; AC15's empty status; the fragment in place; the JSON's measured/notes filled, passes true.",
+    "The GitHub gate: make ci-fast green on the PR (.github/workflows/ci.yml:60-62) — it runs replay-map-index (Makefile:513), script-gate-lint (mk/script-gates.mk:27), python-guard and uid-guard (Makefile:73), plus the four newly pinned guard edges (Makefile:134, :172).",
+    "Not run: no GPU gate, no make golden, no capture, no bench, no full local make test (merge rule); the nightly rig/full runs the whole suite — including the full tools/test_replay.py via tools-test — on main post-merge. script-gate-selftest's stub-orphan-child case is environmentally red on this Mac at the base (V18, planner-replicated PV9): not a gate for this row."
+  ],
+  "pause_points": [
+    "Fence extraction != 148 lines, sha256 != 66f65140..., or git apply --check fails -> re-extract, never retype; applied numstat != 73 11 over exactly the four files -> stop.",
+    "Any AC line differing from the design doc's expected table -> stop (AC2 != Ran 11; AC3 != Ran 40; a FAIL for test_source_literals_match_the_map in AC4; AC6 != 8 FAIL lines; AC7 != 4 drill lines; AC8 != ok (9 pairs ...); AC9's refusal strings differ; AC10's counts != 10 then 0; AC12 != 16 [] with the pinned sha and no new pair to name; AC13's blinded/gained non-empty).",
+    "mut refusing a dirty target (exit 4) -> stop, git checkout -- tools/test_replay.py tools/earth_link_capture.gd tools/script_gate_prereqs.sh, report; git status --porcelain non-empty after any mutation AC -> the trap failed: stop and report; do not start the next AC.",
+    "AC9's restore step must end restored=0; anything else -> stop, do not land with a weakened pin or a cropped Makefile.",
+    "AC14: any 7ap-file hit, a 30 s timeout (rc 142), or any other gh failure -> the landing halts; record which occurred and report. Never land past it; never widen the patch.",
+    "dash or shellcheck absent -> the AC tables' degradation path: verdict columns under sh, the skipped counts named in the evidence; never skip silently.",
+    "make script-gate-selftest red on stub-orphan-child on this Mac -> environmental, identical at the base (V18, planner-replicated PV9); not a gate for this row; do not fix it here.",
+    "Any temptation to touch the do-not-touch list -> stop; in particular no Makefile line (the AC9 drill edits a copy restored from $W/Makefile.keep; the pin drill's mk/script-gates.mk edit is git checkout ---restored inside the block).",
+    "No merge before the cross-family evaluation (generator != judge); landing files wait on it."
+  ],
+  "plan_verification": "Planner, 2026-11-17, HEAD e038ce23 (the r2 design commit) on branch mission/stapledon-iter97-7ap; read-only commands only; scratch /tmp/claude/7ap-plan deleted after; git status --porcelain empty after every run; no Godot/AILANG/GPU (the row needs none). PV1 base/HEAD: merge-base 1e839e2e260dcb13e5ca35daf404ecaa6f441895; branch diff = the design doc alone (3 commits); status empty. PV2 the fence: 148 lines, sha256 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39, git apply --check ok, numstat 3 2 mk/script-gates.mk / 2 0 tests/fixtures/script_gate/prereq_negative.mk.txt / 5 2 tools/script_gate_prereqs.sh / 63 7 tools/test_replay.py, stat 4 files changed, 73 insertions(+), 11 deletions(-); added lines 0 trailing-whitespace, 0 space+tab; 7ap.oracle fence 77 lines; patch NOT applied. PV3 base green (V1 replicated): Ran 9 tests in 0.183s / OK (MapIndex, 0 s wall); Ran 38 tests in 2.971s / OK (whole file, 3 s wall). PV4 base lint (V1 replicated): script-gate-lint ok (296 --script invocations: 178 through $(SCRIPT_GATE), 118 on the baseline; 40 includes, all in mk/*.mk; 41 makefiles scanned) + script-gate-prereqs: ok (5 pairs hold ...), rc=0, 1 s. PV5 pins: mk/script-gates.mk:17 SG_PREREQS 5 pairs, :20 pin 5; tools/python-allowlist.txt:24 tools/test_replay.py harness. PV6 AC13's files 503: len(MapIndex().sources()) = 503. PV7 AC12 at the base: 16 [], the 16 sorted names, sha256 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 (valid by V8's identical pair sets). PV8 V19's positive half: the four candidate ci-fast pairs hold at the base (script_gate_prereqs.sh ok, rc=0); V19's negative half (Makefile:134 deletion green) doc-quoted, not re-run. PV9 V18 replicated at the base: script-gate-selftest prints FAIL stub-orphan-child: control (sleep N) not visible to pgrep, FAIL 1 of 18 cases (12 s) — environmental, not a gate. PV10 anchors: Makefile:73 (python-guard, uid-guard), Makefile:134, Makefile:172, Makefile:511/513 (replay-map-index target + ci-fast edge, recipe python3 tools/test_replay.py MapIndex), Makefile:1163 python-guard, Makefile:1175 uid-guard, mk/script-gates.mk:27/32 (ci-fast edge + script-gate-lint target), .github/workflows/ci.yml:60-62; shellcheck /opt/homebrew/bin/shellcheck, dash /bin/dash. Doc-quoted (not re-measured): V4's five base survivors and the fold-in double mutation; V12's 10/0 dash counts; V24's revision-2 drills; AC4-AC7/AC9/AC10's expected lines; AC13's pair deltas beyond files 503; AC14's pick-time PR counts 27/31/57 (V21); the design's wall-time figures.",
+  "risks": [
+    "A future edit re-adds a single-quote consumption alternative (draft r0's blinding): the flank controls and str.py die the moment it lands (V11 sqstr drill); the patch's comment block says why; the tree re-measured 0 blinded / 0 gained (V8, Appendix B oracle, AC13) (design).",
+    "Matched apostrophes flank a real pair in a comment or string: fail closed, loud, by design; the flank controls pin it in both languages; AC13 re-measures the tree (design).",
+    "The cross product over-reports (a dict with two wrong pairs yields up to four entries): loud by design; two.gd pins the exact two cross-wrong messages (design).",
+    "The meta test hardcodes the :10/:16 line pins: by design (D-149); the meta fixture spells its own texts and never reads the real files (design).",
+    "A future pair genuinely needs an attended hold (the old SOURCE_PENDING use case): a new decision (D-149's precedent); the mechanism is in git history and comes back with its own control (design).",
+    "dash -c 'trap \"\" PIPE; ...' only approximates the runner's SIGPIPE-ignored state: the mechanism reproduced exactly (10 errors pre-fix, 0 fixed, V12) with identical verdicts; the fix is safe even where the noise never appears (bash is silent, V12) (design).",
+    "A reviewer simplifies !seen back to exit, or -q back in: AC10's mutation drill makes the noise return on demand; the comment in the script says why (design).",
+    "The four new SG_PREREQS pairs make the list longer to read: the pin moves 5 -> 9 in the same commit; a dropped pair fails the pin (V11) (design).",
+    "shellcheck/dash absent on the executor's host: AC10/AC11's degradation path; the verdict columns still run under sh (design). Planner note: both present here (/opt/homebrew/bin/shellcheck, /bin/dash — PV10).",
+    "(Planner-added) script-gate-selftest's stub-orphan-child case is red on this Mac: environmental pgrep visibility (control (sleep N) not visible to pgrep, FAIL 1 of 18 cases), identical at the base 1e839e2e (doc V18; planner-replicated PV9). Not a gate for this row; the clean-Linux fast tier runs it. Never let it block, never fix it inside this row.",
+    "(Planner-added) The doc's Estimated LOC paragraph is stale by 2 insertions (+61 -7 vs the fence's measured 63 7 on tools/test_replay.py; totals 73 11 agree with AC1/V24): the fence and AC1 bind; do not edit the patch to match the prose (PV2).",
+    "(Planner-added) Open PRs #435, #380, #373: measured clean at pick time (V21, controller: 27/31/57 files, 0 hits on the four 7ap files, makefile=1 each as the known-positive control); the blocking AC14 re-checks before landing and halts on any hit or gh failure; if a PR has merged or vanished, re-measure the conflict surface against the new main (design Conflict surface)."
+  ],
+  "velocity": "One iteration planned (as 7ak ~4 LOC, 7ai ~16, 7aj ~55, 7an ~42, 7ao ~103; 7am ~135). Executor wall-clock estimate ~15-20 min: clone setup ~5 min; commands ~10 min (design: the guard runs in ~0.25 s, the lint in ~1-10 s — planner-measured 1 s — AC10's dash drills ~2 s each); evidence ~5-10 min. Controller cap: planner-measured units MapIndex 0.2 s, whole harness file 3 s, script-gate-lint 1 s (PV3/PV4, date +%s around each); mutation/drill runs = 17 (12 mut calls: AC4 x1, AC5 x3, AC6 x8; AC9's 2 lint drills; AC10's 3 dash drills); 2 x 17 x 3 s ~= 2 min + 20 min floor -> the 30-minute floor binds: CAP 30 MINUTES wall-clock from executor start (AC14's gh calls are already bounded at 30 s each inside it).",
+  "controller_checks": "Controller re-run after the executor, before landing: make replay-map-index (Ran 11 tests / OK), python3 tools/test_replay.py (Ran 40 / OK), make script-gate-lint (ok, 9 pairs), make python-guard, make uid-guard on the PR clone; the fence sha256 66f65140... and numstat vs the committed diff (73 11 over the four files); the changelog fragment present; the sprint JSON's evidence; then the GitHub fast tier, the cross-family evaluation (generator != judge), the charter row 7ap marked done, and the doc move to design_docs/implemented/r1/ with the README index row. script-gate-selftest's stub-orphan-child redness on this Mac is environmental and identical at the base (V18/PV9) — not a gate. The nightly rig/full covers the whole suite post-merge.",
+  "evaluations": {},
+  "pr": null
+}
