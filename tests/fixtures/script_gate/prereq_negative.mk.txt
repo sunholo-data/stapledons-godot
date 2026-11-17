@@ -8,3 +8,5 @@ planet-textures-check:
 planet-textures-check: planet-assets
 ship-console-test: import ship-baseline
 ci-fast: replay-map-index
+# 7ap: the 7ah/7al ci-fast edges keep holding here too (merged rule line)
+ci-fast: similar-main-guard similar-guard-controls session-minor-guard session-minor-guard-controls
