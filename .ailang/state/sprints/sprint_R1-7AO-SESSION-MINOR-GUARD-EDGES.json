@@ -131,12 +131,12 @@
         "AC3: make -s --no-print-directory session-minor-guard-controls | grep -E ': (orphan|downgrade|nofloor|constfirst|tab|paren|selffloor|wrapped|commentfloor) rejected|rejected, '"
       ],
       "expectations": "AC2: the ok line naming SESSION_MINOR (18) = EARTH_LOG_MINOR and 4 test comparisons name it; rc=0 (count unchanged from base). AC3: 10 lines with the doc's exact reason lines, ending session-minor-guard-controls: 27 rejected, 3 accepted (base 19/3).",
-      "status": "planned",
-      "passes": null,
-      "started": null,
-      "completed": null,
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
       "measured": null,
-      "notes": ""
+      "notes": "code commit 8af3a5b4. AC2: session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it, then rc=0. AC3: 9 control lines (orphan, downgrade, nofloor, constfirst, tab, paren, selffloor, wrapped, commentfloor rejected), last line: session-minor-guard-controls: 27 rejected, 3 accepted."
     },
     {
       "id": "M2",
@@ -155,12 +155,12 @@
         "AC7: B=$(mktemp -d); git archive 5b33b62a Makefile mk tools/session_minor_guard_controls.sh bridge/sim_bridge.gd main.gd demos/ship_geometry_demo.gd ui/loading_jump.gd tests/test_bh_hud.gd tests/test_comms_station.gd tests/test_ship_ui.gd | tar -x -C \"$B\" && printf '%s\\n' 'const SPARE_MINOR := 99' >> \"$B/bridge/sim_bridge.gd\" && make -s --no-print-directory -C \"$B\" session-minor-guard-controls 2>&1 | grep -c '^session-minor-guard-controls: orphan: make rc 0, want 2$'; rm -rf \"$B\""
       ],
       "expectations": "AC7 prints 1: the BASE controls (archived objects, hardcoded 99) go red at orphan on a bridge defining minor 99; the patched controls derive next = one above the highest defined minor and would stay green (proved patched-side by AC6's D1_spare99 line). Wall seconds, not minutes (base controls planner-measured 4 s).",
-      "status": "planned",
-      "passes": null,
-      "started": null,
-      "completed": null,
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
       "measured": null,
-      "notes": ""
+      "notes": "AC7: 1 (copy with SPARE_MINOR := 99: session-minor-guard-controls: orphan: make rc 0, want 2)."
     },
     {
       "id": "M3",
@@ -186,12 +186,12 @@
         "rules (design, normative): the mutation ACs run one at a time in the foreground, never as & jobs, with no other Godot run loading the clone meanwhile; mut restores bridge/sim_bridge.gd from an EXIT trap (AC11 is the witness); a script_gate 'timeout after' line is an instrument failure, never a kill — rerun"
       ],
       "expectations": "AC8: script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (rc 0, ...), then 6. AC9: script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (rc 1, ...), then FAIL a start() asking another minor leaves the warm sim. AC10: script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (rc 1, ...), then FAIL a start() with a launch override leaves the warm sim. AC11: diff=0, then 0. AC12: script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (rc 0, ...), rc=0, after the import log with its two pre-existing positions. CSV errors (V23 — do not stop on them).",
-      "status": "planned",
-      "passes": null,
-      "started": null,
-      "completed": null,
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
       "measured": null,
-      "notes": ""
+      "notes": "AC8: script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (rc 0, no SCRIPT ERROR, 7 s of 300 s), then 6. AC9: script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (rc 1, no SCRIPT ERROR, 10 s of 300 s), FAIL a start() asking another minor leaves the warm sim. AC10: script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (rc 1, no SCRIPT ERROR, 12 s of 300 s), FAIL a start() with a launch override leaves the warm sim. AC11: diff=0, then 0. AC12: script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (rc 0, no SCRIPT ERROR, 42 s of 600 s), rc=0."
     },
     {
       "id": "M4",
@@ -211,12 +211,12 @@
         "AC5: make -s --no-print-directory similar-guard-controls | grep -E ': (stray|unbounded) rejected|rejected, '"
       ],
       "expectations": "AC4: similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14); rc=0. AC5: stray rejected (... main.gd _run_map mentions want_minor 0 times, want 1); unbounded rejected (... main.gd _run_map has no following top-level line; range unbounded); similar-guard-controls: 15 rejected, 3 accepted (base 13/3; both mutants pass the base guard, V8 — the RED witness).",
-      "status": "planned",
-      "passes": null,
-      "started": null,
-      "completed": null,
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
       "measured": null,
-      "notes": ""
+      "notes": "AC4: similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14), rc=0. AC5: similar-guard-controls: stray rejected (...); similar-guard-controls: unbounded rejected (... range unbounded); similar-guard-controls: 15 rejected, 3 accepted."
     },
     {
       "id": "M5",
@@ -252,12 +252,12 @@
         "sprint JSON evidence: fill each milestone's measured (the exact gate/reason/FAIL lines above), set passes true per milestone, status -> executed, wall-clock totals under velocity"
       ],
       "expectations": "AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then  4 files changed, 91 insertions(+), 12 deletions(-). AC6: the 14 lines of V28 ending meta: 10 weakenings caught; rc=0. AC13: 27 rejected, 3 accepted / 15 rejected, 3 accepted / rc=0, shellcheck silent. AC14: rc=0 plus the --check path restriction holding. AC15: Makefile tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh , then 8 0. AC16: empty.",
-      "status": "planned",
-      "passes": null,
-      "started": null,
+      "status": "blocked",
+      "passes": false,
+      "started": "2026-11-17T13:20:47Z",
       "completed": null,
       "measured": null,
-      "notes": ""
+      "notes": "BLOCKED at AC14: observed check=2, expected check=0. The 34 whitespace warnings from git diff --check 5b33b62a are all in design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md (its Appendix A fence, lines 406-595). Pathspec excluding design_docs: check=0; uid-guard, python-guard, script-gate-lint rc=0. AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then 4 files changed, 91 insertions(+), 12 deletions(-). AC6: meta 10 weakenings caught, rc=0. AC13: session-minor-guard-controls: 27 rejected, 3 accepted; similar-guard-controls: 15 rejected, 3 accepted; rc=0. AC15: 8 0. AC16: git status --porcelain --untracked-files=all empty. Changelog fragment NOT written (execution stopped at the AC14 mismatch). Committed in 8af3a5b4: the four code files only."
     }
   ],
   "risks": [
