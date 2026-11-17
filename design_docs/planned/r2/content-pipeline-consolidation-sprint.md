@@ -1,6 +1,6 @@
 # Sprint: CONTENT-PIPELINE-CONSOLIDATION
 
-**Status:** Approved by Mark, attended 2026-11-17; CP1–CP3 pilot completed, awaiting independent integration/evaluation. Real-pack AC9 remains pending. See [execution report](content-pipeline-consolidation-report.md).
+**Status:** Approved by Mark, attended 2026-11-17; CP1–CP3 pilot completed, awaiting independent integration/evaluation. Real-pack AC9 subsequently passed for the source clone; combined integration acceptance remains separate. See [execution report](content-pipeline-consolidation-report.md).
 **Design:** [content-pipeline-consolidation.md](content-pipeline-consolidation.md).
 **Tracking:** `.ailang/state/sprints/sprint_CONTENT-PIPELINE-CONSOLIDATION.json`.
 **Goal:** Verify four current bundles through three explicit adapters, retaining their typed loaders/gates; prove one additional fixture asset passes the same lifecycle.

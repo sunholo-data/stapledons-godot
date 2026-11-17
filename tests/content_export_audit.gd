@@ -34,15 +34,17 @@ static func audit_records(zip: ZIPReader, records: Array) -> PackedStringArray:
 	for row: Dictionary in records:
 		var path: String = row.path
 		var name := path.trim_prefix("res://")
-		if zip.file_exists(name):
+		var metadata := name + ".import" if zip.file_exists(name + ".import") else (name + ".remap" if zip.file_exists(name + ".remap") else "")
+		if bool(row.get("raw", false)) or metadata.is_empty():
+			if not zip.file_exists(name): errors.append("missing_packed: " + path); continue
 			var bytes: PackedByteArray = zip.read_file(name)
 			if sha(bytes) != row.sha256 or bytes.size() != int(row.bytes): errors.append("packed_pin: " + path)
 			continue
-		if bool(row.get("raw", false)) or not zip.file_exists(name + ".remap"):
-			errors.append("missing_packed: " + path); continue
 		var config := ConfigFile.new()
-		if config.parse(zip.read_file(name + ".remap").get_string_from_utf8()) != OK:
+		if config.parse(zip.read_file(metadata).get_string_from_utf8()) != OK:
 			errors.append("invalid_remap: " + path); continue
+		if metadata.ends_with(".import") and (config.get_value("remap", "importer", "") != "texture" or config.get_value("remap", "type", "") != "CompressedTexture2D"):
+			errors.append("invalid_import: " + path); continue
 		var target: String = str(config.get_value("remap", "path", ""))
 		if not target.begins_with("res://.godot/imported/") or target != row.get("imported_path", ""):
 			errors.append("imported_path: " + path); continue

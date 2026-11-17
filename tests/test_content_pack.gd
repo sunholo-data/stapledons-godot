@@ -26,6 +26,24 @@ func _initialize() -> void:
 	var remapped := {"assets/characters/captain/avatar.png.remap": '[remap]\npath="res://.godot/imported/avatar.ctex"\n'.to_utf8_buffer(), ".godot/imported/avatar.ctex": "imported fixture".to_utf8_buffer()}
 	var imported := [{"path": "res://assets/characters/captain/avatar.png", "sha256": "original-source", "bytes": 0, "raw": false, "imported_path": "res://.godot/imported/avatar.ctex", "imported_sha256": sha(remapped[".godot/imported/avatar.ctex"])}]
 	check("known imported representation passes", run_case(audit, remapped, imported).is_empty())
+	# Captured Godot 4.7.2 texture-export structure: .import, not a script/scene .remap.
+	# Godot's packed metadata ends in a NUL byte; preserve that observed detail.
+	var metadata := '[remap]\n\nimporter="texture"\ntype="CompressedTexture2D"\nuid="uid://c6g5q7tx7tfx4"\npath="res://.godot/imported/avatar.ctex"\nmetadata={\n"vram_texture": false\n}\n'.to_utf8_buffer()
+	metadata.append(0)
+	var texture_import := {"assets/characters/captain/avatar.png.import": metadata, ".godot/imported/avatar.ctex": remapped[".godot/imported/avatar.ctex"]}
+	check("observed Godot texture .import representation passes", run_case(audit, texture_import, imported).is_empty())
+	var import_missing := texture_import.duplicate(); import_missing.erase(".godot/imported/avatar.ctex")
+	check("observed .import still requires texture bytes", run_case(audit, import_missing, imported).has("missing_imported: res://assets/characters/captain/avatar.png"))
+	var import_wrong := texture_import.duplicate(); import_wrong[".godot/imported/avatar.ctex"] = "wrong imported bytes".to_utf8_buffer()
+	check("observed .import rejects corrupt texture bytes", run_case(audit, import_wrong, imported).has("imported_pin: res://assets/characters/captain/avatar.png"))
+	var wrong_importer := texture_import.duplicate()
+	wrong_importer["assets/characters/captain/avatar.png.import"] = metadata.get_string_from_utf8().replace('importer="texture"', 'importer="keep"').to_utf8_buffer()
+	check("observed .import requires the real texture importer", run_case(audit, wrong_importer, imported).has("invalid_import: res://assets/characters/captain/avatar.png"))
+	var shadowed := import_wrong.duplicate()
+	var source_bytes := "valid raw source must not hide invalid imported texture".to_utf8_buffer()
+	shadowed["assets/characters/captain/avatar.png"] = source_bytes
+	var shadow_records := imported.duplicate(true); shadow_records[0].sha256 = sha(source_bytes); shadow_records[0].bytes = source_bytes.size()
+	check("raw source cannot hide changed active import", run_case(audit, shadowed, shadow_records).has("imported_pin: res://assets/characters/captain/avatar.png"))
 	var broken := remapped.duplicate(); broken.erase(".godot/imported/avatar.ctex")
 	check("missing imported texture fails", run_case(audit, broken, imported).has("missing_imported: res://assets/characters/captain/avatar.png"))
 	broken = remapped.duplicate(); broken[".godot/imported/avatar.ctex"] = "changed".to_utf8_buffer()

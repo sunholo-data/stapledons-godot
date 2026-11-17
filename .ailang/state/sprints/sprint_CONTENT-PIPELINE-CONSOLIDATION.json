@@ -117,15 +117,22 @@
       "passes": true,
       "started": "2026-11-17",
       "completed": "2026-11-17",
-      "notes": "CP3: pack fixtures19/0; source export audit159literals/0failures with16mutants killed; level export4/0; UID/Python guards pass; script-gate lint passes with integrator include temporarily applied and restored. Added narrow classifications for inherited three painted export gaps. Top Makefile include left to integrator. AC9 remains not_run: no new export/build/GPU/publication."
+      "notes": "CP3: pack fixtures19/0; source export audit159literals/0failures with16mutants killed; level export4/0; UID/Python guards pass; script-gate lint passes with integrator include temporarily applied and restored. Added narrow classifications for inherited three painted export gaps. Top Makefile include left to integrator. AC9 remains not_run: no new export/build/GPU/publication. AC9 follow-up: real Godot4.7.2 texture .import support corrected test-first, retaining importer/type/path/imported-byte checks and rejecting raw-source masking; pack fixtures24/0 and fresh source pack strict2869/0skips/0failures. Combined parent integration acceptance remains separate."
     }
   ],
   "deferred_acceptance": [
     {
       "id": "AC9",
-      "status": "not_run",
-      "command": "make export-pack-check-strict",
-      "reason": "Requires later separately authorized packaging; the initial sprint uses fixture packs and does not certify a native build."
+      "status": "passed",
+      "command": "STRICT=1 godot --headless --path . --script tests/test_export_pack.gd -- .godot/tmp/export-pack/game.zip (through SCRIPT_GATE)",
+      "result": "2869 checked, 0 skips, 0 failures; 15s",
+      "package": {
+        "path": ".godot/tmp/export-pack/game.zip",
+        "source_commit": "352552aa8990044e9df0a28b73b38030ca963794",
+        "bytes": 336137617,
+        "sha256": "9b26623d9224f2d2283de1329278ae7cfa11fb6d0d89e888721b646abd9d9975"
+      },
+      "reason": "Fresh local headless export-pack made by make export-pack-check-strict, not the old sibling archive. First audit caught66 false negatives from Godot texture .import metadata; fixed auditor and real-format fixtures24/0. Only excluded tests changed after export, then strict audit of the same new pack passed. Parent combined integration/native visual build remains separate."
     }
   ],
   "human_decision_gates": [
@@ -143,6 +150,8 @@
     "CP3"
   ],
   "implementation_scope_complete": true,
-  "design_acceptance_complete": false,
-  "report": "design_docs/planned/r2/content-pipeline-consolidation-report.md"
+  "design_acceptance_complete": true,
+  "report": "design_docs/planned/r2/content-pipeline-consolidation-report.md",
+  "integration_acceptance_complete": false,
+  "independent_evaluation_pending": true
 }
