@@ -461,6 +461,37 @@
       "completed": null
     },
     {
+      "id": "M1b-fix",
+      "description": "Fix the nightly rig-check-control red since L4 M1b (main 2bb77da7, c69a3bd5; issue #392): the profiler sets TMPDIR to its long --out directory, the control built its temp path under it, the 100-character budget test exited 1 with no output in 14 ms. The control now takes the caller TMPDIR only when its own paths fit, falls back to /tmp otherwise, and names any precondition failure on stdout as rig-check control: FAIL: <reason>. caller-poison carries a TMPDIR of at least 110 characters. No held-file edits (suite_profile.sh, rig_check.sh, Makefile, mk/*.mk untouched).",
+      "status": "executed_pending_evaluation",
+      "depends_on": [
+        "M1b"
+      ],
+      "files": [
+        "tools/test_rig_check.sh",
+        "CHANGELOG.md",
+        ".ailang/state/sprints/sprint_R1-RIG-TEST-SPEED.json"
+      ],
+      "red": [
+        "Pre-fix repro, long TMPDIR (81 chars) on c69a3bd5 base: rc 1, 0.01 s, no output (the silent exit).",
+        "caller-poison with long TMPDIR (>=110 chars), fix not applied: rig-check control caller-poison: FAIL (rc 1, 0 of 25 ok); rig-check control: 26 cases, 1 failures."
+      ],
+      "green": [
+        "sh -n tools/test_rig_check.sh: rc 0",
+        "default TMPDIR: rig-check control: 26 cases, 0 failures (rc 0)",
+        "long TMPDIR (81 chars): rig-check control: 26 cases, 0 failures (rc 0)",
+        "suite_profile.sh run --make gmake --jobs 1 --out <106-character dir> -- rig-check-control: rc 0, rig-check control: 26 cases, 0 failures",
+        "/usr/bin/make (GNU Make 3.81) rig-check-control: rc 0, 26 cases, 0 failures",
+        "make uid-guard: ok (470 .uid files); make python-guard: ok (25 allowlisted, 0 awaiting AILANG port)"
+      ],
+      "drills": {
+        "D1_revert_2a_tmpdir_fallback": "KILLED: long-TMPDIR gate rc 1 with FAIL: temp path is 106 characters (named); default-TMPDIR gate caller-poison FAIL (rc 1, 0 of 25 ok), 1 failure.",
+        "D2_drop_long_TMPDIR_from_caller_poison": "SURVIVED as the drill predicts (not a regression guard by itself): default gate rc 0, 26 cases, 0 failures; the path is exercised only by the caller-poison case when the long TMPDIR is present.",
+        "D3_revert_2b_message_budget_10": "KILLED: mutant rc 1 with 0 bytes of stdout; with 2(b) in place budget 10 prints rig-check control: FAIL: temp path is 73 characters, over the 100-character budget (...) and rc 1."
+      },
+      "not_run": []
+    },
+    {
       "id": "M2",
       "description": "Design 2a-2e: safe setup/P1/P2 lanes runner, mechanical coverage, rig default jobs and serial escape, split home counts files; unchanged serial local make test.",
       "status": "blocked",

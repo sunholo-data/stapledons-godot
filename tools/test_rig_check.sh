@@ -9,9 +9,13 @@ set -eu
 unset RIG_TEST_S RIG_GOLDEN_S RIG_SETUP_S RIG_DL_S RIG_PROFILE RIG_TRACE SUITE_TOP_TARGET   # hermetic: a caller's watchdog or profile override must not reach the cases (iteration 52, M1b)
 RIG=$(cd "$(dirname "${1:-tools/rig_check.sh}")" && pwd -P)/$(basename "${1:-tools/rig_check.sh}")
 TOOLS=$(cd "$(dirname "$0")" && pwd -P)   # the real instrument (suite_profile.sh, timed_recipe_shell.sh) the stub git clone copies
-T=$(mktemp -d "${TMPDIR:-/tmp}/rig-check-control.XXXXXX")
+# The temp base is the caller's TMPDIR only when the control's own paths still fit the 100-character budget: mktemp adds
+# 25 characters ("/rig-check-control.XXXXXX"), so a base over 75 characters (the profiler's --out directory is one) falls back to /tmp.
+base=${TMPDIR:-/tmp}; base=${base%/}
+test "${#base}" -le 75 || base=/tmp
+T=$(mktemp -d "$base/rig-check-control.XXXXXX") || { echo "rig-check control: FAIL: mktemp could not make a temp directory under $base"; exit 1; }
 trap 'rm -rf "$T"' EXIT
-test "${#T}" -le 100   # the clone-red-pointer case needs a log path short enough for the pointer to fit
+if [ "${#T}" -gt 100 ]; then echo "rig-check control: FAIL: temp path is ${#T} characters, over the 100-character budget ($T)"; exit 1; fi   # the clone-red-pointer case needs a log path short enough for the pointer to fit
 export STUB_POSTS="$T/posts" STUB_SHA=0123456789abcdef0123456789abcdef01234567 STUB_MAKES="$T/makes" STUB_CHILD="$T/child"
 export STUB_GMAKES="$T/gmakes" STUB_TOOLS="$TOOLS"
 mkdir "$T/bin"
@@ -265,7 +269,10 @@ why=$gk; preport golden-keeps-profile
 n=25
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
   n=26; nrc=0
-  RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 RIG_PROFILE=0 RIG_TRACE=1 SUITE_TOP_TARGET=poison sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
+  # The profiler sets TMPDIR to its --out directory, which is long (its rows sit beside the log): a caller's TMPDIR of
+  # at least 110 characters is a caller value too, and the control must still run under it (iteration 95).
+  longtmp="$T/caller-tmp"; while [ ${#longtmp} -lt 110 ]; do longtmp="${longtmp}x"; done; mkdir "$longtmp"
+  RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 RIG_PROFILE=0 RIG_TRACE=1 SUITE_TOP_TARGET=poison TMPDIR="$longtmp" sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
   if [ "$nrc" = 0 ] && [ "$nok" = 25 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 25 ok)"; fails=$((fails + 1)); fi
 fi
