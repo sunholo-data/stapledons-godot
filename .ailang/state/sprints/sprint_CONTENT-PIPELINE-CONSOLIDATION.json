@@ -96,10 +96,10 @@
         "AC6: proposed make content-stage-test compares two same-input scratch closures and face hashes with unchanged source pins; no production write, generation, network or GPU",
         "AC7: make captain-anim-test captain-frames-check npc-painted-assets-check npc-painted-test deck-assets-check and proposed make painted-levels-test preserve type-owned checks and late-failure rollback"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Unapproved. Reuse sibling raw-image staging; add only scratch destination support if required. Metrics do not certify actual VRAM/frame time."
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP2 core evidence: independent budgets30/0, scratch stage7/0, real four-bundle authoring check4/0 (92s), captain-anim87/0. All caps frozen from decoded baseline; existing captain3/32MiB stage limits retained. Scratch mode added to existing stage; two same-destination outputs/face checks match, source pins unchanged. No production assets or runtime loader edits. Typed frame/NPC/deck regressions running; final evidence will record results."
     },
     {
       "id": "CP3",

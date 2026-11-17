@@ -3,6 +3,14 @@ extends SceneTree
 const SOURCE:="res://art/environment-painted-pilot/"
 const DEST:="res://assets/levels/painted/"
 func _initialize()->void:
+ var args:=OS.get_cmdline_user_args()
+ if not args.is_empty() and args[0]=="--source":
+  if args.size()!=6 or args[2]!="--dest" or args[4]!="--deck" or not args[5] in ["bridge","commons"]:
+   printerr("invalid scratch stage arguments");quit(1);return
+  for path:String in [args[1],args[3]]:
+   if not path.begins_with("res://.godot/tmp/") or ".." in path:
+    printerr("scratch stage paths must be under res://.godot/tmp/");quit(1);return
+  quit(0 if _stage(args[5],args[1],args[3]) else 1);return
  if OS.get_cmdline_user_args()==PackedStringArray(["people"]):
   var ok:=_people();quit(0 if ok else 1);return
  for path:String in ["res://tools/painted_levels_stage.gd","res://demos/painted_levels_finish.gd","res://tests/test_painted_levels.gd"]:
@@ -11,8 +19,8 @@ func _initialize()->void:
   if not _stage(deck):quit(1);return
  if not _people():quit(1);return
  print("PAINTED_LEVELS_STAGE two native material/mesh closures and raw NPC images, no authoring paths");quit()
-func _stage(deck:String)->bool:
- var src:=SOURCE+deck+"-finish/";var dest:=DEST+deck+"/"
+func _stage(deck:String,source_root:String=SOURCE,dest_root:String=DEST)->bool:
+ var src:=source_root.path_join(deck+"-finish/");var dest:=dest_root.path_join(deck+"/")
  DirAccess.make_dir_recursive_absolute(dest+"compiled")
  var doc:Dictionary=JSON.parse_string(FileAccess.get_file_as_string(src+"manifest.json"))
  var textures:Dictionary={};var materials:Dictionary={};var resources:Dictionary={}

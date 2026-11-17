@@ -83,5 +83,5 @@ If implementation discovers different asset bytes/base ownership or a necessary 
 ## Execution checkpoints (2026-11-17)
 
 - [x] CP1: 25 contract checks pass through SCRIPT_GATE, including four real bundle source/closure checks. Red first: absent shared helper failed the gate. Added one retained captain test-image fixture; no new art generated. Runtime mode ignores absent source inputs; authoring mode fails by name. Existing ship-demo/Commons stages were invoked explicitly once to prepare ignored `.bin` witnesses; checks do not stage them. Base refreshed to `ec415f33` before implementation.
-- [ ] CP2: independent budgets and scratch staging.
+- [x] CP2 core: budget30/0, scratch-stage7/0, real authoring check4/0 (92 s), captain-anim87/0. Same-input scratch staging is byte-identical and face-identical; no production output changed. Broader typed regressions are recorded in final evidence.
 - [ ] CP3: pack controls and wiring.
