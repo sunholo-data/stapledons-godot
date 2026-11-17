@@ -78,10 +78,10 @@
         "AC3: one additional fixture asset changes deterministic closure accounting; corruption fails without altering production fixed-count gates",
         "AC5: runtime validation needs only runtime bytes; authoring validation rejects required missing source inputs; neither mode mutates outputs or re-pins"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Unapproved. Reconcile base/source ownership first; preserve attended dirty work. All content-* targets are proposed."
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP1: 25 contract checks pass, including all four real bundles, extra fixture, source/runtime separation and named negative controls. Red-first missing helper observed. Inputs reconciled to ec415f33 + candidate19e4a763; existing ship-demo/Commons raw staging run explicitly to ignored output directories. Existing loaders/manifests untouched."
     },
     {
       "id": "CP2",

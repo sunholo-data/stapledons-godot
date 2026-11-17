@@ -1,0 +1,608 @@
+{
+  "bundles": [
+    {
+      "budgets": {},
+      "closure_sha256": "f9c626759c3c6d508bf9b5f328d8c23a0f8d62b4fac08bf87cc2a5ae2fb3f369",
+      "id": "captain",
+      "inputs": [
+        {
+          "bytes": 73035,
+          "path": "res://art/captain-anim-v1/NOTES.md",
+          "sha256": "0349d261b4822506107e138684984cf0ac53592fc8e9f876f030930ea0cc5212"
+        },
+        {
+          "bytes": 1410,
+          "path": "res://art/captain-anim-v1/clips.json",
+          "sha256": "b17108a3cdcb4c616d537caa5b7e6622dd96ee20c349687368a4ce389b73c2de"
+        },
+        {
+          "bytes": 22977,
+          "path": "res://art/captain-anim-v1/guides.json",
+          "sha256": "de581809dfb5f99e96de89e946c2380a51cda2f6cb82aeb16b220460c0a41e1b"
+        },
+        {
+          "bytes": 18244,
+          "path": "res://art/captain-anim-v1/guides/idle_back_00.png",
+          "sha256": "8975aaefb7addf493c981e1fdc9c1e2c5a608df7b90fe993d833e0754e4e232c"
+        },
+        {
+          "bytes": 14071,
+          "path": "res://art/captain-anim-v1/guides/idle_profile_00.png",
+          "sha256": "8828d89c78ab6ea7098805b67cfb2de9917e815840d4cabfd1ac0bbba00cd9d2"
+        },
+        {
+          "bytes": 108637,
+          "path": "res://art/captain-anim-v2/NOTES.md",
+          "sha256": "d68eb72800796118daafe5a495baa09f3b736da9ccbc1969e7d4879687c0b469"
+        },
+        {
+          "bytes": 3725,
+          "path": "res://art/captain-anim-v2/clips.json",
+          "sha256": "91217c39b7715a94ba0329fe00f580d85fefaa6fe349a8caf8b2c3551ff649d2"
+        },
+        {
+          "bytes": 22284,
+          "path": "res://art/captain-anim-v2/guides.json",
+          "sha256": "78008aa62e06c6cc4663c7a964670cf76a8392efe1b82b5963046f7b2764a0c7"
+        },
+        {
+          "bytes": 93800,
+          "path": "res://art/captain-anim-v3/NOTES.md",
+          "sha256": "f269f8846613301c20acd87fc6901acc288f702fffd087055852935ab0550663"
+        },
+        {
+          "bytes": 7432,
+          "path": "res://art/captain-anim-v3/NOTES_repaint_1.md",
+          "sha256": "48272e034a5edc48dcb885595501269e4db0229896bc679899af3293d833b192"
+        },
+        {
+          "bytes": 3323,
+          "path": "res://art/captain-anim-v3/NOTES_repaint_2.md",
+          "sha256": "fba7ab5a63edf60f8a5133fc6204458535dcff2089ab0d2d2dacffb6841570fe"
+        },
+        {
+          "bytes": 2244,
+          "path": "res://art/captain-anim-v3/clips.json",
+          "sha256": "76d72cca29cbe5b77cbba3124f5ff9e79150f54d2909d98f69da4feb0d65531b"
+        },
+        {
+          "bytes": 22308,
+          "path": "res://art/captain-anim-v3/guides.json",
+          "sha256": "c4cacdf0d41c9f18a992cd18941be2a9c3ba32edf5d009ea817e55168e0a0de4"
+        },
+        {
+          "bytes": 18141,
+          "path": "res://art/captain-anim-v3/guides/walk_back_00.png",
+          "sha256": "7a0333eec729afb6235ba80e1f6916078bd68932d0284fa7aef154b278dbb885"
+        },
+        {
+          "bytes": 17921,
+          "path": "res://art/captain-anim-v3/guides/walk_back_01.png",
+          "sha256": "08707e2b3dd958b31ddc1aa7f0a713742a0e57fa47bdc19cc6ad143ca3014364"
+        },
+        {
+          "bytes": 18670,
+          "path": "res://art/captain-anim-v3/guides/walk_back_02.png",
+          "sha256": "1ddc5f68aaca3acbd4136b8fac11e12d1ae70b52fc802245b8aef1ab1bcc55b6"
+        },
+        {
+          "bytes": 18384,
+          "path": "res://art/captain-anim-v3/guides/walk_back_03.png",
+          "sha256": "3b1863daa94ff4826a9f8740d92dc9de90eff7cf4af56f5ad77f06490e5319ca"
+        },
+        {
+          "bytes": 18762,
+          "path": "res://art/captain-anim-v3/guides/walk_back_04.png",
+          "sha256": "cbfe6844ae3cd63f69881c83593a16784203df942a8b278a4ca0d1bcc3503b2f"
+        },
+        {
+          "bytes": 18058,
+          "path": "res://art/captain-anim-v3/guides/walk_back_05.png",
+          "sha256": "f553718ce10890cc7ee88360e8ba5f5b27143cb4cc5886c1762060781570bbc2"
+        },
+        {
+          "bytes": 17894,
+          "path": "res://art/captain-anim-v3/guides/walk_back_06.png",
+          "sha256": "674fcf8e2a47311e23118c0acef4f039c4a1c6f5af268782e72d29991fcc9ef3"
+        },
+        {
+          "bytes": 17763,
+          "path": "res://art/captain-anim-v3/guides/walk_back_07.png",
+          "sha256": "6956048ec45b651428aaea730147e4897c3ac19225d952a7eec02c0c60cfdb11"
+        },
+        {
+          "bytes": 18586,
+          "path": "res://art/captain-anim-v3/guides/walk_back_08.png",
+          "sha256": "2cdaa4531dbbd5b5a8c92efc65b30a4630590d982baffc04651a83db2c4e6167"
+        },
+        {
+          "bytes": 18364,
+          "path": "res://art/captain-anim-v3/guides/walk_back_09.png",
+          "sha256": "925a3d78567bc88cf2fecc2db6700ebc3db68f02292af87ada36cf2d9d72ce88"
+        },
+        {
+          "bytes": 18879,
+          "path": "res://art/captain-anim-v3/guides/walk_back_10.png",
+          "sha256": "39aa53eb4c313398995d663fd1ad45e92d4fdc7963d2fdc2e412f857a30e509b"
+        },
+        {
+          "bytes": 18263,
+          "path": "res://art/captain-anim-v3/guides/walk_back_11.png",
+          "sha256": "312386de3420c090749e03fbb41799b8fa36b3b08a4c9470d073f09330552ab2"
+        },
+        {
+          "bytes": 19832,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_00.png",
+          "sha256": "64b537148e4706c07185d5302f9f5b3a594344ee069dd00deeb2d245566a2265"
+        },
+        {
+          "bytes": 19759,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_01.png",
+          "sha256": "02a48494d98a92b80224fabbde6cee7a3a6c2ff5d3985248b0c0f68571220583"
+        },
+        {
+          "bytes": 18974,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_02.png",
+          "sha256": "50c4c48fac20d12a601074ea07030471200395f4727d8ef05810fdf886f754d7"
+        },
+        {
+          "bytes": 16730,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_03.png",
+          "sha256": "934e9091ffa86ca3bc185d30b7d569319605ec41bd5ea8c15882cd7b67a1fc44"
+        },
+        {
+          "bytes": 17350,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_04.png",
+          "sha256": "49d156659a399a576401bc6788d84587c729d298e56d9328a83ba2fa838fc578"
+        },
+        {
+          "bytes": 19584,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_05.png",
+          "sha256": "c19661ce3037713b720cc1b715c896376509b26904951d2f6184a8ed04d83294"
+        },
+        {
+          "bytes": 19948,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_06.png",
+          "sha256": "99f6a6d9b1d65da790423babc380c01b2060c74f59f06e75810ae61c15fea48c"
+        },
+        {
+          "bytes": 20190,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_07.png",
+          "sha256": "21cfc9d6c2789a2a4715c4eee80e5740dbe8764e235cd8ed3382b58cb677f826"
+        },
+        {
+          "bytes": 19034,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_08.png",
+          "sha256": "4b3b8a803c64a4be9c77208cb164bf6dc81e99fb2464372558ff6a77b2de053e"
+        },
+        {
+          "bytes": 17708,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_09.png",
+          "sha256": "b775aaa5861d5050715c2b303820443bb630ecb8e3349fba5f05693a1cbed4e2"
+        },
+        {
+          "bytes": 17493,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_10.png",
+          "sha256": "f67a391220a27489a3eeecdeaec2f6bfb439dd6bdaf3b5158dad58ad451aa767"
+        },
+        {
+          "bytes": 19468,
+          "path": "res://art/captain-anim-v3/guides/walk_profile_11.png",
+          "sha256": "bc0c292fb610cf632c6f6dc42475127d01d8951701103c02e7a1081b79857ab8"
+        },
+        {
+          "bytes": 85673,
+          "path": "res://art/captain-anim-v4/NOTES.md",
+          "sha256": "26cedf4f3a412aad089eb1d2dcbf470129b1985675bdab32944b9b193b1317b5"
+        },
+        {
+          "bytes": 24213,
+          "path": "res://art/captain-anim-v4/NOTES_repaint.md",
+          "sha256": "a94c42cc26326c8ec08eb13b0fbf7744bdd1a7e16f633c3c23a9857553b50a94"
+        },
+        {
+          "bytes": 2688,
+          "path": "res://art/captain-anim-v4/clips.json",
+          "sha256": "03a7993aef28d60fc49d2e7487740a8f5e413dcf87743f1517f638cea8c78fbc"
+        },
+        {
+          "bytes": 3685,
+          "path": "res://art/captain-anim-v4/guides.json",
+          "sha256": "8b1c54a8e1b533fe5e924192fb540f64984915e17103376f657b8c5d1ecdd083"
+        },
+        {
+          "bytes": 20271,
+          "path": "res://art/captain-anim-v4/guides/lift_back_00.png",
+          "sha256": "578e492df49c367a82eae5283f13db91fcb9aa2e25e265e804155f134d865d5b"
+        },
+        {
+          "bytes": 19242,
+          "path": "res://art/captain-anim-v4/guides/lift_back_34_00.png",
+          "sha256": "c03eb65f25a013a024d77ee3cc80c2964ea4e77a71dca877795f4a7feb41d301"
+        },
+        {
+          "bytes": 21521,
+          "path": "res://art/captain-anim-v4/guides/lift_front_00.png",
+          "sha256": "1e65b793378941646539efa6916fc640e6ae2b28fa83271892ff0d450f731c16"
+        },
+        {
+          "bytes": 19524,
+          "path": "res://art/captain-anim-v4/guides/lift_front_34_00.png",
+          "sha256": "678f7331de1625849e5feb5a5150e8c680915cc7b8491ece4cfa1130407579d4"
+        },
+        {
+          "bytes": 14894,
+          "path": "res://art/captain-anim-v4/guides/lift_profile_00.png",
+          "sha256": "71099591aa6ac5f81cfac153cd6631d08389dcba0d545e0bc32ac27aeb95c250"
+        },
+        {
+          "bytes": 18498,
+          "path": "res://art/captain-anim-v4/guides/look_up_back_00.png",
+          "sha256": "b613110b5ef143a8dff653a7f3b1fdbe6f0681e8edd2eb43f1428152e309edc3"
+        },
+        {
+          "bytes": 16560,
+          "path": "res://art/captain-anim-v4/guides/look_up_back_34_00.png",
+          "sha256": "165611428c64f4a9d8a2670e2281bd1954dd52196e623f395f1e2ce4b8752671"
+        },
+        {
+          "bytes": 19860,
+          "path": "res://art/captain-anim-v4/guides/look_up_front_00.png",
+          "sha256": "f9f34be312dd27227b1ecfdec8cc6fec41b337cc022fe61c7325e2cbde864d0c"
+        },
+        {
+          "bytes": 17494,
+          "path": "res://art/captain-anim-v4/guides/look_up_front_34_00.png",
+          "sha256": "d3eb6aa35e4e1b84a36038c1c87d7be731acab653a784bacced595e568013319"
+        },
+        {
+          "bytes": 14688,
+          "path": "res://art/captain-anim-v4/guides/look_up_profile_00.png",
+          "sha256": "1cb6f4a8076c01fc8cc5670034ab7d9c4434e6840a2d0f1ddc8f1576bf10b3db"
+        },
+        {
+          "bytes": 13913,
+          "path": "res://art/captain-anim-v4/guides/seated_back_00.png",
+          "sha256": "0c70fb2b0809f1ba09f3cff6cffaaeb50f171eba7ca1932ba3d718df4552da30"
+        },
+        {
+          "bytes": 18847,
+          "path": "res://art/captain-anim-v4/guides/seated_front_00.png",
+          "sha256": "dc98a1f1eb316abb0c85aad9b3154e2f588551937330d10cfa4ab0fa3f949ccd"
+        },
+        {
+          "bytes": 15017,
+          "path": "res://art/captain-anim-v4/guides/sit_back_00.png",
+          "sha256": "c0f715f3f60135b3298e63732a2c1d69d08fdf47abc87d697964206af6c15a84"
+        },
+        {
+          "bytes": 14421,
+          "path": "res://art/captain-anim-v4/guides/sit_back_01.png",
+          "sha256": "538fde81ed86e85c435c55fbcde0c0bbc4e1777b61f916d6c14e26051f0b263f"
+        },
+        {
+          "bytes": 20804,
+          "path": "res://art/captain-anim-v4/guides/sit_front_00.png",
+          "sha256": "9b22c4d82479d669b00140a5e09a6487a9c427b9ce90bd8dc9a4bbb146f1d1b8"
+        },
+        {
+          "bytes": 19855,
+          "path": "res://art/captain-anim-v4/guides/sit_front_01.png",
+          "sha256": "d95ea26ff24be5efb66828c223ef85fca61c1e5fa3265fcbf55b00c62c493eab"
+        },
+        {
+          "bytes": 20112,
+          "path": "res://art/captain-anim-v4/guides/use_low_back_00.png",
+          "sha256": "61ee3b37631f758c033bfa3b2a744d13fcab709f8bb71ae1d72efdf1e92e8a87"
+        },
+        {
+          "bytes": 20200,
+          "path": "res://art/captain-anim-v4/guides/use_low_back_01.png",
+          "sha256": "a24829bdd0097873769302bcc5f82794d732e0a1c89a4e905e22f938e2318c6f"
+        },
+        {
+          "bytes": 20524,
+          "path": "res://art/captain-anim-v4/guides/use_low_front_00.png",
+          "sha256": "683c8c9b0921eb2479d195d9c0af6b715469e59aab465dfea9964d9a41d05c95"
+        },
+        {
+          "bytes": 20062,
+          "path": "res://art/captain-anim-v4/guides/use_low_front_01.png",
+          "sha256": "f4984c8ec5db727ab3f77832dd7f54af3b6116b7f99ac1bf7d73450b4363970d"
+        },
+        {
+          "bytes": 20061,
+          "path": "res://art/captain-anim-v4/guides/use_mid_back_00.png",
+          "sha256": "a61f9c628803204dfabbf1b17cc8764a30a028725d04aae01ab23df8bd43eb1c"
+        },
+        {
+          "bytes": 20151,
+          "path": "res://art/captain-anim-v4/guides/use_mid_back_01.png",
+          "sha256": "574b09313c6aa168c9c6e30a5472eb421b171c46e3912bf5f8f5594f5e160441"
+        },
+        {
+          "bytes": 20202,
+          "path": "res://art/captain-anim-v4/guides/use_mid_front_00.png",
+          "sha256": "27e0af96beb0219e2ffa098ee431831d0a1dbadbe2cbb0880d7de0cadbc41a18"
+        },
+        {
+          "bytes": 19461,
+          "path": "res://art/captain-anim-v4/guides/use_mid_front_01.png",
+          "sha256": "c66b74960d78f0de0fc523ac35cecb2142b211bc8dba16b8bcb791ac14c212f9"
+        },
+        {
+          "bytes": 2458,
+          "path": "res://art/captain-anim-v4/review_ca2.json",
+          "sha256": "ff76cf11e706be1887440476507b9535f23fc11bfaf46f5fb4e30fbb18ae265e"
+        },
+        {
+          "bytes": 103337,
+          "path": "res://assets/characters/captain/generation_notes.md",
+          "sha256": "86f4d7b7cfe04afd21b7b0a9882253a100183367854885f7bd72873565ac7ea7"
+        },
+        {
+          "bytes": 35691,
+          "path": "res://tools/captain_frames.gd",
+          "sha256": "c58796e7d726212496075a74c5cc03f5fcbf60cf87afefa0ad1e8b9641d20bef"
+        }
+      ],
+      "kind": "captain",
+      "provenance": {
+        "limitations": "Not a claim of prompt-to-image determinism. Historical external generation outputs not retained locally are not reconstructible from model/seed.",
+        "model": "not_exposed",
+        "processing": "existing tools/captain_frames.gd --ingest",
+        "seed": "not_exposed",
+        "source_revision": "painted candidate 19e4a763; captain tracked ancestry retained in generation notes",
+        "tool": "OpenAI built-in image_gen.imagegen; mechanical Godot processing"
+      },
+      "review": {
+        "appearance": "D-102; D-118",
+        "production": "pending combined native acceptance"
+      },
+      "runtime_manifest": "res://assets/characters/captain/manifest.json",
+      "runtime_manifest_sha256": "241321ad3837cd690bfa145384438dd429fbd08d0cc94cf54087438ebe088fce"
+    },
+    {
+      "budgets": {},
+      "closure_sha256": "53500c9ce6a25d95aef1271d67334709f4cdd5c41a678971c73cfe27af24f1e2",
+      "id": "painted-npcs",
+      "inputs": [
+        {
+          "bytes": 3152,
+          "path": "res://art/npc-painted-v1/prompts/engineer.txt",
+          "sha256": "68efdf7d3f077668c0028ebc83bd47243cafeef07e11e4489e813672aced1997"
+        },
+        {
+          "bytes": 2680,
+          "path": "res://art/npc-painted-v1/prompts/gardener.txt",
+          "sha256": "ebc463004bf58c5057c6faf654e10d54e4d2ff16f0c60990421e4ad4fe39a58c"
+        },
+        {
+          "bytes": 2464,
+          "path": "res://art/npc-painted-v1/prompts/grove.txt",
+          "sha256": "0caba0a776bf59e4be9a123c721ad6337dd0e50b42fb2d642d197dacea2e00db"
+        },
+        {
+          "bytes": 3021,
+          "path": "res://art/npc-painted-v1/prompts/medic.txt",
+          "sha256": "4d412d8b9dce0f2e957da72eff094b3ef3639fb3030fb000b3d10de8f30c0964"
+        },
+        {
+          "bytes": 2608,
+          "path": "res://art/npc-painted-v1/prompts/reader.txt",
+          "sha256": "72c418a0ba09c2aafc66b2debb7e8bea5d5bf09b6d04b943848d7c565cabbca8"
+        },
+        {
+          "bytes": 2003,
+          "path": "res://art/npc-painted-v1/prompts/seated_back.txt",
+          "sha256": "b37c71268ceb199892434756786db04f646490a0f4f3d3435c796f97d8b948e6"
+        },
+        {
+          "bytes": 694,
+          "path": "res://art/npc-painted-v1/prompts/seated_back_cleanup.txt",
+          "sha256": "7b62b276559475597e3e9cc98172532365db53a88b0950500165bc572a680044"
+        },
+        {
+          "bytes": 2587,
+          "path": "res://art/npc-painted-v1/provenance.json",
+          "sha256": "8d6b8a68341df1960f7ad7b09f3bc84e4e9b3e6b87419651a57f5bc71cf1dbb2"
+        },
+        {
+          "bytes": 1038,
+          "path": "res://art/npc-painted-v1/roster.json",
+          "sha256": "dc8274faaf466d26a76876fa89e809bd12ec2c8bed66dfa519ed721e5f2ca98e"
+        },
+        {
+          "bytes": 917076,
+          "path": "res://art/npc-painted-v1/sources/engineer.png",
+          "sha256": "cc19444710b7110d003213076eeea3d06d5bf9271eb3ad2896081939d20c4fd4"
+        },
+        {
+          "bytes": 840099,
+          "path": "res://art/npc-painted-v1/sources/gardener.png",
+          "sha256": "ea9508ac7b8fc4cf036543a02b9c559744c57c94860191b72dbe630a9fbc70b6"
+        },
+        {
+          "bytes": 819552,
+          "path": "res://art/npc-painted-v1/sources/grove.png",
+          "sha256": "09b93d0ae2abcf128fa6c8d278fc7443f3a6c7f1d757d5263ed9d91ae7e850db"
+        },
+        {
+          "bytes": 850280,
+          "path": "res://art/npc-painted-v1/sources/medic.png",
+          "sha256": "0f9aa76d0c44711c4359e7d427d233dfc95a981a531d2195380ef42d061ac74d"
+        },
+        {
+          "bytes": 912399,
+          "path": "res://art/npc-painted-v1/sources/reader.png",
+          "sha256": "fc315913b212d99e0fc2b04db8dc146944a6b2f6052adaf5757f97149c220f1e"
+        },
+        {
+          "bytes": 1909245,
+          "path": "res://art/npc-painted-v1/sources/seated_back.png",
+          "sha256": "8579d4def8eae4f2d2dd4e136fe504f9549a86c6caf2ccc6f831d31790105342"
+        },
+        {
+          "bytes": 1903423,
+          "path": "res://art/npc-painted-v1/sources/seated_back_initial.png",
+          "sha256": "c1d5fdb9b9b4f975d360e28cc455ded98ca39a4cf6d002e59cecffed1196b6d1"
+        },
+        {
+          "bytes": 760901,
+          "path": "res://assets/characters/captain/avatar_captain_y0_front.png",
+          "sha256": "1e294b6e491a9cf978b3446553c2d57638489de1244925cda0a92d74c73609dd"
+        },
+        {
+          "bytes": 108903,
+          "path": "res://data/crew/portraits/engineer_neutral.png",
+          "sha256": "458b195238f962d7075423388544c6b93eed2989d25ea036e95dfa1efd169c0c"
+        },
+        {
+          "bytes": 110012,
+          "path": "res://data/crew/portraits/medic_neutral.png",
+          "sha256": "2f07d34148d2925e7ad4d728feabdcf3add7cafcd880427af2a078c2b6e0ed6e"
+        },
+        {
+          "bytes": 7325,
+          "path": "res://tools/npc_painted_assets.gd",
+          "sha256": "8366c076b97bcd1a126998f314a696777bd7cd5fd0d159ccd78f1233f276fc69"
+        }
+      ],
+      "kind": "npc",
+      "provenance": {
+        "limitations": "Not a claim of prompt-to-image determinism. Historical external generation outputs not retained locally are not reconstructible from model/seed.",
+        "model": "not_exposed",
+        "processing": "existing tools/npc_painted_assets.gd --ingest",
+        "seed": "not_exposed",
+        "source_revision": "painted candidate 19e4a763; captain tracked ancestry retained in generation notes",
+        "tool": "OpenAI built-in image_gen.imagegen; mechanical Godot processing"
+      },
+      "review": {
+        "appearance": "D-139; D-141",
+        "production": "pending combined native acceptance"
+      },
+      "runtime_manifest": "res://assets/characters/npcs/manifest.json",
+      "runtime_manifest_sha256": "7d0d23a1f53339aa18a63df80e9a304691c00781724d7543975d864c0cc23284"
+    },
+    {
+      "budgets": {},
+      "closure_sha256": "8e7cbceb1a66313e96c3b2eb9b44359662eda99ff10503386b494a2538a645bf",
+      "id": "painted-bridge",
+      "inputs": [
+        {
+          "bytes": 2757597,
+          "path": "res://art/environment-painted-pilot/bridge-finish/bridge-floor-albedo.png",
+          "sha256": "487bd49c6bd555536b6995e4f05b6484b941720151cada820d1ef72d7a63869a"
+        },
+        {
+          "bytes": 2362012,
+          "path": "res://art/environment-painted-pilot/bridge-finish/crafted-pigment-atlas.png",
+          "sha256": "12632167abc77aa49b271bf48d99bf44a8099c874b0aa0ca242cba2f00f9c6d8"
+        },
+        {
+          "bytes": 5646,
+          "path": "res://art/environment-painted-pilot/bridge-finish/generation.json",
+          "sha256": "8074d60584cb0c4886a97b6347cfca70a879e48dab6f2c50a87b6a8fd9a0cbcf"
+        },
+        {
+          "bytes": 1348525,
+          "path": "res://art/environment-painted-pilot/bridge-finish/ivory-botanical-enamel.png",
+          "sha256": "d6fb1d9107878ae4a20721c9823693387a9afb80539c816d1889ae166d47d0c0"
+        },
+        {
+          "bytes": 2166168,
+          "path": "res://art/environment-painted-pilot/whole-room/bridge-whole-room-paintover-v1.png",
+          "sha256": "a5cb835a633811c090ad8f516b5a31f8abdaf7b513103fee2a8543f11980fa1e"
+        },
+        {
+          "bytes": 8391,
+          "path": "res://art/environment-painted-pilot/whole-room/generation.json",
+          "sha256": "7249265d363638bbd9ce9dc527e1189c76381d79c4400a8614504845ff3173e1"
+        },
+        {
+          "bytes": 10005,
+          "path": "res://tools/bridge_painted_finish_build.gd",
+          "sha256": "ca54daad5bda6dbb5b663faea40ae26923b01891c20ad2f4829430ce383992d7"
+        },
+        {
+          "bytes": 4364,
+          "path": "res://tools/painted_levels_stage.gd",
+          "sha256": "541dc556a32db7f815f4d00d74c2c825308e8d9dafb6fac7cd1ba58a039338b9"
+        }
+      ],
+      "kind": "painted_deck",
+      "provenance": {
+        "limitations": "Not a claim of prompt-to-image determinism. Historical external generation outputs not retained locally are not reconstructible from model/seed.",
+        "model": "not_exposed",
+        "processing": "existing tools/painted_levels_stage.gd; geometry-preserving material rebind",
+        "seed": "not_exposed",
+        "source_revision": "painted candidate 19e4a763; captain tracked ancestry retained in generation notes",
+        "tool": "OpenAI built-in image_gen.imagegen; mechanical Godot processing"
+      },
+      "review": {
+        "appearance": "D-164; D-165",
+        "production": "pending combined native acceptance"
+      },
+      "runtime_manifest": "res://assets/levels/painted/bridge/manifest.json",
+      "runtime_manifest_sha256": "bac1e9d99a53da8c69f1550660a9c5b0d3621dbfb3ffe00b2c5a88834120a7d1"
+    },
+    {
+      "budgets": {},
+      "closure_sha256": "9d17bd59e9711adb5e4c77538ef0f708dc384c77583a606c0af5decd86fa8393",
+      "id": "painted-commons",
+      "inputs": [
+        {
+          "bytes": 2420417,
+          "path": "res://art/environment-painted-pilot/commons-finish/commons-floor-albedo.png",
+          "sha256": "c376a446baa26766b45c61e1d074166c054238e6b800d15468dececa541d56d9"
+        },
+        {
+          "bytes": 2157,
+          "path": "res://art/environment-painted-pilot/commons-finish/generation.json",
+          "sha256": "ea895ea149eca416bf6fcbf529a832d8c8b7f31cb3944a44c4589c43a7fbede0"
+        },
+        {
+          "bytes": 2531010,
+          "path": "res://art/environment-painted-pilot/commons-panel-paint.png",
+          "sha256": "0e17c9ffef589f897fba079f57471c4d3aebbbca393fc7ab43ccd1d8582675e1"
+        },
+        {
+          "bytes": 2255606,
+          "path": "res://art/environment-painted-pilot/whole-room/commons-whole-room-paintover-v2.png",
+          "sha256": "6b2dbcd60e9cee8675b8e8f5029754b945bd27368186dbd3909968d8fb32567d"
+        },
+        {
+          "bytes": 8391,
+          "path": "res://art/environment-painted-pilot/whole-room/generation.json",
+          "sha256": "7249265d363638bbd9ce9dc527e1189c76381d79c4400a8614504845ff3173e1"
+        },
+        {
+          "bytes": 6543,
+          "path": "res://tools/commons_painted_finish_build.gd",
+          "sha256": "e2c33897184b96579f3c33a38c825a697ca373b229d2ea241d1fc248e688fb27"
+        },
+        {
+          "bytes": 4364,
+          "path": "res://tools/painted_levels_stage.gd",
+          "sha256": "541dc556a32db7f815f4d00d74c2c825308e8d9dafb6fac7cd1ba58a039338b9"
+        }
+      ],
+      "kind": "painted_deck",
+      "provenance": {
+        "limitations": "Not a claim of prompt-to-image determinism. Historical external generation outputs not retained locally are not reconstructible from model/seed.",
+        "model": "not_exposed",
+        "processing": "existing tools/painted_levels_stage.gd; geometry-preserving material rebind",
+        "seed": "not_exposed",
+        "source_revision": "painted candidate 19e4a763; captain tracked ancestry retained in generation notes",
+        "tool": "OpenAI built-in image_gen.imagegen; mechanical Godot processing"
+      },
+      "review": {
+        "appearance": "D-164; D-165",
+        "production": "pending combined native acceptance"
+      },
+      "runtime_manifest": "res://assets/levels/painted/commons/manifest.json",
+      "runtime_manifest_sha256": "c4472c8c4fa851e171da696346150676cf02eb777dcbd58e228980ebd5ef447e"
+    }
+  ],
+  "schema": "stapledons.content.catalog/1"
+}
