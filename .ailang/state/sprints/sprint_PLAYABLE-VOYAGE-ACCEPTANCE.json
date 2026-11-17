@@ -7,9 +7,7 @@
   "sprint_plan": "design_docs/planned/r1/playable-voyage-acceptance-sprint.md",
   "execution_authorized": true,
   "handoff_sent": false,
-  "github_issues": [
-
-  ],
+  "github_issues": [],
   "evidence_baseline": {
     "authoring_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
     "authoring_dirty": true,
@@ -17,7 +15,7 @@
     "painted_candidate_clean_at_audit": true,
     "painted_candidate_local_main_base": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
     "canon_commit": "c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa",
-    "execution_commit": null,
+    "execution_commit": "ec415f33",
     "runtime_pin": "v0.56.1",
     "runtime_checks_run_during_planning": false,
     "open_pr_status": "unverified_network_unavailable"
@@ -43,36 +41,28 @@
       "milestone": "PV1",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "Game-specific test startup/provenance only; no package-like capability. Consume ship strand's proposed ShipReviewReadiness.wait helper. No registry search required."
     },
     {
       "milestone": "PV2",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "Reuse existing repository playthrough/console/session harness; add game-specific completion assertions and fixtures, no maths or generic package capability."
     },
     {
       "milestone": "PV3",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "Existing make/replay/display commands and evidence report only; no new package capability."
     },
     {
       "milestone": "PV4",
       "package": null,
       "action": "none",
-      "searches": [
-
-      ],
+      "searches": [],
       "reason": "Attended checklist and disposition record only; no executable package capability."
     }
   ],
@@ -80,10 +70,11 @@
     {
       "id": "OQ1",
       "source": "design_docs/planned/r1/playable-voyage-acceptance.md#open-questions-for-mark",
-      "status": "open",
+      "status": "resolved",
       "decision": "Approve bounded acceptance sprint and identify reconciled combined baseline.",
       "default": "No implementation or handoff.",
-      "stop": "STOP: report BLOCKED: OQ1 sprint approval and end the run."
+      "stop": "STOP: report BLOCKED: OQ1 sprint approval and end the run.",
+      "answer": "Mark approved PV1-PV3, attended 2026-11-17; integration baseline ec415f33 with shared readiness SF0"
     },
     {
       "id": "OQ2",
@@ -133,9 +124,9 @@
         "Record source/base/runtime/script/lock/asset identity; missing dependency fails closed."
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-17T07:30:00Z",
       "completed": null,
-      "notes": "Planning source risk only: existing candidate startup awaits civic art/two physics frames while journey harness waits one process frame; no reproduced runtime failure claimed."
+      "notes": "Shared SF0 readiness consumed; complete positive source run confirms installed141/1000/42 identity before controlled frames. Full AC1/AC8 compatibility qualification is scheduled in PV3; no human/native acceptance claim."
     },
     {
       "id": "PV2",
@@ -158,10 +149,10 @@
         "AC4 missing-return, missing-home-news and missing-log controls fail for named completion reasons, not parse/resource/timeout failures.",
         "AC5 display audit passes and frozen minimal/scene replay files remain unchanged."
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "New fixture is the working example. Companion script receives tracked .uid if created. No .ail change."
+      "passes": true,
+      "started": "2026-11-17T07:30:00Z",
+      "completed": "2026-11-17T07:44:00Z",
+      "notes": "TDD: missing helper then unit14/0; old harness accepted missing-home-news143079/0 before endpoint integration. New complete route143640/0, display audit259146 checks/0 failures, all six named negative controls pass including missing return/home news/log. Frozen fixture/replay unchanged."
     },
     {
       "id": "PV3",
@@ -183,9 +174,9 @@
         "Cross-family evaluator reviews endpoint/control evidence; product blocker stops scope with reproduction and separate proposed fix."
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-17T07:44:00Z",
       "completed": null,
-      "notes": "No runtime checks have passed as part of this planning audit. Synthetic historical timing uses 3.5 m/s; real movement is 2.2 m/s and human time is measured separately."
+      "notes": "Same-pin compatibility and fresh-session replay qualification beginning. Independent evaluation remains parent-owned."
     },
     {
       "id": "PV4",

@@ -2,6 +2,8 @@ extends SceneTree
 ## M4.5aR3: real scene/sim, console decisions only, time supplied by step().
 const Main := preload("res://main.gd")
 const ReviewDrive := preload("res://tests/review_drive.gd")
+const Readiness := preload("res://demos/ship_review_readiness.gd")
+const Completion := preload("res://tests/playthrough_completion.gd")
 # The driver's script argument is not a game launch flag: exercise the plain route.
 class PlainLaunch extends Main:
 	func _user_args() -> Dictionary:
@@ -21,6 +23,7 @@ var phase := ""
 var poles := {}
 var monitor_rows := 0 # 7aj M3: sampled rows, for the mutant hook
 var commits_min := 2
+var completion: RefCounted
 var scratch := ProjectSettings.globalize_path("res://.godot/tmp/playthrough")
 
 
@@ -37,6 +40,11 @@ func check(ok: bool, message: String) -> bool:
 
 
 func event(row: Dictionary) -> void:
+	if completion != null:
+		if row.get("type") == "read":
+			var w: Dictionary = demo.journey_sim.world
+			row.merge({"location": Completion.target(w), "tick": w.tick, "journey_state": w.journey.state, "phase": w.ship.phase})
+		completion.observe_event(row)
 	events.store_line(JSON.stringify(row))
 
 
@@ -47,6 +55,7 @@ func refusal() -> String:
 
 func sample() -> void:
 	frame += 1
+	if completion != null: completion.observe_world(demo.journey_sim.world)
 	var next: String = demo.journey_sim.world.ship.phase
 	var changed := next != phase
 	if changed:
@@ -431,9 +440,11 @@ func session_check() -> void:
 	var lines := FileAccess.get_file_as_string(path).split("\n", false)
 	var games := 0
 	var commits := 0
+	var session: Array = []
 	for line: String in lines:
 		var row: Variant = JSON.parse_string(line)
 		if not check(row is Dictionary and row.get("v") == 2, "session protocol schema"): return
+		session.append(row)
 		if row.type == "new_game": games += 1
 		if row.type == "input":
 			check(row.has("tick") and row.has("dtau") and row.intents is Array, "session input schema")
@@ -441,6 +452,16 @@ func session_check() -> void:
 				if intent.k == "commit": commits += 1
 	check(not lines.is_empty() and games == 1 and commits >= commits_min, "session has new_game and %d commits" % commits_min)
 	print("session lines=%d new_game=%d commit=%d" % [lines.size(), games, commits])
+	if completion != null:
+		var errors: Array = completion.errors(session, demo.journey_sim.world)
+		for message: String in errors: check(false, message)
+		var report := {"status": "pass" if errors.is_empty() else "fail", "errors": errors,
+			"new_game": games, "commits": commits, "witness": completion.witness(),
+			"final_target": Completion.target(demo.journey_sim.world), "final_journey": demo.journey_sim.world.journey.state,
+			"final_phase": demo.journey_sim.world.ship.phase, "final_tick": demo.journey_sim.world.tick}
+		var file := FileAccess.open(scratch.path_join("completion.json"), FileAccess.WRITE)
+		if check(file != null, "completion evidence opens"): file.store_string(JSON.stringify(report, "\t")); file.close()
+		if errors.is_empty(): check(true, "complete voyage endpoint"); print("voyage-completion: PASS 2 commits 2 arrivals 3 ordered reads")
 
 
 func _run() -> void:
@@ -452,6 +473,7 @@ func _run() -> void:
 	var script: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if not check(script is Dictionary and script.get("steps") is Array and not script.steps.is_empty(), "valid script"):
 		quit(1); return
+	if script.get("complete_voyage", false): completion = Completion.new()
 	DirAccess.make_dir_recursive_absolute(scratch)
 	DirAccess.remove_absolute(scratch.path_join("session.ndjson")) # a stale tee cannot satisfy H1
 	events = FileAccess.open(scratch.path_join("events.ndjson"), FileAccess.WRITE)
@@ -473,6 +495,13 @@ func _run() -> void:
 		demo = current_scene
 	if not check(demo != null and demo.get_script() == preload("res://demos/ship_geometry_demo.gd") and demo.ready_ok, "New game opens ship"):
 		quit(1); return
+	var ready: Dictionary = await Readiness.wait(demo, 30000)
+	if not check(ready.ok, "combined ship ready: " + str(ready.errors)):
+		demo.journey_sim.stop(); quit(1); return
+	var identity := FileAccess.open(scratch.path_join("readiness.json"), FileAccess.WRITE)
+	if not check(identity != null, "readiness evidence opens"):
+		demo.journey_sim.stop(); quit(1); return
+	identity.store_string(JSON.stringify(ready.identity, "\t")); identity.close()
 	demo.auto = false
 	demo.journey_auto_tick = false
 	# Disable engine-driven updates; every subsequent frame is supplied by step().
