@@ -1,0 +1,4 @@
+tee: /dev/stderr: Operation not permitted
+basis-gate: ok (0 inline conversions; the control's 3 caught)
+script-gate: camera-forward-test ok: camera-forward: 35 passed, 0 failures (rc 0, no SCRIPT ERROR, 21 s of 600 s)
+qualification: 1 passed, 0 failures

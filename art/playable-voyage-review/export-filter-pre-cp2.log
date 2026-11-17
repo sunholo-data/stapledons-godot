@@ -1,0 +1,8 @@
+scoped files 141
+distinct literals 161
+filters 40/16
+UNCLASSIFIED res://art/environment-painted-pilot/bridge-finish (demos/bridge_painted_finish.gd:3)
+UNCLASSIFIED res://art/environment-painted-pilot/commons-finish (demos/commons_painted_finish.gd:3)
+UNCLASSIFIED res://assets/levels/painted/ (demos/painted_levels_finish.gd:5)
+export-filter-audit: 161 literals, 86R 18F 32D 22X, 3 failures
+make: *** [export-filter-audit] Error 1

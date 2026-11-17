@@ -1,0 +1,2 @@
+script-gate: title-screen-test ok: title-screen: 111 passed, 0 failures (rc 0, no SCRIPT ERROR, 25 s of 600 s)
+qualification: 1 passed, 0 failures

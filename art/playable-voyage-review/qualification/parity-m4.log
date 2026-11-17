@@ -1,0 +1,11 @@
+replay: AILANG v0.56.1, arm64 (/private/tmp/stapledons-playable-voyage-20261117/runtime/bin/ailang)
+  ok    m4_transit_harness        428 lines    563034 bytes  VM   2.36 s  interpreter   7.30 s  sha256 e8cabac62833d388  sha256 tests/replays/m4_transit_harness.state.arm64.sha256
+replay: 1 cases, all identical (7.3 s wall)
+replay sim-only: only sim/ship.ail is launched (by construction: the replay path builds no AI-service command; no process count is measured)
+refusals plan=2 cancel=2 commit=2
+state-unchanged=PASS
+replay: AILANG v0.56.1, arm64 (/private/tmp/stapledons-playable-voyage-20261117/runtime/bin/ailang)
+replay positive control: one-bit golden-copy divergence detected
+.godot/tmp/replay/m4_min_path.vm.ndjson .godot/tmp/replay/positive-control/m4_min_path.state.arm64.ndjson differ: char 1, line 1
+cmp positive control: divergence detected
+qualification: 1 passed, 0 failures

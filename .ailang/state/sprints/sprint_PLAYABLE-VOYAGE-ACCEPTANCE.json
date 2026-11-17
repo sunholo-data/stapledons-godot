@@ -1,6 +1,6 @@
 {
   "sprint_id": "PLAYABLE-VOYAGE-ACCEPTANCE",
-  "status": "in_progress",
+  "status": "awaiting_parent_qualification",
   "approved": true,
   "created": "2026-11-17",
   "design_doc": "design_docs/planned/r1/playable-voyage-acceptance.md",
@@ -15,7 +15,7 @@
     "painted_candidate_clean_at_audit": true,
     "painted_candidate_local_main_base": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
     "canon_commit": "c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa",
-    "execution_commit": "ec415f33",
+    "execution_commit": "c34d8869a261eb7fcc10ae233147cbe987fb5cbb",
     "runtime_pin": "v0.56.1",
     "runtime_checks_run_during_planning": false,
     "open_pr_status": "unverified_network_unavailable"
@@ -126,7 +126,7 @@
       "passes": null,
       "started": "2026-11-17T07:30:00Z",
       "completed": null,
-      "notes": "Shared SF0 readiness consumed; complete positive source run confirms installed141/1000/42 identity before controlled frames. Full AC1/AC8 compatibility qualification is scheduled in PV3; no human/native acceptance claim."
+      "notes": "Shared readiness and complete route verified;20/21 compatibility targets pass across PV3. Legacy ship-console cache-only retry remains parent-owned before passes can be true."
     },
     {
       "id": "PV2",
@@ -176,7 +176,7 @@
       "passes": null,
       "started": "2026-11-17T07:44:00Z",
       "completed": null,
-      "notes": "Same-pin compatibility and fresh-session replay qualification beginning. Independent evaluation remains parent-owned."
+      "notes": "20 planned compatibility targets passed; strict258s, parity-m4 194s, frozen replay-scene52s. Preserved hashed positive/6negative/source witnesses in art/playable-voyage-review/evidence.json. ship-console cache retry, SF1b live, combined ci-fast and final independent conditions remain parent-owned; new complete-log direct VM/interpreter comparison not run after slot release. No human/native acceptance claim."
     },
     {
       "id": "PV4",

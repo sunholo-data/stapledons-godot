@@ -1,0 +1,5 @@
+curl: (6) Could not resolve host: storage.googleapis.com
+curl: (6) Could not resolve host: storage.googleapis.com
+curl: (6) Could not resolve host: storage.googleapis.com
+ship-baseline: FAIL fetch ship.glb (9da74077d72d8132970063dbf7c27eb14bdb52286fecbd02f4ae0149fc0344fa)
+make: *** [ship-baseline] Error 1

@@ -1,0 +1,2 @@
+script-gate: comms-walk-test ok: comms-walk: 11 passed, 0 failures (rc 0, no SCRIPT ERROR, 11 s of 600 s)
+qualification: 1 passed, 0 failures
