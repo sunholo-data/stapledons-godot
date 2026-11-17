@@ -1,0 +1,262 @@
+{
+ "sprint_id": "R1-7AP-SOURCE-LITERAL-GUARD-EDGES",
+ "round": 1,
+ "evaluator": "claude-sonnet-5.5 (Agent tool)",
+ "score": 91,
+ "pass": true,
+ "rubric": {
+  "acceptance_criteria": 30,
+  "code_quality_tests": 24,
+  "design_alignment_scope": 19,
+  "mutation_robustness": 10,
+  "docs_changelog_artifacts": 8,
+  "note": "automated gates all green (30-pt ACs 15/15; tests/lint 25 pts scored as 24/25 for meta-test weakness; remaining categories scored by judgement)"
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Meta test test_the_7ap_guard_test_can_fail has no healthy-baseline run: sub-cases 3 and 4 (named[:1], named[1:]) pass on any AssertionError, so a drifted line pin in the fixture (mutations m22/m23) still passes for the wrong reason. Fix: add m.sources=lambda: named with real stars and assert it does NOT raise.",
+  "Unpinned grammar spellings: caret prefix on dq and sq ids, negative index in single-quoted key, stray top-level '}' (mutations m5, m7, m8, m12): add one control text each.",
+  "Mixed-quote pairs ('id': \"X\" or \"id\": 'X') are still not matched; same as base, not a new false negative, but not documented as deferred.",
+  "Changelog says 'all four spellings'; the diff covers more (&/^ and single-quoted both); wording imprecise but not wrong. Trailing-whitespace hits from git diff --check are only in the design doc (embedded patch), code paths clean.",
+  "No new false negative found vs base; guard has no dependence on catalogue order (wrong index computed at run time); scope is exactly four code files + changelog + sprint JSON + doc/plan."
+ ],
+ "ac_results": {
+  "AC1": "matched: sha 66f65140..., committed, 73 11",
+  "AC2": "matched: Ran 11, OK, rc=0",
+  "AC3": "matched: Ran 40, OK",
+  "AC4": "matched: FAIL only test_the_7ap_guard_test_can_fail",
+  "AC5": "matched",
+  "AC6": "matched",
+  "AC7": "matched: rc=1 + exactly 4 drill lines",
+  "AC8": "matched",
+  "AC9": "matched: rc=2,2; rc=2,1; restored=0",
+  "AC10": "matched: rc=0,10; rc=0,0; rc=1,2,0",
+  "AC11": "matched",
+  "AC12": "matched: 16 [], sha 67f76aef...",
+  "AC13": "matched: 41/41, blinded [], gained []",
+  "AC14": "matched: pr435 27/1, pr380 31/1, pr373 57/1, no 7ap-file hit (network ok)",
+  "AC15": "matched: empty"
+ },
+ "mutations": [
+  {
+   "description": "m1 index group2 never used (i from group1 only)",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m2 id group4 never used",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m3 id group3 never used (swap to group4 only)",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_source_literals_match_the_map (__main__.MapIndex.test_source_literals_match_the_map)"
+  },
+  {
+   "description": "m4 index prefers group2 order swapped (equivalent)",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "equivalent (operand order of mutually exclusive groups)"
+  },
+  {
+   "description": "m5 caret prefix dropped from dq id",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real test gap, minor: the caret prefix on a double-quoted id is not pinned (drills use & only); a '^' pair with a wrong index would be missed after a regression"
+  },
+  {
+   "description": "m6 ampersand dropped keep caret dq",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m7 caret dropped sq id",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real test gap, minor: caret on a single-quoted id unpinned"
+  },
+  {
+   "description": "m8 sq index no negative",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real test gap, minor: negative index in single-quoted key unpinned (neg.gd is double-quoted); regression would miss `'index': -1` pairs"
+  },
+  {
+   "description": "m9 sq id requires no whitespace before colon",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "near-equivalent (' *' vs '\\s*' differs only for tabs/newlines before the colon)"
+  },
+  {
+   "description": "m10 dq index \\s* after colon removed",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_source_literals_match_the_map (__main__.MapIndex.test_source_literals_match_the_map)"
+  },
+  {
+   "description": "m11 level_pairs min->max",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m12 closing brace pop guard len>1 -> >0",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real test gap, minor: a stray '}' at top level is not exercised"
+  },
+  {
+   "description": "m13 unclosed loop only last frame",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real test gap, minor: unclosed fallback with an unclosed outer plus inner frame not exercised"
+  },
+  {
+   "description": "m14 unclosed loop skips top-level frame",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "harmless: top-level frame pairs are not a dictionary"
+  },
+  {
+   "description": "m15 level_pairs only first index",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m16 level_pairs only first id",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m17 meta: drop first assertRaises sub-case text (use stars wrong a+1 -> a)",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail)"
+  },
+  {
+   "description": "m18 meta: empty stars subcase uses full stars",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail)"
+  },
+  {
+   "description": "m19 meta: named[:1] -> named",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail)"
+  },
+  {
+   "description": "m20 meta: named[1:] -> named",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail)"
+  },
+  {
+   "description": "m21 spellings: expected two.gd order swapped (test text)",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m22 meta line pin: transit lines 9->8",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "real hole (meta test): sub-cases 3/4 raise for any failed assertIn, including a wrong line pin in the fixture; there is no healthy-baseline run (named + real stars expecting success), so these sub-cases can pass for the wrong reason"
+  },
+  {
+   "description": "m23 meta line pin earth 15->14",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "same as m22"
+  },
+  {
+   "description": "m24 string consumption re-added only for one-char apostrophe flank",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)"
+  },
+  {
+   "description": "m25 group(5) -> brace detection '[{}]' only {",
+   "file": "tools/test_replay.py",
+   "result": "KILLED",
+   "assessment": "killed: FAIL: test_the_7am_intervening_fields_fail (__main__.MapIndex.test_the_7am_intervening_fields_fail)"
+  },
+  {
+   "description": "m26 index regexp matches ids ints with +",
+   "file": "tools/test_replay.py",
+   "result": "SURVIVED",
+   "assessment": "harmless/near-equivalent"
+  },
+  {
+   "description": "m27 SG_PREREQS drop first new pair",
+   "file": "mk/script-gates.mk",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m28 SG_PREREQS pair typo similar-guard-controls",
+   "file": "mk/script-gates.mk",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m29 pin 9 -> 10",
+   "file": "mk/script-gates.mk",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m30 pin 9 -> 5 with list kept",
+   "file": "mk/script-gates.mk",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m31 fixture drops session-minor-guard-controls",
+   "file": "tests/fixtures/script_gate/prereq_negative.mk.txt",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m32 fixture drops whole new line",
+   "file": "tests/fixtures/script_gate/prereq_negative.mk.txt",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m33 sh: seen never set (prints all matches)",
+   "file": "tools/script_gate_prereqs.sh",
+   "result": "SURVIVED",
+   "assessment": "harmless to current Makefile (one rule line per target); loses first-match semantics only if a target has two rule lines; not covered by a drill"
+  },
+  {
+   "description": "m34 sh: grep database check inverted to match nothing",
+   "file": "tools/script_gate_prereqs.sh",
+   "result": "KILLED",
+   "assessment": "killed: make: *** [script-gate-lint] Error 1"
+  },
+  {
+   "description": "m35 sh: awk drops !~ /=/",
+   "file": "tools/script_gate_prereqs.sh",
+   "result": "SURVIVED",
+   "assessment": "pre-existing line, not a changed-line hole; unpinned"
+  }
+ ],
+ "gates": {
+  "python3 tools/test_replay.py": "Ran 40 OK",
+  "make replay-map-index": "Ran 11 OK",
+  "make script-gate-lint": "ok (9 pairs)",
+  "make python-guard": "ok",
+  "make uid-guard": "ok",
+  "git diff --check (tools mk tests)": "clean",
+  "make script-gate-selftest": "not run (known environmental red)"
+ },
+ "summary": "All 15 ACs reproduce exactly against the base+design state; 35 extra mutations: 22 killed, 13 survived (1 equivalent, rest minor test gaps; one real hole in the meta test, which has no healthy-baseline run). No blocking findings."
+}
