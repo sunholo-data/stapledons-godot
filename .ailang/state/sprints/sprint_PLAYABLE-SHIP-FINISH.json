@@ -11,9 +11,7 @@
   "base_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
   "base_main": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
   "runtime_version": "0.56.1",
-  "github_issues": [
-
-  ],
+  "github_issues": [],
   "velocity": {
     "target_loc_per_day": null,
     "estimated_total_loc": 390,
@@ -52,18 +50,16 @@
       "description": "Shared bounded normal-entry readiness and production closure identity",
       "estimated_loc": 120,
       "estimated_days": 0.25,
-      "dependencies": [
-
-      ],
+      "dependencies": [],
       "acceptance_criteria": [
         "New make ship-finish-test validates actual normal-entry finish counts 141/1000/42, closure and production captain identity.",
         "ShipReviewReadiness.wait(demo, timeout_ms) returns bounded ok/errors/identity; stalled, failed and missing install controls fail closed.",
         "Existing rollback/restoration, disjoint deck ownership, body/WALK/camera and lift round-trip checks remain; SCRIPT_GATE rejects empty summaries and parse/runtime errors."
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Ship owns proposed shared readiness helper; playable-voyage PV1 consumes it. Main retains civic plus physics installation ordering."
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "Shared bounded ShipReviewReadiness.wait helper and production receipt implemented. RED missing helper then GREEN readiness13/0 and existing painted invariants1168/0 via SCRIPT_GATE, headless. Main keeps install ordering; no GPU/native timing claim."
     },
     {
       "id": "SF1a",

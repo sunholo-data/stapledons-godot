@@ -2,9 +2,11 @@ extends SceneTree
 ## Headless actual-world integration and source-resource restoration.
 const Finish:=preload("res://demos/painted_levels_finish.gd")
 var failures:Array=[]
+var passed:=0
 func _initialize()->void:_run.call_deferred()
 func require_true(label:String,ok:bool)->void:
  if not ok:failures.append(label);printerr("FAIL ",label)
+ else:passed+=1
 func _run()->void:
  var demo:Node=load("res://demos/ship_geometry_demo.tscn").instantiate()
  demo.setup_options={"size":Vector2i(1280,720),"stars":false,"background":false,"sound":false,"sky_state":"rest","civic_art":true,"mouse_look":false,"settings_dir":"res://.godot/tmp/painted-levels-test"}
@@ -51,4 +53,5 @@ func _run()->void:
   for row:Dictionary in result.bridge.changes+result.commons.changes:require_true("original mesh restored",row.node.mesh==row.original_mesh)
  var report:={"failures":failures,"gpu_used":false,"packed":OS.has_feature("standalone"),"painted_bridge":141,"painted_commons":result.get("commons",{}).get("changes",[]).size(),"residents":42}
  print("painted-levels-test: ",JSON.stringify(report))
+ print("painted-levels-invariants: %d passed, %d failures"%[passed,failures.size()])
  demo.queue_free();await process_frame;quit(0 if failures.is_empty() else 1)
