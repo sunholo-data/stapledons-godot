@@ -78,7 +78,7 @@ Source it once per shell, after Appendix A is applied; it cuts the three fences 
 (no dependence on `/tmp`):
 
 ```sh
-D=design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md
+D=design_docs/implemented/r1/m4-7ao-session-minor-guard-edges.md
 W=$(mktemp -d "${TMPDIR:-/tmp}/7ao.XXXXXXXX") || exit 1
 # fence NAME: the body of the fence opened by a line "```<lang> NAME" in this doc
 fence() { awk -v n="$1" '$0 ~ "^```[a-z]+ " n "$" { f = 1; next } f && /^```$/ { exit } f' "$D"; }

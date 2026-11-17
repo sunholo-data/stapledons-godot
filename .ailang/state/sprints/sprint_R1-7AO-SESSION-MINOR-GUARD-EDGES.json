@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AO-SESSION-MINOR-GUARD-EDGES",
-  "status": "executed",
+  "status": "evaluated_pass",
   "approved": true,
   "approved_by": "mission controller iteration 96 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; quorum r1 BLOCKED 2/3 (kimi, glm; sol absent quota) -> designer revision 1; r2 BLOCKED 2/3 (kimi, glm; gemini pass) -> controller revision 2 under the narrow-refinement carve-out, fixes verbatim; no round 3)",
   "created": "2026-11-17",
-  "design_doc": "design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7ao-session-minor-guard-edges-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7ao-session-minor-guard-edges.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ao-session-minor-guard-edges-sprint.md",
   "branch": "mission/stapledon-iter96-7ao",
   "base_commit": "5b33b62a",
   "implements": [
@@ -296,6 +296,16 @@
   "controller_checks": "Controller re-run after the executor, before landing: the four guard targets on the PR clone (session-minor-guard / session-minor-guard-controls expected 27 rejected, 3 accepted; similar-main-guard / similar-guard-controls expected 15 rejected, 3 accepted); uid-guard python-guard script-gate-lint; the fence sha256 3eca953a... and numstat vs the committed diff; AC15's scope check (only the four Files paths; Makefile hunks within base lines 123-190, 8 0); the changelog fragment present; the sprint JSON's evidence. It files the V27 follow-up charter row (a condition before a want_minor write that the test run never takes) — this row does not fix it. The nightly rig/full covers loading-jump-test post-merge.",
   "plan_verification": "Planner, 2026-11-17, HEAD a3a91c59 (r2 design commit) on branch mission/stapledon-iter96-7ao; planner made no tree writes outside .godot/tmp scratch (gitignored), porcelain count 0 after every run; no Godot run (sandbox: user:// unwritable, /tmp refused, ps denied — all recorded as executor environment requirements; TMPDIR reroot planner-verified, controls green in 4 s). Base guards green (V1 replicated): session-minor guard ok ... 4 test comparisons name it; session-minor-guard-controls: 19 rejected, 3 accepted (4 s); similar-test guard ok ... (18) >= SIMILAR_MINOR (14); similar-guard-controls: 13 rejected, 3 accepted. Hygiene gates green at base (V17 replicated): uid-guard ok (495), python-guard ok (25), script-gate-lint ok (296 invocations). Appendix A re-checked against this tree: fence cut from the doc's own fence() = 206 lines, sha256 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a (the doc's AC1 expectation); git apply --check -> apply-ok; git apply --numstat -> 19 3 Makefile / 9 4 tests/test_loading_jump.gd / 44 4 tools/session_minor_guard_controls.sh / 19 1 tools/similar_guard_controls.sh; 4 files changed, 91 insertions(+), 12 deletions(-); temp file deleted, patch NOT applied. AC14 nuance planner-discovered and planned for: git diff --check 5b33b62a at branch head flags 34 lines, every one under design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md (stored diff-context whitespace; positive control = the 34 hits prove detection works), while the patch's own added lines are clean (0 trailing whitespace, 0 space+tab counted on the extracted fence). Toolchain (V18 replicated): AILANG v0.56.1, Godot 4.7.2.stable.official.ed1daf0bf. Full details: the plan's Plan verification section PV1-PV10.",
   "velocity": "One iteration planned (as 7ak/7ai/7aj/7am/7an of this size). Executor wall-clock estimate ~20-25 min: clone + make import ~5 min; commands under 10 min (design: controls 3-5 s and 1 s, meta-drills 21-44 s, AC8-AC10 ~30 s, AC12 ~45 s at load 5-15; the full path dry-run inside a 1500 s bound at load 5-17, V23 DRYRUN rc=0); evidence ~5 min. Controller cap: measured unit make -s session-minor-guard-controls = 4 s (date +%s around the run, rc 0, 19/3 at base — PV7); mutation ACs = 6 (AC3, AC5, AC6, AC7, AC9, AC10); 2 x 7 x 4 s + 20 min ~= 21 min -> the 30-minute floor binds: CAP 30 MINUTES wall-clock from executor start (the same floor results counting AC8 too: 2 x 8 x 4 s ~= 1 min).",
-  "evaluations": {},
-  "pr": null
+  "evaluations": {
+    "round_1_sonnet": {
+      "file": ".ailang/state/evaluations/eval_R1-7AO-SESSION-MINOR-GUARD-EDGES_round_1_sonnet.json",
+      "judge": "Sonnet 5.5 (Agent tool, own clone stapledons-godot-iter96-eval), iteration 96",
+      "score": 91,
+      "pass": true,
+      "blocking": 0,
+      "mutations": "28 diff-anchored: 20 killed, 8 survived (3 equivalent/expected; S3, S4, S6, S7, S17, T3 untested fail-closed; S12 and S1 real non-blocking, controller reproduced S12)",
+      "cross_vendor": "none: D-166 default C (tooling rows merge on a same-vendor, different-model judge), FLAGGED"
+    }
+  },
+  "pr": 456
 }
