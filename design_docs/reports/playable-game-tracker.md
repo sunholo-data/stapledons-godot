@@ -12,9 +12,9 @@ Audit checkout: `f3aa83bf4120fb6f57d858129dd9bada59ed91b4`, with substantial pre
 
 | Priority | Strand and plan | Owner | Current state | Completion evidence |
 |---|---|---|---|---|
-| 1 | [Ship finish and laptop performance](../planned/r2/playable-ship-finish.md) · [Sprint](../planned/r2/playable-ship-finish-sprint.md) | Sol: ship_finish_plan | Proposed; awaiting approval | One combined native build; captain scope explicit; both decks playable; laptop baseline and measured improvements; Mark's acceptance |
-| 2 | [Content pipeline consolidation](../planned/r2/content-pipeline-consolidation.md) · [Sprint](../planned/r2/content-pipeline-consolidation-sprint.md) | Sol: asset_pipeline_plan | Proposed; awaiting approval | Existing contracts consolidated; a further asset reaches the packaged game through reusable validation and installation |
-| 3 | [Playable voyage acceptance](../planned/r1/playable-voyage-acceptance.md) · [Sprint](../planned/r1/playable-voyage-acceptance-sprint.md) | Sol: playable_voyage_plan | Proposed; awaiting approval | Existing deterministic journey checks and recorded human review of planning, commitment, transit, arrival and consequences |
+| 1 | [Ship finish and laptop performance](../planned/r2/playable-ship-finish.md) · [Sprint](../planned/r2/playable-ship-finish-sprint.md) | Sol: ship_finish_plan | Approved first batch; in progress | One combined native build; captain scope explicit; both decks playable; laptop baseline and measured improvements; Mark's acceptance |
+| 2 | [Content pipeline consolidation](../planned/r2/content-pipeline-consolidation.md) · [Sprint](../planned/r2/content-pipeline-consolidation-sprint.md) | Sol: asset_pipeline_plan | Approved first batch; in progress | Existing contracts consolidated; a further asset reaches the packaged game through reusable validation and installation |
+| 3 | [Playable voyage acceptance](../planned/r1/playable-voyage-acceptance.md) · [Sprint](../planned/r1/playable-voyage-acceptance-sprint.md) | Sol: playable_voyage_plan | Approved first batch; in progress | Existing deterministic journey checks and recorded human review of planning, commitment, transit, arrival and consequences |
 
 Each sprint has a matching JSON tracker under `.ailang/state/sprints/`, named `sprint_PLAYABLE-SHIP-FINISH.json`, `sprint_CONTENT-PIPELINE-CONSOLIDATION.json` and `sprint_PLAYABLE-VOYAGE-ACCEPTANCE.json`. All feature results remain null. JSON parsing and whitespace checks passed during planning; runtime tests were not run.
 
@@ -59,3 +59,7 @@ Review the three designs and proposed sprint plans together, resolving shared ow
 - Newer directional captain frames and older-age coverage: classify required versus deferred for the selected voyage.
 - Broader art generation, 3D character revival and unrelated feature expansion.
 - Publication and merge: separate from preparing and validating a candidate.
+
+## Execution — 2026-11-17
+
+Mark approved the first batch: SF0–SF1b, CP1–CP3 and PV1–PV3. Three Sol agents execute in full isolated clones under `/private/tmp/stapledons-playable-{ship,content,voyage}-20261117`; integration is `/private/tmp/stapledons-playable-integration-20261117`. This location uses the available writable sandbox rather than altering the existing sibling candidate. Initial plan commit: `7b00bf6b`; current remote main `ae5394dd` merged at `ec415f33`, preserving both appended ledger rows. Native review/performance results and publication are not implied by implementation approval.
