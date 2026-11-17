@@ -55,6 +55,7 @@ include mk/worlds.mk
 include mk/reach.mk
 include mk/ship-finish.mk
 include mk/playable-voyage.mk
+include mk/content.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import

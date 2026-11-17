@@ -13,6 +13,8 @@ const AUTO_EXT := {"gd": "gdc", "tscn": "scn", "gdshader": "", "gdshaderinc": ""
 ## D: concatenated or directory reads. Each row names the include entry that ships the bytes,
 ## the witnesses the game needs (project-relative, never all AUTO_EXT), and why.
 const DYNAMIC := [
+	{"prefix": "res://assets/levels/painted/", "filter": "assets/levels/*", "witnesses": ["assets/levels/painted/bridge/manifest.json", "assets/levels/painted/commons/manifest.json", "assets/levels/painted/bridge/floor_atlas.res", "assets/levels/painted/commons/floor_atlas.res"],
+		"reason": "PaintedLevelsFinish installs both typed native closures; content_export_audit checks every dynamic mesh/material/texture and raw person witness"},
 	{"prefix": "res://observation_bundle/", "filter": "observation_bundle/*", "witnesses": ["observation_bundle/manifest.json.bin", "observation_bundle/abell3128-vis/tiles.json.bin"],
 		"reason": "Pinned Euclid image indices/tiles staged as raw .bin bytes; telescope-export-smoke verifies their hashes without source paths"},
 	{"prefix": "res://data/feed/SOURCES", "filter": "data/feed/*", "witnesses": ["data/feed/SOURCES"],
@@ -82,6 +84,10 @@ const DYNAMIC := [
 ## X: dev-only paths. They must not ship, and a fallback must ship. exact: the literal must equal
 ## the path; otherwise the path is a prefix. The root row is the bare "res://" (never read as a file).
 const DEV_ONLY := [
+	{"path": "res://art/environment-painted-pilot/bridge-finish", "exact": true, "fallback": "res://assets/levels/painted/",
+		"reason": "Bridge authoring entry default; combined playable installer passes the staged assets/levels/painted/bridge manifest"},
+	{"path": "res://art/environment-painted-pilot/commons-finish", "exact": true, "fallback": "res://assets/levels/painted/",
+		"reason": "Commons authoring entry default; combined playable installer passes the staged assets/levels/painted/commons manifest"},
 	{"path": "res://data/raw/observations/", "exact": false, "fallback": "res://observation_bundle/",
 		"reason": "Offline science/image build inputs; runtime reads the hash-pinned .bin tiles staged by observation-bundle"},
 	{"path": "res://art/commons-grown-pilot/placements.json", "exact": true, "fallback": "res://assets/levels/commons/civic/placements.json",

@@ -54,4 +54,5 @@ func _run()->void:
  var report:={"failures":failures,"gpu_used":false,"packed":OS.has_feature("standalone"),"painted_bridge":141,"painted_commons":result.get("commons",{}).get("changes",[]).size(),"residents":42}
  print("painted-levels-test: ",JSON.stringify(report))
  print("painted-levels-invariants: %d passed, %d failures"%[passed,failures.size()])
+ print("painted-levels-check: %d passed, %d failures"%[passed,failures.size()])
  demo.queue_free();await process_frame;quit(0 if failures.is_empty() else 1)

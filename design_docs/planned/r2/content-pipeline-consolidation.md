@@ -1,6 +1,6 @@
 # R2: Content pipeline consolidation
 
-**Status:** Proposed design, 2026-11-17. Documentation/planning only; the accompanying sprint is unapproved. Created from Mark's attended request for a concrete plan to consolidate AI-authored captain, environment and NPC resources before implementation.
+**Status:** Approved 2026-11-17; CP1–CP3 verification pilot implemented, awaiting integration/evaluation and real-pack AC9. See [execution evidence](content-pipeline-consolidation-report.md). Created from Mark's attended request for a concrete plan to consolidate AI-authored captain, environment and NPC resources before implementation.
 **Release:** r2 · **Milestone:** new; no roadmap row yet.
 **Priority:** P2. Make the existing painted-content paths reproducible and reviewable without blocking their current art reviews.
 **Implements:** [AI showcase](https://github.com/sunholo-data/stapledons-design/blob/c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa/features/ai-showcase.md) §§3–5 (identity, generated assets and recorded selection), [ship exploration](https://github.com/sunholo-data/stapledons-design/blob/c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa/features/phase2-core-views/ship-exploration.md) “Ship Layout Philosophy”, and ledger D-7, D-18, D-139–D-141, D-164–D-165. Only the offline, authored-resource part is in scope.
@@ -106,7 +106,7 @@ D-18 remains distribution policy. Small runtime files keep their current git/sta
 
 ## Acceptance criteria
 
-All `content-*` targets below are **proposed**, not available or executed today. Commands are executable gates to implement, not claims of successful validation. Existing gate names remain unchanged.
+These commands were proposed at design time. CP1–CP3 now implement the pilot gates in `mk/content.mk`; the execution report records actual results. The integrator adds its top Makefile include. AC9 remains unexecuted; existing gate names are unchanged.
 
 | ID | Checkable result | Command |
 |---|---|---|
@@ -147,7 +147,7 @@ Total 650–850 LOC; midpoint 750. Initial sprint covers CP1–CP3 with fixture/
 
 ## Open questions for Mark
 
-None about canon or already-ruled art direction. Implementation approval of this proposed sprint is still pending under CLAUDE.md's design → sprint → execute cycle. Recommendation: approve the bounded verification pilot after review; broader catalog expansion and new asset production are outside its scope. Unanswered default: retain this as proposed and do not execute.
+None about canon or already-ruled art direction. Implementation approval was given by Mark on 2026-11-17; CP1–CP3 were executed under CLAUDE.md's design → sprint → execute cycle. The bounded verification pilot is approved and complete. Broader catalog expansion/new asset production remain outside its scope; real-pack acceptance and landing remain pending.
 
 ## Deliverables
 

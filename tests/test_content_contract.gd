@@ -35,6 +35,7 @@ func _initialize() -> void:
 	check("duplicate catalog identity fails", "duplicate_id" in contract.catalog_errors(catalog))
 	catalog.schema = "wrong"
 	check("unknown catalog schema fails", "catalog_schema" in contract.catalog_errors(catalog))
+	check("empty catalog fails closed", "catalog_inventory" in contract.catalog_errors({"schema": "stapledons.content.catalog/1", "bundles": []}))
 	var refs := [{"path": ROOT + "provenance.txt", "sha256": FileAccess.get_sha256(ROOT + "provenance.txt"), "bytes": FileAccess.get_file_as_bytes(ROOT + "provenance.txt").size()}]
 	check("authoring source pin passes", contract.input_errors(refs).is_empty())
 	refs[0].sha256 = "0".repeat(64)
@@ -61,9 +62,11 @@ func _initialize() -> void:
 	DirAccess.remove_absolute(manifest_path)
 	var production: Dictionary = contract.doc(contract.CATALOG)
 	check("four-record production catalog", contract.catalog_errors(production).is_empty() and production.bundles.size() == 4)
-	for bundle: Dictionary in production.bundles:
-		var checked: Dictionary = contract.check_entry(bundle, "authoring")
-		check("current bundle " + bundle.id + ": " + str(checked.errors), checked.errors.is_empty())
+	# Explicit corpus check needs the existing raw ship witnesses staged first; fixtures have no such prerequisite.
+	if "--current" in OS.get_cmdline_user_args():
+		for bundle: Dictionary in production.bundles:
+			var checked: Dictionary = contract.check_entry(bundle, "authoring")
+			check("current bundle " + bundle.id + ": " + str(checked.errors), checked.errors.is_empty())
 	finish()
 func has_error(result: Dictionary, code: String) -> bool:
 	return Array(result.errors).any(func(e: String) -> bool: return e.begins_with(code))

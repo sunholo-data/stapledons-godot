@@ -1,6 +1,6 @@
 {
   "sprint_id": "CONTENT-PIPELINE-CONSOLIDATION",
-  "status": "in_progress",
+  "status": "completed",
   "approved": true,
   "approved_by": "Mark, attended 2026-11-17: approved lets go",
   "approved_on": null,
@@ -99,7 +99,7 @@
       "passes": true,
       "started": "2026-11-17",
       "completed": "2026-11-17",
-      "notes": "CP2 core evidence: independent budgets30/0, scratch stage7/0, real four-bundle authoring check4/0 (92s), captain-anim87/0. All caps frozen from decoded baseline; existing captain3/32MiB stage limits retained. Scratch mode added to existing stage; two same-destination outputs/face checks match, source pins unchanged. No production assets or runtime loader edits. Typed frame/NPC/deck regressions running; final evidence will record results."
+      "notes": "CP2: budget30/0; scratch stage7/0, exact byte/face/source-pin checks; full authoring4/0 in92s, runtime4/0 in91s. Existing captain anim87/0, frame50+selftest50, NPC assets5/25, deck12pins+negative controls, NPC pilot23/0, painted actual-world1168/0. Existing per-stage3/32MiB caps retained. No production asset or runtime loader changes."
     },
     {
       "id": "CP3",
@@ -114,10 +114,10 @@
         "AC8/AC10: make export-filter-audit level-export-test script-gate-lint uid-guard python-guard plus proposed content fixture targets pass",
         "Report exact local evidence and mark real-pack AC9 deferred to separately authorized make export-pack-check-strict; no fixture-to-native acceptance substitution"
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Unapproved. No native build/publication; GitHub fast tier and cross-family evaluation remain landing requirements."
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP3: pack fixtures19/0; source export audit159literals/0failures with16mutants killed; level export4/0; UID/Python guards pass; script-gate lint passes with integrator include temporarily applied and restored. Added narrow classifications for inherited three painted export gaps. Top Makefile include left to integrator. AC9 remains not_run: no new export/build/GPU/publication."
     }
   ],
   "deferred_acceptance": [
@@ -141,5 +141,8 @@
     "CP1",
     "CP2",
     "CP3"
-  ]
+  ],
+  "implementation_scope_complete": true,
+  "design_acceptance_complete": false,
+  "report": "design_docs/planned/r2/content-pipeline-consolidation-report.md"
 }
