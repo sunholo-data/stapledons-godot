@@ -1,0 +1,144 @@
+{
+  "sprint_id": "PLAYABLE-SHIP-FINISH",
+  "title": "Production-scene evidence before painted ship repair",
+  "status": "in_progress",
+  "created": "2026-11-17",
+  "design_doc": "design_docs/planned/r2/playable-ship-finish.md",
+  "sprint_plan": "design_docs/planned/r2/playable-ship-finish-sprint.md",
+  "approval": "Mark, attended 2026-11-17: approved lets go",
+  "execution_authorized": true,
+  "executor_handoff_sent": false,
+  "base_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
+  "base_main": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
+  "runtime_version": "0.56.1",
+  "github_issues": [
+
+  ],
+  "velocity": {
+    "target_loc_per_day": null,
+    "estimated_total_loc": 390,
+    "estimated_days": 2.5,
+    "basis": "No measured comparable velocity; bounded task allowances with about 25 percent uncertainty. Human review, laptop availability and publication waits excluded."
+  },
+  "registry_reuse": [
+    {
+      "milestone": "SF0",
+      "package": null,
+      "action": "none",
+      "reason": "Repo-native normal-entry readiness, finish closure and receipt checks; no package-like capability."
+    },
+    {
+      "milestone": "SF1a",
+      "package": null,
+      "action": "none",
+      "reason": "Extend existing Godot benchmark and uploader boundary; no package capability."
+    },
+    {
+      "milestone": "SF1b",
+      "package": null,
+      "action": "none",
+      "reason": "Reuse authored views, journey inputs and profiler with Godot CLI/report glue."
+    },
+    {
+      "milestone": "SF2",
+      "package": null,
+      "action": "none",
+      "reason": "Native review matrix and evaluation preparation only."
+    }
+  ],
+  "features": [
+    {
+      "id": "SF0",
+      "description": "Shared bounded normal-entry readiness and production closure identity",
+      "estimated_loc": 120,
+      "estimated_days": 0.25,
+      "dependencies": [
+
+      ],
+      "acceptance_criteria": [
+        "New make ship-finish-test validates actual normal-entry finish counts 141/1000/42, closure and production captain identity.",
+        "ShipReviewReadiness.wait(demo, timeout_ms) returns bounded ok/errors/identity; stalled, failed and missing install controls fail closed.",
+        "Existing rollback/restoration, disjoint deck ownership, body/WALK/camera and lift round-trip checks remain; SCRIPT_GATE rejects empty summaries and parse/runtime errors."
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Ship owns proposed shared readiness helper; playable-voyage PV1 consumes it. Main retains civic plus physics installation ordering."
+    },
+    {
+      "id": "SF1a",
+      "description": "Explicit local-only benchmark mode with production and hardware metadata",
+      "estimated_loc": 130,
+      "estimated_days": 0.25,
+      "dependencies": [
+        "SF0"
+      ],
+      "acceptance_criteria": [
+        "New make ship-finish-profile-test proves local review writes its report and makes zero uploader calls.",
+        "Existing default remote-summary behavior is preserved for existing callers with a positive uploader control.",
+        "Report contains actual build/finish/captain pins, viewport/hardware, raw timings and validity fields; insufficient/fake samples fail and unavailable GPU timing is not zero-cost evidence."
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Extend existing ShipDemoBenchmark; do not create another benchmark or change canonical performance gates."
+    },
+    {
+      "id": "SF1b",
+      "description": "Packaged normal-entry review route and reproducible phase report validation",
+      "estimated_loc": 140,
+      "estimated_days": 0.5,
+      "dependencies": [
+        "SF1a"
+      ],
+      "acceptance_criteria": [
+        "Proposed --ship-finish-review output path enters the actual normal game install and shared readiness seam; headless performance claims fail.",
+        "Bridge, Commons, lift, seated selection and real-transit phases carry reproducible seed/input/camera/phase metadata and original/painted material conditions with exact restoration.",
+        "New make ship-finish-review-report validates fixtures and rejects stale hashes, missing phases or fabricated hardware confirmation; no GPU work is required on the training host."
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "One executor session target; reslice if route integration exceeds the cap. The new argument is absent from the current archive."
+    },
+    {
+      "id": "SF2",
+      "description": "Build-pinned native review matrix, focused regressions and independent evaluation",
+      "estimated_loc": 0,
+      "estimated_days": 1.5,
+      "dependencies": [
+        "SF1b"
+      ],
+      "acceptance_criteria": [
+        "Production captain inventory and unfilled native review matrix map exact build/report pins to existing S3/S5, VF and CA owner rows.",
+        "Focused captain/camera/civic/lift regressions, UID guard and whitespace pass; different-family evaluation is recorded.",
+        "Laptop measurement, Mark visual verdicts and publication remain explicitly pending unless separately evidenced; no art generation, repair expansion, upload or premature completion claim."
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Preparation/evaluation allowance; not a requirement to wait for or claim native acceptance. Conditional repairs return to original sprint owners."
+    }
+  ],
+  "pending_external_gates": [
+    "Mark approves this proposed sprint before implementation.",
+    "Design OQ1: actual target laptop confirmation and native local measurement session.",
+    "Design OQ2: Mark's existing native S3/S5/CA visual review verdicts.",
+    "Design OQ3: resolve prior external publication rejection and concrete archive delivery through the normal channel."
+  ],
+  "constraints": [
+    "No executor handoff or implementation during planning.",
+    "No local GPU while training; no build, push, upload or commit in this session.",
+    "Preserve dirty authoring work; reconcile current main before a future code-bearing review archive.",
+    "Local-only review never uploads; existing default benchmark behavior remains scoped to its current callers.",
+    "No new physics, .ail code, geometry/controls change, asset generation or captain renderer switch.",
+    "Do not close original S3/S5 or captain gates from headless checks or CPU/browser authoring evidence."
+  ],
+  "approved": true,
+  "approved_by": "Mark, attended 2026-11-17: approved lets go",
+  "approved_scope": [
+    "SF0",
+    "SF1a",
+    "SF1b"
+  ]
+}

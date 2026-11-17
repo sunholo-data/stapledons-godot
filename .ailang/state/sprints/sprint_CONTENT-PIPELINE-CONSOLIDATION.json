@@ -1,0 +1,145 @@
+{
+  "sprint_id": "CONTENT-PIPELINE-CONSOLIDATION",
+  "status": "in_progress",
+  "approved": true,
+  "approved_by": "Mark, attended 2026-11-17: approved lets go",
+  "approved_on": null,
+  "created": "2026-11-17",
+  "base_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
+  "candidate_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
+  "design_doc": "design_docs/planned/r2/content-pipeline-consolidation.md",
+  "sprint_plan": "design_docs/planned/r2/content-pipeline-consolidation-sprint.md",
+  "github_issues": [
+
+  ],
+  "executor_handoff": false,
+  "scope": "Four existing bundles, three typed adapters, one additional fixture asset; verification and pack-fixture pilot only. No generation, GPU, build, publish, broad migration or runtime-loader replacement.",
+  "velocity": {
+    "target_loc_per_day": null,
+    "estimated_total_loc": 750,
+    "estimated_days": 2,
+    "basis": "Provisional active engineering allocation; reviewed git/CHANGELOG history has no comparable measured asset-pipeline LOC/day. Review/integration wait excluded."
+  },
+  "registry_reuse": [
+    {
+      "milestone": "CP1",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Registry validator checks ailang.toml/.ail exports; image candidates parse/upload documents. Reuse Godot JSON/FileAccess/HashingContext and existing typed manifests."
+    },
+    {
+      "milestone": "CP2",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Independent decoded resource sizes and geometry checks require existing Godot Image/resource I/O; reuse captain budgets and existing stages, no new package mathematics."
+    },
+    {
+      "milestone": "CP3",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Reuse repository ZIPReader/remap audits and SCRIPT_GATE wiring. No suitable published Godot pack validator or package capability to add."
+    }
+  ],
+  "features": [
+    {
+      "id": "CP1",
+      "description": "Four-record authoring catalog, three typed enumerators and one extension fixture",
+      "estimated_loc": 285,
+      "estimated_days": 0.75,
+      "dependencies": [
+
+      ],
+      "acceptance_criteria": [
+        "AC1/AC2: proposed make content-contract-test validates schema, kind, IDs, paths and pins; each seeded defect fails by name",
+        "AC3: one additional fixture asset changes deterministic closure accounting; corruption fails without altering production fixed-count gates",
+        "AC5: runtime validation needs only runtime bytes; authoring validation rejects required missing source inputs; neither mode mutates outputs or re-pins"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Unapproved. Reconcile base/source ownership first; preserve attended dirty work. All content-* targets are proposed."
+    },
+    {
+      "id": "CP2",
+      "description": "Independent bundle budgets, typed regressions and isolated repeat-stage evidence",
+      "estimated_loc": 265,
+      "estimated_days": 0.75,
+      "dependencies": [
+        "CP1"
+      ],
+      "acceptance_criteria": [
+        "AC4: proposed make content-budget-test recomputes independent decoded/mip/file/mesh metrics and kills per-ceiling defects; captain 3/32 MiB stage caps stay intact",
+        "AC6: proposed make content-stage-test compares two same-input scratch closures and face hashes with unchanged source pins; no production write, generation, network or GPU",
+        "AC7: make captain-anim-test captain-frames-check npc-painted-assets-check npc-painted-test deck-assets-check and proposed make painted-levels-test preserve type-owned checks and late-failure rollback"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Unapproved. Reuse sibling raw-image staging; add only scratch destination support if required. Metrics do not certify actual VRAM/frame time."
+    },
+    {
+      "id": "CP3",
+      "description": "Dynamic pack-closure negative controls and bounded focused gate integration",
+      "estimated_loc": 200,
+      "estimated_days": 0.5,
+      "dependencies": [
+        "CP2"
+      ],
+      "acceptance_criteria": [
+        "AC8: proposed make content-pack-test passes a complete fixture and rejects missing raw image/portrait/resource/manifest and leaked authoring catalog",
+        "AC8/AC10: make export-filter-audit level-export-test script-gate-lint uid-guard python-guard plus proposed content fixture targets pass",
+        "Report exact local evidence and mark real-pack AC9 deferred to separately authorized make export-pack-check-strict; no fixture-to-native acceptance substitution"
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "Unapproved. No native build/publication; GitHub fast tier and cross-family evaluation remain landing requirements."
+    }
+  ],
+  "deferred_acceptance": [
+    {
+      "id": "AC9",
+      "status": "not_run",
+      "command": "make export-pack-check-strict",
+      "reason": "Requires later separately authorized packaging; the initial sprint uses fixture packs and does not certify a native build."
+    }
+  ],
+  "human_decision_gates": [
+    {
+      "id": "sprint_approval",
+      "source": "CLAUDE.md: Development cycle, step 2",
+      "instruction": "STOP: report BLOCKED: sprint approval pending and end without implementation mutations while approved is false."
+    }
+  ],
+  "approval": "Mark, attended 2026-11-17: approved lets go",
+  "execution_authorized": true,
+  "approved_scope": [
+    "CP1",
+    "CP2",
+    "CP3"
+  ]
+}
