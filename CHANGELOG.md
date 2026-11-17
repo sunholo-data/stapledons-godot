@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### r1-rig-test-speed-m1b-fix (2026-11-17)
+
+#### Fixed
+
+- **The nightly `rig-check-control` is green again** (issue #392; red on both nights since L4 M1b landed, main 2bb77da7 and c69a3bd5; sprint R1-RIG-TEST-SPEED M1b-fix). The profiler sets `TMPDIR` to its `--out` directory, which is long, and the control built its temp path under it; the 100-character budget test then exited 1 with no output in 14 ms. The control takes the caller's `TMPDIR` only when its own paths still fit, falls back to `/tmp` otherwise, and any precondition that fails prints `rig-check control: FAIL: <reason>` before exiting non-zero. `caller-poison` now carries a `TMPDIR` of at least 110 characters, so the control is tested under the profiler's condition. The case count is unchanged (26 outer, 25 nested).
+
 ### r1-rig-test-speed-m1b (2026-11-16)
 
 #### Added
