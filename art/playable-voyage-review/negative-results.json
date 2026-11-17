@@ -1,0 +1,79 @@
+{
+  "control_suite": "6 passed, 0 failures",
+  "cases": [
+    {
+      "case": "unknown_station",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 8,
+      "assertions_failed_as_expected": 1,
+      "reasons": [
+        "walk has a path: missing_station"
+      ],
+      "log": "art/playable-voyage-review/negative-unknown_station.log"
+    },
+    {
+      "case": "unfocused",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 8,
+      "assertions_failed_as_expected": 1,
+      "reasons": [
+        "unscripted refusal: Use the Archive terminal first."
+      ],
+      "log": "art/playable-voyage-review/negative-unfocused.log"
+    },
+    {
+      "case": "unscripted",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 6587,
+      "assertions_failed_as_expected": 1,
+      "reasons": [
+        "unscripted refusal: No news from home has reached the ship yet."
+      ],
+      "log": "art/playable-voyage-review/negative-unscripted.log"
+    },
+    {
+      "case": "missing_return",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 68145,
+      "assertions_failed_as_expected": 8,
+      "reasons": [
+        "completion exactly two commits",
+        "completion missing return to Sol at rest",
+        "completion missing observed arrival: Sol",
+        "completion missing phase: Sol/boosting",
+        "completion missing phase: Sol/cruising",
+        "completion missing phase: Sol/braking",
+        "completion missing home news",
+        "completion missing final home log"
+      ],
+      "log": "art/playable-voyage-review/negative-missing_return.log"
+    },
+    {
+      "case": "missing_home_news",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 143082,
+      "assertions_failed_as_expected": 2,
+      "reasons": [
+        "completion missing home news",
+        "completion missing final home log"
+      ],
+      "log": "art/playable-voyage-review/negative-missing_home_news.log"
+    },
+    {
+      "case": "missing_final_log",
+      "control_status": "passed",
+      "observed_app_exit": 1,
+      "assertions_passed": 142767,
+      "assertions_failed_as_expected": 1,
+      "reasons": [
+        "completion missing final home log"
+      ],
+      "log": "art/playable-voyage-review/negative-missing_final_log.log"
+    }
+  ]
+}

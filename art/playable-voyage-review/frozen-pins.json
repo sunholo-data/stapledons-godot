@@ -1,0 +1,32 @@
+[
+  {
+    "path": "tests/playthrough_min.json",
+    "sha256": "612d62e35496b4e359937a4db89f2442fba8539e1e673f59c12aaa6d877f3211",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  },
+  {
+    "path": "sim/tools/session_audit.ail",
+    "sha256": "e154f2cbf92b65df428890ad99de1f4d09c91b534d53c3e3765926c02f41a0ef",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  },
+  {
+    "path": "tests/replays/scene/m4_scene_session.input.sha256",
+    "sha256": "7faacff7cf9aa4b099911b1bc490079d926581cb1ef379b33710e28ce2c1770a",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  },
+  {
+    "path": "tests/replays/scene/m4_scene_session.ndjson",
+    "sha256": "ab44d47c89762366287beab590f2e2067cca67e2d021e5c084d0c04b6a471c24",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  },
+  {
+    "path": "tests/replays/scene/m4_scene_session.record.txt",
+    "sha256": "1373fd4348d339e2618fba1258586168952469f923915eb56c72ca6f588425cd",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  },
+  {
+    "path": "tests/replays/scene/m4_scene_session.state.arm64.sha256",
+    "sha256": "9969644ecd0b45d38817faa95239d0ac9c7a6122ec8ff6248f666781bde36e03",
+    "unchanged_from": "ec415f339575a7127f7c9d8643c6067db3011199"
+  }
+]

@@ -1,0 +1,2 @@
+script-gate: captain-command-test ok: captain-command: 54 passed, 0 failures (rc 0, no SCRIPT ERROR, 5 s of 600 s)
+qualification: 1 passed, 0 failures
