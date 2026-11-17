@@ -73,6 +73,9 @@ accept() {
   echo "session-minor-guard-controls: $1 accepted"
 }
 OK_TAIL='; main\.gd _run_map, demos/ship_geometry_demo\.gd _create_navigation and ui/loading_jump\.gd _work_sim ask it; [1-9][0-9]* test comparisons name it$'
+# 7ao: the highest protocol minor ROOT defines; one above it is defined nowhere (R14 orphan, B bump).
+next=$(( $(sed -nE 's/^const [A-Z0-9_]+_MINOR := ([0-9]+).*/\1/p' "$ROOT/bridge/sim_bridge.gd" | sort -n | tail -n 1) + 1 ))
+TAB=$(printf '\t')
 
 # P: the tree as it is (positive control: rc 0 and the ok line is captured).
 copy pristine
@@ -147,8 +150,8 @@ reject exprsession "$P SESSION_MINOR unresolved in bridge/sim_bridge.gd"
 
 # R14: SESSION_MINOR equal to no defined protocol minor.
 copy orphan
-mutate orphan bridge/sim_bridge.gd 's/^const SESSION_MINOR := [0-9]+/const SESSION_MINOR := 99/'
-reject orphan "$P SESSION_MINOR (99) is no protocol minor in bridge/sim_bridge.gd"
+mutate orphan bridge/sim_bridge.gd "s/^const SESSION_MINOR := [0-9]+/const SESSION_MINOR := $next/"
+reject orphan "$P SESSION_MINOR ($next) is no protocol minor in bridge/sim_bridge.gd"
 
 # R15: a feature test names today's constant again.
 copy testname
@@ -182,10 +185,47 @@ ln -s "$tmp/brokentest/tests/no_such_file.gd" "$tmp/brokentest/tests/broken.gd"
 { test -L "$tmp/brokentest/tests/broken.gd" && test ! -e "$tmp/brokentest/tests/broken.gd"; } || { echo "session-minor-guard-controls: brokentest: no dangling symlink" >&2; exit 3; }
 reject brokentest "$P test scan error (grep rc 2)"
 
+# R20 (7ao): a downgrade to the newest defined minor below the floor tests/test_comms_station.gd asserts.
+fv=$(sed -nE 's/^const EARTH_LOG_MINOR := ([0-9]+).*/\1/p' "$ROOT/bridge/sim_bridge.gd")
+old=$(sed -nE 's/^const [A-Z0-9_]+_MINOR := ([0-9]+).*/\1/p' "$ROOT/bridge/sim_bridge.gd" | awk -v f="$fv" '$1 + 0 < f + 0' | sort -n | tail -n 1)
+copy downgrade
+mutate downgrade bridge/sim_bridge.gd "s/^const SESSION_MINOR := [0-9]+/const SESSION_MINOR := $old/"
+reject downgrade "$P SESSION_MINOR ($old) is below EARTH_LOG_MINOR ($fv), a floor a test asserts"
+
+# R21 (7ao): no test asserts a floor (the floor scan's known-positive control).
+copy nofloor
+mutate nofloor tests/test_comms_station.gd 's/ and SimBridge\.SESSION_MINOR >= SimBridge\.EARTH_LOG_MINOR//'
+reject nofloor "$P no test asserts a floor for SESSION_MINOR"
+
+# R22-R24 (7ao): a test names another constant first, after a tab, or in parentheses.
+copy constfirst
+mutate constfirst tests/test_comms_station.gd 's/demo\.journey_sim\.want_minor == SimBridge\.SESSION_MINOR/SimBridge.EARTH_LOG_MINOR == demo.journey_sim.want_minor/'
+reject constfirst "$P tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR"
+copy tab
+mutate tab tests/test_comms_station.gd "s/(journey_sim\\.want_minor ==) SimBridge\\.SESSION_MINOR/\\1${TAB}SimBridge.EARTH_LOG_MINOR/"
+reject tab "$P tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR"
+copy paren
+mutate paren tests/test_comms_station.gd 's/(journey_sim\.want_minor ==) SimBridge\.SESSION_MINOR/\1 (SimBridge.EARTH_LOG_MINOR)/'
+reject paren "$P tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR"
+
+# R25 (7ao r1, glm-5.3): the floor names SESSION_MINOR itself (vacuous), which would let a downgrade through.
+copy selffloor
+mutate selffloor tests/test_comms_station.gd 's/SimBridge\.SESSION_MINOR >= SimBridge\.EARTH_LOG_MINOR/SimBridge.SESSION_MINOR >= SimBridge.SESSION_MINOR/'
+reject selffloor "$P floor SESSION_MINOR is not a floor a test asserts"
+
+# R26 (7ao r1, kimi-k3): a ternary wraps the prefetch call, so some builds never prefetch (no test sees it).
+copy wrapped
+mutate wrapped ui/loading_jump.gd "${JUMP}s/= SimBridge\\.warm\\(SimBridge\\.SESSION_MINOR\\)/= null if OS.has_feature(\"x\") else SimBridge.warm(SimBridge.SESSION_MINOR)/"
+reject wrapped "$P ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR"
+
+# R27 (7ao r2, kimi-k3): the floor commented out behind a `#` (the natural way to disable that assert).
+copy commentfloor
+mutate commentfloor tests/test_comms_station.gd 's/ and SimBridge\.SESSION_MINOR >= SimBridge\.EARTH_LOG_MINOR/ # and SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR/'
+reject commentfloor "$P no test asserts a floor for SESSION_MINOR"
+
 # B: a protocol bump the game adopts: a new constant one above the highest minor, and SESSION_MINOR moved to
 # it. No session file and no test is edited.
 copy bump
-next=$(( $(sed -nE 's/^const [A-Z0-9_]+_MINOR := ([0-9]+).*/\1/p' "$tmp/bump/bridge/sim_bridge.gd" | sort -n | tail -n 1) + 1 ))
 test "$next" -gt 18 || { echo "session-minor-guard-controls: bump: next minor $next" >&2; exit 1; }
 mutate bump bridge/sim_bridge.gd "s/^const SESSION_MINOR := [0-9]+\$/const SESSION_MINOR := $next/"
 append bump bridge/sim_bridge.gd "const FUTURE_MINOR := $next"
@@ -199,6 +239,6 @@ accept comment "^$P ok, SESSION_MINOR \\([1-9][0-9]*\\) = [A-Z0-9_ ]+$OK_TAIL"
 # G: the comparisons' count is the real one (4 today: test_bh_hud x2, test_comms_station, test_ship_ui).
 test "$(grep -oE 'journey_sim\.(want_minor|hello_reply\.proto\.minor) *[=!<>]=? *SimBridge\.SESSION_MINOR' "$tmp/pristine/tests/"*.gd | wc -l | tr -d ' ')" -ge 4 || { echo "session-minor-guard-controls: fewer than 4 comparisons in the pristine copy" >&2; exit 1; }
 
-test "$rejected" -eq 19 || { echo "session-minor-guard-controls: $rejected rejected, want 19" >&2; exit 1; }
+test "$rejected" -eq 27 || { echo "session-minor-guard-controls: $rejected rejected, want 27" >&2; exit 1; }
 test "$accepted" -eq 3 || { echo "session-minor-guard-controls: $accepted accepted, want 3" >&2; exit 1; }
 echo "session-minor-guard-controls: $rejected rejected, $accepted accepted"

@@ -26,6 +26,12 @@ mutate() {
   if cmp -s "$tmp/$1/$2" "$tmp/$1/$2.new"; then echo "similar-guard-controls: $1: mutation left $2 unchanged" >&2; exit 3; fi
   mv "$tmp/$1/$2.new" "$tmp/$1/$2" || exit 1
 }
+# awkmut CASE FILE AWK_PROGRAM: a POSIX awk program on $tmp/CASE/FILE (7ao: multi-line moves); exit 3 if unchanged
+awkmut() {
+  awk "$3" "$tmp/$1/$2" > "$tmp/$1/$2.new" || exit 1
+  if cmp -s "$tmp/$1/$2" "$tmp/$1/$2.new"; then echo "similar-guard-controls: $1: mutation left $2 unchanged" >&2; exit 3; fi
+  mv "$tmp/$1/$2.new" "$tmp/$1/$2" || exit 1
+}
 # guard CASE: run the target on $tmp/CASE; make's rc in $rc, its output in $tmp/CASE.log
 guard() {
   rc=0
@@ -124,6 +130,18 @@ mutate compound main.gd "${RANGE}s/^(.*want_minor *= *SimBridge\.[A-Z0-9_]+_MINO
 	sim.want_minor -= 10/"
 reject compound 'similar-test guard: main.gd _run_map mentions want_minor 2 times, want 1'
 
+# D14 (7ao): the ask moved out of _run_map into a static func inserted right after it
+# (a range ending at the next `^func ` line would still see it and pass).
+copy stray
+# shellcheck disable=SC2016 # $0 is awk's record, not a shell expansion
+awkmut stray main.gd '/^func _run_map\(/ { f = 1; print; next } f && /want_minor *= *SimBridge\./ { ask = $0; next } f && /^[^ \t#]/ { print "static func _stray() -> void:"; print ask; print ""; f = 0 } { print }'
+reject stray 'similar-test guard: main.gd _run_map mentions want_minor 0 times, want 1'
+
+# D15 (7ao): _run_map is the last thing in main.gd (no following top-level line).
+copy unbounded
+awkmut unbounded main.gd '/^func _run_map\(/ { f = 1; print; next } f && /^[^ \t#]/ { exit } { print }'
+reject unbounded 'similar-test guard: main.gd _run_map has no following top-level line; range unbounded'
+
 # F: a future protocol bump: a new constant one above the highest minor, asked by the map session.
 copy future
 next=$(( $(sed -nE 's/^const [A-Z0-9_]+_MINOR := ([0-9]+).*/\1/p' "$tmp/future/bridge/sim_bridge.gd" | sort -n | tail -1) + 1 ))
@@ -142,6 +160,6 @@ const COMMENTED_MINOR := $next  # a trailing comment
 mutate comment main.gd "${RANGE}s/(want_minor *= *SimBridge\.)[A-Z0-9_]+_MINOR/\1COMMENTED_MINOR/"
 accept comment "^similar-test guard: ok, main\\.gd _run_map asks COMMENTED_MINOR \\($next\\) >= SIMILAR_MINOR \\(14\\)\$"
 
-test "$rejected" -eq 13 || { echo "similar-guard-controls: $rejected rejected, want 13" >&2; exit 1; }
+test "$rejected" -eq 15 || { echo "similar-guard-controls: $rejected rejected, want 15" >&2; exit 1; }
 test "$accepted" -eq 3 || { echo "similar-guard-controls: $accepted accepted, want 3" >&2; exit 1; }
 echo "similar-guard-controls: $rejected rejected, $accepted accepted"

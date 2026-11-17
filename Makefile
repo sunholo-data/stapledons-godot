@@ -126,6 +126,7 @@ similar-test:      ## S0 ranking and sessions: strict VM = VM = interpreter = fr
 # grammar: the assignment is exactly `want_minor = SimBridge.<NAME>_MINOR` and each constant exactly `const <NAME> := <digits>`,
 # each optionally followed by a `#` comment; anything else (an expression, a ternary, a literal) is rejected. _run_map must
 # mention want_minor exactly once, so a second write (`-=`, `+=`, a reassignment), a comparison or a comment fails closed.
+# 7ao: _run_map's range ends at the next top-level line (a `static func`, a `var`), as 7al's sites do, and must have one.
 # SIMILAR_GUARD_ROOT is where main.gd and bridge/sim_bridge.gd are read; similar-guard-controls points it at mutated copies.
 SIMILAR_GUARD_ROOT ?= .
 .PHONY: similar-main-guard similar-guard-controls
@@ -134,9 +135,10 @@ ci-fast: similar-main-guard similar-guard-controls
 similar-main-guard: ## 7ah: main.gd's map session asks a SimBridge minor >= SIMILAR_MINOR, and never SIMILAR_MINOR
 	@set -eu; r='$(SIMILAR_GUARD_ROOT)'; g="$$r/main.gd"; b="$$r/bridge/sim_bridge.gd"; \
 	  test -f "$$g" && test -f "$$b" || { echo "similar-test guard: missing $$g or $$b" >&2; exit 1; }; \
-	  body=$$(sed -n '/^func _run_map(/,/^func /p' "$$g"); \
+	  body=$$(sed -n '/^func _run_map(/,/^[^[:space:]#]/p' "$$g"); \
 	  n=$$(printf '%s\n' "$$body" | awk '{ n += gsub(/want_minor/, "") } END { print n + 0 }'); \
 	  test "$$n" = 1 || { echo "similar-test guard: main.gd _run_map mentions want_minor $$n times, want 1" >&2; exit 1; }; \
+	  printf '%s\n' "$$body" | tail -n 1 | grep -q '^[^[:space:]#]' || { echo "similar-test guard: main.gd _run_map has no following top-level line; range unbounded" >&2; exit 1; }; \
 	  set_lines=$$(printf '%s\n' "$$body" | grep want_minor); \
 	  name=$$(printf '%s\n' "$$set_lines" | sed -nE 's/^[^#]*want_minor *= *SimBridge\.([A-Z0-9_]+_MINOR)[[:space:]]*(#.*)?$$/\1/p'); \
 	  test -n "$$name" || { echo "similar-test guard: main.gd _run_map want_minor is not one bare SimBridge minor" >&2; exit 1; }; \
@@ -156,6 +158,10 @@ similar-guard-controls: ## 7ah: similar-main-guard rejects each mutation of main
 # and the route then spawns its own on the main thread (2-5 s on the loaded Studio). SESSION_MINOR must be
 # `const SESSION_MINOR := <digits>` equal to another `const <NAME>_MINOR` (a defined protocol minor), and every test
 # comparison of journey_sim's minor with a SimBridge constant must name SESSION_MINOR, so a bump edits one line.
+# 7ao: the scan reads either order, tabs and a parenthesised constant; SESSION_MINOR must be at or above every
+# `SimBridge.SESSION_MINOR >= SimBridge.<NAME>_MINOR` floor a test asserts (at least one), so a downgrade fails here;
+# a floor must name a minor other than SESSION_MINOR (a self-floor is vacuous). The prefetch's ask is the whole
+# statement `holder["value"] = SimBridge.warm(SimBridge.SESSION_MINOR)`, so no condition can wrap the call.
 # A site function's range runs from its `func NAME(` line to the next top-level line (column 0, not a comment: a
 # `func`, a `static func`, a `var`); it must have one (else the range is unbounded) and must mention its token
 # (want_minor; warm( for the prefetch) exactly once (fail closed).
@@ -178,15 +184,25 @@ session-minor-guard: ## 7al: the map, the ship and the loading jump's prefetch a
 	    printf '%s\n' "$$body" | tail -n 1 | grep -q '^[^[:space:]#]' || { echo "$$p $$1 $$2 has no following top-level line; range unbounded" >&2; exit 1; }; \
 	    n=$$(printf '%s\n' "$$body" | awk -v t="$$3" '{ s = $$0; while ((i = index(s, t)) > 0) { n++; s = substr(s, i + length(t)) } } END { print n + 0 }'); \
 	    test "$$n" = 1 || { echo "$$p $$1 $$2 mentions $$3 $$n times, want 1" >&2; exit 1; }; \
-	    case "$$3" in want_minor) e='^[^#]*want_minor *= *SimBridge\.SESSION_MINOR[[:space:]]*(#.*)?$$';; *) e='^[^#]*SimBridge\.warm\(SimBridge\.SESSION_MINOR\)[[:space:]]*(#.*)?$$';; esac; \
+	    case "$$3" in want_minor) e='^[^#]*want_minor *= *SimBridge\.SESSION_MINOR[[:space:]]*(#.*)?$$';; *) e='^[[:space:]]*holder\["value"\][[:space:]]*=[[:space:]]*SimBridge\.warm\(SimBridge\.SESSION_MINOR\)[[:space:]]*(#.*)?$$';; esac; \
 	    printf '%s\n' "$$body" | grep -qE "$$e" || { echo "$$p $$1 $$2 does not ask SimBridge.SESSION_MINOR" >&2; exit 1; }; \
 	  done; \
-	  set +e; hits=$$(cd "$$r" && grep -oHE 'journey_sim\.(want_minor|hello_reply\.proto\.minor) *[=!<>]=? *SimBridge\.[A-Z0-9_]+_MINOR' tests/*.gd); gs=$$?; set -e; \
+	  w='[[:space:]]*'; m='journey_sim\.(want_minor|hello_reply\.proto\.minor)'; c='SimBridge\.[A-Z0-9_]+_MINOR'; \
+	  set +e; hits=$$(cd "$$r" && grep -oHE -e "$$m$$w[=!<>]=?$$w\(?$$w$$c" -e "$$c$$w\)?$$w[=!<>]=?$$w([A-Za-z0-9_]+\.)*$$m" tests/*.gd); gs=$$?; set -e; \
 	  case "$$gs" in 0|1) ;; *) echo "$$p test scan error (grep rc $$gs)" >&2; exit 1;; esac; \
+	  hits=$$(printf '%s\n' "$$hits" | sed -nE "s/^([^:]*):.*($$c).*$$/\1:\2/p"); \
 	  k=$$(printf '%s\n' "$$hits" | grep -c . || true); \
 	  test "$$k" -ge 1 || { echo "$$p no test compares journey_sim's minor with a SimBridge constant" >&2; exit 1; }; \
 	  bad=$$(printf '%s\n' "$$hits" | grep -v 'SimBridge\.SESSION_MINOR$$' | sed -n 1p); \
 	  test -z "$$bad" || { echo "$$p $${bad%%:*} compares journey_sim's minor with SimBridge.$${bad##*.}, not SESSION_MINOR" >&2; exit 1; }; \
+	  fl=$$(cd "$$r" && grep -hE "^[^#]*SimBridge\.SESSION_MINOR$$w>=$$w$$c" tests/*.gd | grep -ohE "SimBridge\.SESSION_MINOR$$w>=$$w$$c" | sed -E 's/.*\.//' | sort -u); \
+	  test -n "$$fl" || { echo "$$p no test asserts a floor for SESSION_MINOR" >&2; exit 1; }; \
+	  for x in $$fl; do \
+	    case "$$x" in SESSION_MINOR) echo "$$p floor SESSION_MINOR is not a floor a test asserts" >&2; exit 1;; esac; \
+	    fv=$$(sed -nE "s/^const $$x := ([0-9]+)[[:space:]]*(#.*)?$$/\1/p" "$$b"); \
+	    case "$$fv" in ''|*[!0-9]*) echo "$$p floor $$x unresolved in bridge/sim_bridge.gd" >&2; exit 1;; esac; \
+	    test "$$v" -ge "$$fv" || { echo "$$p SESSION_MINOR ($$v) is below $$x ($$fv), a floor a test asserts" >&2; exit 1; }; \
+	  done; \
 	  echo "$$p ok, SESSION_MINOR ($$v) = $$names; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; $$k test comparisons name it"
 session-minor-guard-controls: ## 7al: session-minor-guard rejects each mutation of a session minor and accepts a one-line bump
 	@MAKE='$(MAKE)' sh tools/session_minor_guard_controls.sh .

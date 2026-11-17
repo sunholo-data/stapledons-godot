@@ -1,0 +1,311 @@
+{
+  "sprint_id": "R1-7AO-SESSION-MINOR-GUARD-EDGES",
+  "status": "evaluated_pass",
+  "approved": true,
+  "approved_by": "mission controller iteration 96 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; quorum r1 BLOCKED 2/3 (kimi, glm; sol absent quota) -> designer revision 1; r2 BLOCKED 2/3 (kimi, glm; gemini pass) -> controller revision 2 under the narrow-refinement carve-out, fixes verbatim; no round 3)",
+  "created": "2026-11-17",
+  "design_doc": "design_docs/implemented/r1/m4-7ao-session-minor-guard-edges.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7ao-session-minor-guard-edges-sprint.md",
+  "branch": "mission/stapledon-iter96-7ao",
+  "base_commit": "5b33b62a",
+  "implements": [
+    "7ao"
+  ],
+  "scope": "103 changed lines in four files, applied byte-exactly from Appendix A of the design doc (git apply --numstat, planner-replicated: 19 3 Makefile / 9 4 tests/test_loading_jump.gd / 44 4 tools/session_minor_guard_controls.sh / 19 1 tools/similar_guard_controls.sh; 4 files changed, 91 insertions(+), 12 deletions(-); fence 206 lines, sha256 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a), plus changelogs/unreleased/2026-11-17-session-minor-guard-edges.md. Makefile hunks only inside the 7ah similar-main-guard and 7al session-minor-guard recipes and comment blocks (base lines 123-190; AC15 asserts 8 0). No product, asset, shader, golden or *.ail change; bridge/sim_bridge.gd and the three session files are not edited (the (e) mutation ACs edit bridge/sim_bridge.gd:237 for one bounded run each through the preamble's mut, EXIT-trap restored; AC11 is the witness). No new script -> no .uid; no *.py -> no allowlist row. Not run: no GPU, no make golden, no capture, no bench (Makefile:713/740), no full local make test (merge rule; the nightly rig/full runs the suite on main post-merge). Targeted gates: make session-minor-guard, make session-minor-guard-controls, make similar-main-guard, make similar-guard-controls, make uid-guard, make python-guard, make script-gate-lint (ci-fast membership: Makefile:166, Makefile:133, mk/script-gates.mk:27, Makefile:73), plus the targeted make loading-jump-test (test-only, Makefile:1297, not in ci-fast) and the GitHub fast tier make ci-fast on the PR (.github/workflows/ci.yml:60-62). Role split: the executor applies Appendix A byte-exactly with git apply and runs AC1-AC16 in order in its own full clone ../stapledons-godot-<topic>; the controller lands (commit, PR, cross-family evaluation, charter follow-up row for the V27 hole, doc move to implemented/).",
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "The patch is Appendix A, byte for byte, and is what the clone holds",
+      "command": "shasum -a 256 \"$W/7ao.patch\" | cut -d' ' -f1; git apply -R --check \"$W/7ao.patch\" && git diff --shortstat 5b33b62a -- Makefile tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh tests/test_loading_jump.gd",
+      "expected": "3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then ` 4 files changed, 91 insertions(+), 12 deletions(-)` (fence 206 lines — planner-replicated)"
+    },
+    {
+      "id": "AC2",
+      "criterion": "The guard passes the tree; the count is unchanged",
+      "command": "make -s --no-print-directory session-minor-guard; echo rc=$?",
+      "expected": "session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it, then rc=0 (base ok line identical, count 4 — planner-replicated)"
+    },
+    {
+      "id": "AC3",
+      "criterion": "(a)(b)(c)(d) every control holds, with eight new rejections and the derived orphan",
+      "command": "make -s --no-print-directory session-minor-guard-controls | grep -E ': (orphan|downgrade|nofloor|constfirst|tab|paren|selffloor|wrapped|commentfloor) rejected|rejected, '",
+      "expected": "10 lines prefixed session-minor-guard-controls: — orphan rejected (SESSION_MINOR (19) is no protocol minor in bridge/sim_bridge.gd); downgrade rejected (SESSION_MINOR (17) is below EARTH_LOG_MINOR (18), a floor a test asserts); nofloor rejected (no test asserts a floor for SESSION_MINOR); constfirst, tab, paren each rejected (... test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR); selffloor rejected (floor SESSION_MINOR is not a floor a test asserts); wrapped rejected (ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR); commentfloor rejected (no test asserts a floor for SESSION_MINOR); last, 27 rejected, 3 accepted (base 19 rejected, 3 accepted — planner-replicated)"
+    },
+    {
+      "id": "AC4",
+      "criterion": "(f) 7ah's guard passes the tree",
+      "command": "make -s --no-print-directory similar-main-guard; echo rc=$?",
+      "expected": "similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14), then rc=0 (base ok line identical — planner-replicated)"
+    },
+    {
+      "id": "AC5",
+      "criterion": "(f) similar-main-guard's controls hold, with two new rejections",
+      "command": "make -s --no-print-directory similar-guard-controls | grep -E ': (stray|unbounded) rejected|rejected, '",
+      "expected": "similar-guard-controls: stray rejected (similar-test guard: main.gd _run_map mentions want_minor 0 times, want 1); similar-guard-controls: unbounded rejected (similar-test guard: main.gd _run_map has no following top-level line; range unbounded); similar-guard-controls: 15 rejected, 3 accepted (base 13 rejected, 3 accepted — planner-replicated; both mutants pass the base guard, V8 — the RED witness)"
+    },
+    {
+      "id": "AC6",
+      "criterion": "Each new guard clause is load-bearing: weakened alone, its control goes red at the named case",
+      "command": "perl -e 'alarm shift; exec @ARGV' 600 sh \"$W/7ao_meta.sh\" .; echo rc=$?",
+      "expected": "the 14 lines of V28: base_s 27 rejected 3 accepted, base_q 15 rejected 3 accepted, A1_noreverse/A2_spaceonly/A3_noparen red at constfirst/tab/paren, C1_nofloorcheck red at downgrade, C2_nofloorscan red at nofloor, C3_selffloor red at selffloor, C4_prefixfree red at wrapped, C5_unanchored red at commentfloor, F1_funcend red at stray, F2_nobound red at unbounded (each rc 2 :: ...: make rc 0, want 2), D1_spare99 green, ending meta: 10 weakenings caught, then rc=0 (38-44 s measured, V12/V28)"
+    },
+    {
+      "id": "AC7",
+      "criterion": "(d) the base controls fail on a defined minor 99 (the new ones pass it: AC6's D1_spare99 line)",
+      "command": "B=$(mktemp -d); git archive 5b33b62a Makefile mk tools/session_minor_guard_controls.sh bridge/sim_bridge.gd main.gd demos/ship_geometry_demo.gd ui/loading_jump.gd tests/test_bh_hud.gd tests/test_comms_station.gd tests/test_ship_ui.gd | tar -x -C \"$B\" && printf '%s\\n' 'const SPARE_MINOR := 99' >> \"$B/bridge/sim_bridge.gd\" && make -s --no-print-directory -C \"$B\" session-minor-guard-controls 2>&1 | grep -c '^session-minor-guard-controls: orphan: make rc 0, want 2$'; rm -rf \"$B\"",
+      "expected": "1 (V13: full run rc 2, session-minor-guard-controls: orphan: make rc 0, want 2; mktemp honours the TMPDIR reroot if /tmp is refused — plan Environment 3)"
+    },
+    {
+      "id": "AC8",
+      "criterion": "(e) the split test passes the tree",
+      "command": "warm sw_base 0 \"$P\"; grep -c '^ok ' \"$W/sw_base.log\"",
+      "expected": "script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (rc 0, no SCRIPT ERROR, ... of 300 s), then 6 (base 5 checks; V6, V23 26-28 s)"
+    },
+    {
+      "id": "AC9",
+      "criterion": "(e) the split kills the minor mutant (_adopt_warm stops checking the minor)",
+      "command": "mut sw_minor 's/ or w\\.want_minor != want_minor:$/:/' 1 \"$K\"; grep -m1 '^FAIL' \"$W/sw_minor.log\"",
+      "expected": "script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (rc 1, no SCRIPT ERROR, ...), then FAIL a start() asking another minor leaves the warm sim (V6 split_minor 3/3; the old check passed this mutant: V6 orig_minor 5/0 — the hole this row closes)"
+    },
+    {
+      "id": "AC10",
+      "criterion": "(e) the split kills the override mutant (_adopt_warm stops checking the launch override)",
+      "command": "mut sw_ovr 's/w == null or not launch_override\\.is_empty\\(\\) or record_path/w == null or record_path/' 1 \"$K\"; grep -m1 '^FAIL' \"$W/sw_ovr.log\"",
+      "expected": "script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (rc 1, ...), then FAIL a start() with a launch override leaves the warm sim (V6 split_ovr 4/2)"
+    },
+    {
+      "id": "AC11",
+      "criterion": "The mutations left nothing behind",
+      "command": "git diff --quiet HEAD -- bridge/sim_bridge.gd; echo diff=$?; ps -axo command= | grep -F -e \"--package-dir $PWD/sim \" | grep -vc grep",
+      "expected": "diff=0, then 0 (mut's EXIT traps restored the bridge byte-identically; V6 sha before = sha after; needs working ps — plan Environment 2, planner-sandbox-refused)"
+    },
+    {
+      "id": "AC12",
+      "criterion": "The whole loading-jump target is green, with one more check",
+      "command": "perl -e 'alarm shift; exec @ARGV' 900 make -s --no-print-directory loading-jump-test; echo rc=$?",
+      "expected": "last lines script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (rc 0, no SCRIPT ERROR, ... of 600 s) and rc=0 (base 77, V7). The import prerequisite first prints Godot's import log with two pre-existing Cannot create file 'res://data/starmap/truth/positions. ... errors from a CSV's comment header — outside the gate, do not stop on them (V23)"
+    },
+    {
+      "id": "AC13",
+      "criterion": "Portable to dash and gmake; shellcheck silent",
+      "command": "shellcheck tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh && shellcheck -s dash tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh && MAKE=gmake dash tools/session_minor_guard_controls.sh . | tail -1 && MAKE=gmake dash tools/similar_guard_controls.sh . | tail -1 && gmake -s SHELL=/bin/dash session-minor-guard >/dev/null && gmake -s SHELL=/bin/dash similar-main-guard >/dev/null; echo rc=$?",
+      "expected": "shellcheck silent; session-minor-guard-controls: 27 rejected, 3 accepted; similar-guard-controls: 15 rejected, 3 accepted; rc=0 (V14; shellcheck/dash/gmake planner-verified on PATH)"
+    },
+    {
+      "id": "AC14",
+      "criterion": "The fast tier's hygiene gates still pass",
+      "command": "make -s --no-print-directory uid-guard python-guard script-gate-lint >/dev/null; echo rc=$?; git diff --check 5b33b62a; echo check=$?",
+      "expected": "rc=0 (base: uid-guard ok 495 .uid files; python-guard ok 25 allowlisted; script-gate-lint ok 296 --script invocations — planner-replicated, PV6). Planner note on check=: at branch head git diff --check flags 34 lines, all under design_docs/ (the committed design doc stores a diff, whose context whitespace trips the lint; check=0 was measured in the dry-run shape where the doc was untracked, V23). Accept when every flagged line is under design_docs/ or .ailang/ AND git diff --check 5b33b62a -- Makefile tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh tests/test_loading_jump.gd is empty, rc 0 (the patch's added lines measured clean: 0 trailing whitespace, 0 space+tab — PV6)"
+    },
+    {
+      "id": "AC15",
+      "criterion": "Scope: only the Files paths, and every Makefile hunk inside the two blocks (base lines 123-190)",
+      "command": "git diff --name-only 5b33b62a -- . ':!design_docs' ':!.ailang' ':!changelogs' | tr '\\n' ' '; echo; git diff -U0 5b33b62a -- Makefile | awk '/^@@/ { split($2, a, \",\"); s = substr(a[1], 2) + 0; n++; if (s < 123 || s > 190) bad++ } END { print n, bad + 0 }'",
+      "expected": "Makefile tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh , then 8 0 (eight hunks, none outside base lines 123-190; V28)"
+    },
+    {
+      "id": "AC16",
+      "criterion": "No evidence file is left in the clone (after the commit)",
+      "command": "rm -rf \"$W\"; git status --porcelain --untracked-files=all",
+      "expected": "empty (the four Files paths plus the changelog fragment are committed; $W and .godot/tmp scratch are gone or gitignored; no .uid, no .bak, no patch residue)"
+    }
+  ],
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "(a) both orders, blanks, parentheses; (b) the prefetch anchored to its statement; (c) the asserted floors, self-floor refused, commented floor unseen; controls R20-R27 (design Milestones table M1, order 1)",
+      "files": [
+        "Makefile",
+        "tools/session_minor_guard_controls.sh"
+      ],
+      "loc": "~50 changed lines (session-minor-guard recipe and comment block + the controls script's R20-R27; part of the single byte-exact apply: fence 206 lines, sha256 3eca953a... ; Makefile total 19 3, controls script total 44 4 — planner-replicated numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC2",
+        "AC3"
+      ],
+      "commands": [
+        "setup asserts: cd the executor's own full clone at the branch head; export PATH=$PWD/runtime/bin:$PATH (or make runtime first); make import once; ailang --version (v0.56.1), godot --version (4.7.2.stable...) — mismatch -> stop; assert ps -axo command= works and user:// writable; if /tmp is refused (planner-measured) mkdir -p $PWD/.godot/tmp/7ao && export TMPDIR=$PWD/.godot/tmp/7ao — mktemp honours TMPDIR (tools/session_minor_guard_controls.sh:13, tools/similar_guard_controls.sh:9)",
+        "byte-for-byte: source the doc's preamble (fence/warm/mut); fence 7ao.patch -> $W/7ao.patch; wc -l = 206; shasum -a 256 = 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a; git apply --check clean; git apply --numstat = 19 3 Makefile / 9 4 tests/test_loading_jump.gd / 44 4 tools/session_minor_guard_controls.sh / 19 1 tools/similar_guard_controls.sh; git apply $W/7ao.patch; four-file shortstat =  4 files changed, 91 insertions(+), 12 deletions(-) — a mismatch means re-extract, never retype",
+        "AC2: make -s --no-print-directory session-minor-guard; echo rc=$?",
+        "AC3: make -s --no-print-directory session-minor-guard-controls | grep -E ': (orphan|downgrade|nofloor|constfirst|tab|paren|selffloor|wrapped|commentfloor) rejected|rejected, '"
+      ],
+      "expectations": "AC2: the ok line naming SESSION_MINOR (18) = EARTH_LOG_MINOR and 4 test comparisons name it; rc=0 (count unchanged from base). AC3: 10 lines with the doc's exact reason lines, ending session-minor-guard-controls: 27 rejected, 3 accepted (base 19/3).",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
+      "measured": null,
+      "notes": "code commit 8af3a5b4. AC2: session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it, then rc=0. AC3: 9 control lines (orphan, downgrade, nofloor, constfirst, tab, paren, selffloor, wrapped, commentfloor rejected), last line: session-minor-guard-controls: 27 rejected, 3 accepted."
+    },
+    {
+      "id": "M2",
+      "title": "(d) derived orphan minor, TAB (design Milestones table M2: with M1, same file)",
+      "files": [
+        "tools/session_minor_guard_controls.sh"
+      ],
+      "loc": "~6 lines (next= computed once after OK_TAIL from $ROOT/bridge/sim_bridge.gd: one above the highest const *_MINOR value; R14 uses it instead of 99; the B case reuses it; TAB=$(printf '\\t') for R23's sed replacement)",
+      "depends_on": [
+        "M1"
+      ],
+      "acceptance": [
+        "AC7"
+      ],
+      "commands": [
+        "AC7: B=$(mktemp -d); git archive 5b33b62a Makefile mk tools/session_minor_guard_controls.sh bridge/sim_bridge.gd main.gd demos/ship_geometry_demo.gd ui/loading_jump.gd tests/test_bh_hud.gd tests/test_comms_station.gd tests/test_ship_ui.gd | tar -x -C \"$B\" && printf '%s\\n' 'const SPARE_MINOR := 99' >> \"$B/bridge/sim_bridge.gd\" && make -s --no-print-directory -C \"$B\" session-minor-guard-controls 2>&1 | grep -c '^session-minor-guard-controls: orphan: make rc 0, want 2$'; rm -rf \"$B\""
+      ],
+      "expectations": "AC7 prints 1: the BASE controls (archived objects, hardcoded 99) go red at orphan on a bridge defining minor 99; the patched controls derive next = one above the highest defined minor and would stay green (proved patched-side by AC6's D1_spare99 line). Wall seconds, not minutes (base controls planner-measured 4 s).",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
+      "measured": null,
+      "notes": "AC7: 1 (copy with SPARE_MINOR := 99: session-minor-guard-controls: orphan: make rc 0, want 2)."
+    },
+    {
+      "id": "M3",
+      "title": "(e) test_sim_warm split (design Milestones table M3, independent)",
+      "files": [
+        "tests/test_loading_jump.gd"
+      ],
+      "loc": "13 changed lines (+9/-4): other keeps PROTO_MINOR and drops the override, asked directly with not other._adopt_warm() and SimBridge.has_warm(), then other.stop(); a new ovr bridge through start() with the /bin/false override; labels 'a start() asking another minor leaves the warm sim' and 'a start() with a launch override leaves the warm sim'; test_sim_warm 5 -> 6 checks",
+      "depends_on": [],
+      "acceptance": [
+        "AC8",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC12"
+      ],
+      "commands": [
+        "AC8: warm sw_base 0 \"$P\"; grep -c '^ok ' \"$W/sw_base.log\"   # unmutated green reference",
+        "AC9: mut sw_minor 's/ or w\\.want_minor != want_minor:$/:/' 1 \"$K\"; grep -m1 '^FAIL' \"$W/sw_minor.log\"",
+        "AC10: mut sw_ovr 's/w == null or not launch_override\\.is_empty\\(\\) or record_path/w == null or record_path/' 1 \"$K\"; grep -m1 '^FAIL' \"$W/sw_ovr.log\"",
+        "AC11: git diff --quiet HEAD -- bridge/sim_bridge.gd; echo diff=$?; ps -axo command= | grep -F -e \"--package-dir $PWD/sim \" | grep -vc grep",
+        "AC12: perl -e 'alarm shift; exec @ARGV' 900 make -s --no-print-directory loading-jump-test; echo rc=$?",
+        "rules (design, normative): the mutation ACs run one at a time in the foreground, never as & jobs, with no other Godot run loading the clone meanwhile; mut restores bridge/sim_bridge.gd from an EXIT trap (AC11 is the witness); a script_gate 'timeout after' line is an instrument failure, never a kill — rerun"
+      ],
+      "expectations": "AC8: script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (rc 0, ...), then 6. AC9: script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (rc 1, ...), then FAIL a start() asking another minor leaves the warm sim. AC10: script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (rc 1, ...), then FAIL a start() with a launch override leaves the warm sim. AC11: diff=0, then 0. AC12: script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (rc 0, ...), rc=0, after the import log with its two pre-existing positions. CSV errors (V23 — do not stop on them).",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
+      "measured": null,
+      "notes": "AC8: script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (rc 0, no SCRIPT ERROR, 7 s of 300 s), then 6. AC9: script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (rc 1, no SCRIPT ERROR, 10 s of 300 s), FAIL a start() asking another minor leaves the warm sim. AC10: script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (rc 1, no SCRIPT ERROR, 12 s of 300 s), FAIL a start() with a launch override leaves the warm sim. AC11: diff=0, then 0. AC12: script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (rc 0, no SCRIPT ERROR, 42 s of 600 s), rc=0."
+    },
+    {
+      "id": "M4",
+      "title": "(f) 7al's range on similar-main-guard; controls D14, D15 (design Milestones table M4, independent)",
+      "files": [
+        "Makefile",
+        "tools/similar_guard_controls.sh"
+      ],
+      "loc": "~23 lines (similar-main-guard recipe and comment block, base lines 123-149: range end /^func / -> /^[^[:space:]#]/ as at Makefile:176, the unbounded-range reason line after the count; the controls gain awkmut with 7al's cmp refusal, D14 stray and D15 unbounded; 19 1 numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC4",
+        "AC5"
+      ],
+      "commands": [
+        "AC4: make -s --no-print-directory similar-main-guard; echo rc=$?",
+        "AC5: make -s --no-print-directory similar-guard-controls | grep -E ': (stray|unbounded) rejected|rejected, '"
+      ],
+      "expectations": "AC4: similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14); rc=0. AC5: stray rejected (... main.gd _run_map mentions want_minor 0 times, want 1); unbounded rejected (... main.gd _run_map has no following top-level line; range unbounded); similar-guard-controls: 15 rejected, 3 accepted (base 13/3; both mutants pass the base guard, V8 — the RED witness).",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:23:42Z",
+      "measured": null,
+      "notes": "AC4: similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14), rc=0. AC5: similar-guard-controls: stray rejected (...); similar-guard-controls: unbounded rejected (... range unbounded); similar-guard-controls: 15 rejected, 3 accepted."
+    },
+    {
+      "id": "M5",
+      "title": "Evidence and changelog: AC1-AC16, the fragment (design Milestones table M5, last; the AC block runs strictly AC1->AC16 in one shell — the milestones group the ACs for reporting and scoring, they do not re-sequence the run; each AC is recorded exactly once, here the cross-cutting ones)",
+      "files": [
+        "changelogs/unreleased/2026-11-17-session-minor-guard-edges.md",
+        ".ailang/state/sprints/sprint_R1-7AO-SESSION-MINOR-GUARD-EDGES.json"
+      ],
+      "loc": "~6 lines (the fragment, one YYYY-MM-DD-<slug>.md file opening with '### ', the 7am shape) plus the sprint JSON evidence",
+      "depends_on": [
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC6",
+        "AC13",
+        "AC14",
+        "AC15",
+        "AC16"
+      ],
+      "commands": [
+        "AC1 (first in execution order): shasum -a 256 \"$W/7ao.patch\" | cut -d' ' -f1; git apply -R --check \"$W/7ao.patch\" && git diff --shortstat 5b33b62a -- Makefile tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh tests/test_loading_jump.gd",
+        "AC6: perl -e 'alarm shift; exec @ARGV' 600 sh \"$W/7ao_meta.sh\" .; echo rc=$?",
+        "fragment changelogs/unreleased/2026-11-17-session-minor-guard-edges.md: '### Fixed' (or 'Changed', the 7am fragment shape) — the session-minor guard sees a comparison in either order with tabs/blanks/parenthesised constant; the prefetch only as the whole assignment statement; floors a test asserts enforced (one required, no self-floor, none behind a comment); controls derive the orphan minor (no hardcoded 99) and cover the eight spellings; test_sim_warm checks each _adopt_warm refusal with its own bridge; similar-main-guard reads _run_map to the next top-level line and fails closed when there is none; test-hygiene only, four files +91/-12, nothing a player sees or hears changes",
+        "AC13: shellcheck tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh && shellcheck -s dash tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh && MAKE=gmake dash tools/session_minor_guard_controls.sh . | tail -1 && MAKE=gmake dash tools/similar_guard_controls.sh . | tail -1 && gmake -s SHELL=/bin/dash session-minor-guard >/dev/null && gmake -s SHELL=/bin/dash similar-main-guard >/dev/null; echo rc=$?",
+        "AC14: make -s --no-print-directory uid-guard python-guard script-gate-lint >/dev/null; echo rc=$?; git diff --check 5b33b62a; echo check=$?   # planner note: at branch head --check flags only the design doc's stored diff-context whitespace (34 lines, all design_docs/; PV6 — check=0 held in the dry-run shape, V23); accept when every flagged path is under design_docs/ or .ailang/ AND git diff --check 5b33b62a -- Makefile tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh tests/test_loading_jump.gd is empty, rc 0; anything else flagged is real: stop",
+        "AC15: git diff --name-only 5b33b62a -- . ':!design_docs' ':!.ailang' ':!changelogs' | tr '\\n' ' '; echo; git diff -U0 5b33b62a -- Makefile | awk '/^@@/ { split($2, a, \",\"); s = substr(a[1], 2) + 0; n++; if (s < 123 || s > 190) bad++ } END { print n, bad + 0 }'",
+        "commit the four Files paths plus the fragment (no .uid — no new script; CLAUDE.md), e.g. '7ao: session-minor guard lexical edges — spellings, floors, prefetch anchor, derived orphan, split refusals, similar range (AC1-AC15 green)'; git status --porcelain empty afterwards",
+        "AC16 (after the commit): rm -rf \"$W\"; git status --porcelain --untracked-files=all",
+        "sprint JSON evidence: fill each milestone's measured (the exact gate/reason/FAIL lines above), set passes true per milestone, status -> executed, wall-clock totals under velocity"
+      ],
+      "expectations": "AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then  4 files changed, 91 insertions(+), 12 deletions(-). AC6: the 14 lines of V28 ending meta: 10 weakenings caught; rc=0. AC13: 27 rejected, 3 accepted / 15 rejected, 3 accepted / rc=0, shellcheck silent. AC14: rc=0 plus the --check path restriction holding. AC15: Makefile tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh , then 8 0. AC16: empty.",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-17T13:20:47Z",
+      "completed": "2026-11-17T12:25:17Z",
+      "measured": null,
+      "notes": "AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then 4 files changed, 91 insertions(+), 12 deletions(-) (re-run after the changelog commit: reverse-check rc=0, same sha and shortstat). AC6: meta: 10 weakenings caught, then rc=0 (the 14 V28 lines matched). AC13: session-minor-guard-controls: 27 rejected, 3 accepted; similar-guard-controls: 15 rejected, 3 accepted; rc=0. AC14 (pathspec per controller amendment 40524f10, git diff --check 5b33b62a -- . :!design_docs): rc=0, check=0. AC15: 8 0. AC16: git status --porcelain --untracked-files=all empty. Commits: 8af3a5b4 (code), 85feca70 (JSON progress), c1896ef1 (changelog fragment), this commit (M5 JSON)."
+    }
+  ],
+  "risks": [
+    "A future feature test asserts a floor the bridge does not define (a typo): the guard fails 'floor NAME unresolved', closed (design).",
+    "A future bump forgets a new floor: not a regression; the old floor still holds; the convention is written in the 7ao Makefile comment (design).",
+    "The reversed pattern double-counts a line with both orders: measured, the pristine count stays 4 (V11) (design).",
+    "_adopt_warm() is private: GDScript does not enforce privacy; the test reads _warm through has_warm() already, and _adopt_warm is what start() runs first (bridge/sim_bridge.gd:177, V19) (design).",
+    "Load makes AC8-AC12 slow: every Godot run is bounded by tools/script_gate.sh; a 'timeout after' line is an instrument failure, never a kill — rerun (design).",
+    "A later edit renames holder or reshapes the prefetch statement: the guard fails closed; the editor updates one regex with the reason in front of them — a false red, never a silent pass (design).",
+    "A future floor written non-canonically (e.g. EARTH_LOG_MINOR <= SESSION_MINOR): not seen; if it is the only floor the guard fails 'no test asserts a floor', closed (design).",
+    "R19's meaning under the new grep: unchanged — the grep rc is checked before the sed rewrite; R19 stays rejected (... test scan error (grep rc 2)) (V11) (design).",
+    "(Planner-added) Sandbox environment: the planner's sandbox refused /tmp writes (rerooted TMPDIR under .godot/tmp — controls green, 4 s, PV7), ps (denied — AC11 needs it, PV8) and user:// (no Godot run here, mission constraint); all three are hard asserts in the executor's setup; a sandbox that fails them reports and stops, it does not adapt the tests.",
+    "(Planner-added) AC14's git diff --check at branch head flags only the design doc's stored fence whitespace (34 lines, all design_docs/; PV6): accept per the path restriction in AC14/M5; anything else flagged is real.",
+    "(Planner-added) Open PRs: no added conflict measured (V16: #435, #380, #373 all 1 -> 1 pre-existing); if one lands first, rebase and re-run AC2-AC5 and AC15."
+  ],
+  "pause_points": [
+    "Environment: ailang --version != v0.56.1 or godot --version != 4.7.2 -> stop; ps or user:// unavailable -> stop (planner-measured sandbox failure modes); /tmp refused -> reroot TMPDIR=$PWD/.godot/tmp/7ao, never edit the controls scripts around it.",
+    "Fence != 206 lines, sha256 != 3eca953a..., or git apply --check fails -> re-extract, never retype; applied four-file shortstat != ' 4 files changed, 91 insertions(+), 12 deletions(-)' -> stop.",
+    "Any AC differing from the doc's expected output -> stop (naming in particular: AC2's count != 4; AC3 != 27 rejected, 3 accepted or a reason line differing; AC5 != 15 rejected, 3 accepted; AC6 != meta: 10 weakenings caught; AC8 != 6 passed, 0 failures; AC9/AC10 first FAIL not the named label; AC12 != 78 passed, 0 failures).",
+    "A script_gate 'timeout after' line / rc 142 on AC8-AC10/AC12 -> instrument failure, never a kill: rerun on a quieter host within the remaining budget; never bump a budget silently (design Risks).",
+    "mut refusing a dirty bridge/sim_bridge.gd (exit 4) -> a previous run left the tree mutated: stop, git checkout -- bridge/sim_bridge.gd, report; non-empty git status --porcelain after any mutation AC -> the trap failed: stop and report, do not start the next AC.",
+    "AC12's import log shows the two positions. CSV errors -> pre-existing, outside the gate (V23); do not stop, do not fix them here.",
+    "AC14: hygiene make rc != 0 -> stop; --check flags outside design_docs//.ailang/ -> stop (the four patch paths were planner-measured clean).",
+    "Any temptation to touch the do-not-touch list -> stop; bridge/sim_bridge.gd:237 is edited only by mut (AC9, AC10), trap-restored; AC11 is the witness.",
+    "No merge before the cross-family evaluation (generator != judge); landing files wait on it."
+  ],
+  "local_pr_gates": [
+    "M1 on record: AC2's ok line (4 test comparisons name it, rc 0); AC3's 10 lines ending 27 rejected, 3 accepted.",
+    "M2 on record: AC7's 1.",
+    "M3 on record: AC8's sim-warm: 6 passed, 0 failures + 6; AC9's 3 passed, 3 failures + FAIL a start() asking another minor leaves the warm sim; AC10's 4 passed, 2 failures + FAIL a start() with a launch override leaves the warm sim; AC11's diff=0 / 0; AC12's loading-jump: 78 passed, 0 failures, rc 0.",
+    "M4 on record: AC4's ok line, rc 0; AC5's stray/unbounded rejections and 15 rejected, 3 accepted.",
+    "M5 on record: AC1's sha256 + shortstat; AC6's 14 lines ending meta: 10 weakenings caught; AC13's two counts, rc 0; AC14's rc 0 plus the --check path restriction; AC15's path list + 8 0; AC16's empty status; the fragment in place; the JSON's measured filled, passes true.",
+    "The GitHub gate: make ci-fast green on the PR (.github/workflows/ci.yml:60-62) — it runs session-minor-guard, session-minor-guard-controls (Makefile:166), similar-main-guard, similar-guard-controls (Makefile:133), script-gate-lint (mk/script-gates.mk:27), python-guard and uid-guard (Makefile:73).",
+    "Not run: no GPU gate, no make golden, no capture, no bench (Makefile:713/740), no full local make test (merge rule); the nightly rig/full runs the suite — including loading-jump-test (Makefile:1297) — on main post-merge."
+  ],
+  "controller_checks": "Controller re-run after the executor, before landing: the four guard targets on the PR clone (session-minor-guard / session-minor-guard-controls expected 27 rejected, 3 accepted; similar-main-guard / similar-guard-controls expected 15 rejected, 3 accepted); uid-guard python-guard script-gate-lint; the fence sha256 3eca953a... and numstat vs the committed diff; AC15's scope check (only the four Files paths; Makefile hunks within base lines 123-190, 8 0); the changelog fragment present; the sprint JSON's evidence. It files the V27 follow-up charter row (a condition before a want_minor write that the test run never takes) — this row does not fix it. The nightly rig/full covers loading-jump-test post-merge.",
+  "plan_verification": "Planner, 2026-11-17, HEAD a3a91c59 (r2 design commit) on branch mission/stapledon-iter96-7ao; planner made no tree writes outside .godot/tmp scratch (gitignored), porcelain count 0 after every run; no Godot run (sandbox: user:// unwritable, /tmp refused, ps denied — all recorded as executor environment requirements; TMPDIR reroot planner-verified, controls green in 4 s). Base guards green (V1 replicated): session-minor guard ok ... 4 test comparisons name it; session-minor-guard-controls: 19 rejected, 3 accepted (4 s); similar-test guard ok ... (18) >= SIMILAR_MINOR (14); similar-guard-controls: 13 rejected, 3 accepted. Hygiene gates green at base (V17 replicated): uid-guard ok (495), python-guard ok (25), script-gate-lint ok (296 invocations). Appendix A re-checked against this tree: fence cut from the doc's own fence() = 206 lines, sha256 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a (the doc's AC1 expectation); git apply --check -> apply-ok; git apply --numstat -> 19 3 Makefile / 9 4 tests/test_loading_jump.gd / 44 4 tools/session_minor_guard_controls.sh / 19 1 tools/similar_guard_controls.sh; 4 files changed, 91 insertions(+), 12 deletions(-); temp file deleted, patch NOT applied. AC14 nuance planner-discovered and planned for: git diff --check 5b33b62a at branch head flags 34 lines, every one under design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md (stored diff-context whitespace; positive control = the 34 hits prove detection works), while the patch's own added lines are clean (0 trailing whitespace, 0 space+tab counted on the extracted fence). Toolchain (V18 replicated): AILANG v0.56.1, Godot 4.7.2.stable.official.ed1daf0bf. Full details: the plan's Plan verification section PV1-PV10.",
+  "velocity": "One iteration planned (as 7ak/7ai/7aj/7am/7an of this size). Executor wall-clock estimate ~20-25 min: clone + make import ~5 min; commands under 10 min (design: controls 3-5 s and 1 s, meta-drills 21-44 s, AC8-AC10 ~30 s, AC12 ~45 s at load 5-15; the full path dry-run inside a 1500 s bound at load 5-17, V23 DRYRUN rc=0); evidence ~5 min. Controller cap: measured unit make -s session-minor-guard-controls = 4 s (date +%s around the run, rc 0, 19/3 at base — PV7); mutation ACs = 6 (AC3, AC5, AC6, AC7, AC9, AC10); 2 x 7 x 4 s + 20 min ~= 21 min -> the 30-minute floor binds: CAP 30 MINUTES wall-clock from executor start (the same floor results counting AC8 too: 2 x 8 x 4 s ~= 1 min).",
+  "evaluations": {
+    "round_1_sonnet": {
+      "file": ".ailang/state/evaluations/eval_R1-7AO-SESSION-MINOR-GUARD-EDGES_round_1_sonnet.json",
+      "judge": "Sonnet 5.5 (Agent tool, own clone stapledons-godot-iter96-eval), iteration 96",
+      "score": 91,
+      "pass": true,
+      "blocking": 0,
+      "mutations": "28 diff-anchored: 20 killed, 8 survived (3 equivalent/expected; S3, S4, S6, S7, S17, T3 untested fail-closed; S12 and S1 real non-blocking, controller reproduced S12)",
+      "cross_vendor": "none: D-166 default C (tooling rows merge on a same-vendor, different-model judge), FLAGGED"
+    }
+  },
+  "pr": 456
+}
