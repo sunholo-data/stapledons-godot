@@ -463,7 +463,7 @@
     {
       "id": "M1b-fix",
       "description": "Fix the nightly rig-check-control red since L4 M1b (main 2bb77da7, c69a3bd5; issue #392): the profiler sets TMPDIR to its long --out directory, the control built its temp path under it, the 100-character budget test exited 1 with no output in 14 ms. The control now takes the caller TMPDIR only when its own paths fit, falls back to /tmp otherwise, and names any precondition failure on stdout as rig-check control: FAIL: <reason>. caller-poison carries a TMPDIR of at least 110 characters. No held-file edits (suite_profile.sh, rig_check.sh, Makefile, mk/*.mk untouched).",
-      "status": "executed_pending_evaluation",
+      "status": "evaluated_pass",
       "depends_on": [
         "M1b"
       ],
