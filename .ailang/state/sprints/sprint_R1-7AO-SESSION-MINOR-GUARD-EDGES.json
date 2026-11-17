@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-7AO-SESSION-MINOR-GUARD-EDGES",
-  "status": "approved",
+  "status": "executed",
   "approved": true,
   "approved_by": "mission controller iteration 96 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; quorum r1 BLOCKED 2/3 (kimi, glm; sol absent quota) -> designer revision 1; r2 BLOCKED 2/3 (kimi, glm; gemini pass) -> controller revision 2 under the narrow-refinement carve-out, fixes verbatim; no round 3)",
   "created": "2026-11-17",
@@ -252,12 +252,12 @@
         "sprint JSON evidence: fill each milestone's measured (the exact gate/reason/FAIL lines above), set passes true per milestone, status -> executed, wall-clock totals under velocity"
       ],
       "expectations": "AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then  4 files changed, 91 insertions(+), 12 deletions(-). AC6: the 14 lines of V28 ending meta: 10 weakenings caught; rc=0. AC13: 27 rejected, 3 accepted / 15 rejected, 3 accepted / rc=0, shellcheck silent. AC14: rc=0 plus the --check path restriction holding. AC15: Makefile tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh , then 8 0. AC16: empty.",
-      "status": "blocked",
-      "passes": false,
+      "status": "done",
+      "passes": true,
       "started": "2026-11-17T13:20:47Z",
-      "completed": null,
+      "completed": "2026-11-17T12:25:17Z",
       "measured": null,
-      "notes": "BLOCKED at AC14: observed check=2, expected check=0. The 34 whitespace warnings from git diff --check 5b33b62a are all in design_docs/planned/r1/m4-7ao-session-minor-guard-edges.md (its Appendix A fence, lines 406-595). Pathspec excluding design_docs: check=0; uid-guard, python-guard, script-gate-lint rc=0. AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then 4 files changed, 91 insertions(+), 12 deletions(-). AC6: meta 10 weakenings caught, rc=0. AC13: session-minor-guard-controls: 27 rejected, 3 accepted; similar-guard-controls: 15 rejected, 3 accepted; rc=0. AC15: 8 0. AC16: git status --porcelain --untracked-files=all empty. Changelog fragment NOT written (execution stopped at the AC14 mismatch). Committed in 8af3a5b4: the four code files only."
+      "notes": "AC1: 3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a, then 4 files changed, 91 insertions(+), 12 deletions(-) (re-run after the changelog commit: reverse-check rc=0, same sha and shortstat). AC6: meta: 10 weakenings caught, then rc=0 (the 14 V28 lines matched). AC13: session-minor-guard-controls: 27 rejected, 3 accepted; similar-guard-controls: 15 rejected, 3 accepted; rc=0. AC14 (pathspec per controller amendment 40524f10, git diff --check 5b33b62a -- . :!design_docs): rc=0, check=0. AC15: 8 0. AC16: git status --porcelain --untracked-files=all empty. Commits: 8af3a5b4 (code), 85feca70 (JSON progress), c1896ef1 (changelog fragment), this commit (M5 JSON)."
     }
   ],
   "risks": [
