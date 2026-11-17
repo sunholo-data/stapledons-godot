@@ -41,7 +41,8 @@ def ailang():
 
 def command(entry, size, vm=True):
     flags = ["--bytecode", "--strict-bytecode"] if vm else []
-    return [ailang(), "run", "--quiet", *flags, "--package-dir", "sim", "--entry", entry, "--args-json", str(size), MODULE]
+    # env -u AI_LIVE: the entry is a variable, so make ai-live-guard wants AI_LIVE cleared here.
+    return ["env", "-u", "AI_LIVE", ailang(), "run", "--quiet", *flags, "--package-dir", "sim", "--entry", entry, "--args-json", str(size), MODULE]
 
 
 def start(entry, size, vm=True):

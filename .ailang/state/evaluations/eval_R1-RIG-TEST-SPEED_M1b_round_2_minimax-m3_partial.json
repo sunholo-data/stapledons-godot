@@ -1,0 +1,71 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED",
+  "milestone": "M1b",
+  "round": 2,
+  "evaluator": "minimax-m3 (pi, openrouter)",
+  "reviewed_head": "31f7055598be789915f0dd3588f9589632852c83",
+  "score": null,
+  "verdict": "PROVISIONAL",
+  "provisional_note": "Written early, within the first 20 minutes, before the mutation drills. Overwritten as evidence lands. Verdict, score and the mutant table are NOT final in this revision.",
+  "rubric": {
+    "tests_pass": {
+      "points": null,
+      "max": 20,
+      "notes": "PARTIAL: the literal AC4 gate command returns rc=1 in this sandbox (26 cases, 2 failures: keep-going and caller-poison). Both failures are traced to sandbox restrictions (sysctl denied; BSD mktemp -t denied in the per-user temp dir), NOT to the M1b code: the same keep-going failures reproduce on origin/main's rig_check.sh, and with a sysctl probe on PATH all 7 new M1b cases and all 18 original cases are green (see gates)."
+    },
+    "lint_clean": {
+      "points": null,
+      "max": 10,
+      "notes": "sh -n on both scripts pending."
+    },
+    "acceptance_criteria": {
+      "points": null,
+      "max": 30,
+      "notes": "AC4/AC5/AC13 checked so far: AC13 = 0 held files, 0 .py. AC2/AC3/AC7-AC11 are controller-only (1f baseline runs are explicitly not part of this delivery)."
+    },
+    "code_quality": {
+      "points": null,
+      "max": 15,
+      "notes": "PENDING"
+    },
+    "documentation": {
+      "points": null,
+      "max": 15,
+      "notes": "PENDING"
+    },
+    "design_fidelity": {
+      "points": null,
+      "max": 10,
+      "notes": "PENDING"
+    }
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {
+      "id": "NB0",
+      "file": "tools/test_rig_check.sh",
+      "line": "16, 60-70, 178-260",
+      "defect": "The new M1b control cases run the real tools/suite_profile.sh, which reads the host load through sysctl (or /proc/loadavg) and dies without it. The control therefore is not hermetic w.r.t. sysctl, unlike the M1a control tools/test_suite_profile.sh, which installs a deterministic sysctl probe precisely to 'keep sysctl sandbox restrictions out of fixtures' (tools/test_suite_profile.sh:14-21).",
+      "failing_scenario": "On any host where sysctl is denied (this evaluation sandbox: 'sysctl: sysctl fmt -1 1024 1: Operation not permitted'), the profiled cases fail for reasons unrelated to the code under test: profile-on, profile-trace, profile-red, golden-keeps-profile go red, and long-success, success-refused, golden-setup, full-no-setup, test-hang fail as they now route through the profiler.",
+      "proposed_fix": "Add a deterministic sysctl probe to the M1b control's stub bin (as test_suite_profile.sh does) and put it on the gmake-missing PATH as well, so the profiler never reads the host load.",
+      "status": "candidate; final severity pending the rest of the evaluation"
+    }
+  ],
+  "mutants": [],
+  "gates": [
+    {
+      "command": "env -u RIG_TEST_S -u RIG_GOLDEN_S -u RIG_PROFILE -u RIG_JOBS -u RIG_TRACE -u SUITE_TOP_TARGET -u RIG_CHECK_NESTED sh tools/test_rig_check.sh tools/rig_check.sh",
+      "rc": 1,
+      "key_line": "rig-check control: 26 cases, 2 failures (keep-going FAIL, caller-poison FAIL 'rc 1, 36 of 25 ok') - sandbox-caused, see NB0 and NB1"
+    },
+    {
+      "command": "same control with a deterministic sysctl probe prepended to PATH (evaluation accommodation, scratch only)",
+      "rc": 1,
+      "key_line": "rig-check control: 26 cases, 2 failures - all 7 new M1b cases ok, all 18 original cases ok; only keep-going (pre-existing on origin/main) and its cascade caller-poison remain"
+    }
+  ],
+  "unmeasured": [
+    "AC2/AC3 (1f baseline evidence), AC7-AC11 (controller-only rig runs) - out of scope for the code half.",
+    "Mutation drills - in progress."
+  ]
+}

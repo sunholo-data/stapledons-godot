@@ -298,7 +298,7 @@
     {
       "id": "M1b",
       "description": "Design 1d/1e rig profile wiring and loud fallback cases, then 1f baseline runs; no held-file edits. Three comparable serial gmake instrumented runs (one traced), fourth system-make fallback run.",
-      "status": "blocked",
+      "status": "in_progress",
       "approval": "BLOCKED pending D-129; defaults in the design are not approval",
       "depends_on": [
         "M1a",
@@ -395,8 +395,40 @@
         "D-129 may change policy; reconcile before unblocking."
       ],
       "notes": [
-        "BLOCKED: do not implement 1d, rig profile cases or collect baselines until D-129 RESOLVED.",
-        "M1b report is before-only evidence; it cannot certify final AC9 speed ratio."
+        "D-129 RESOLVED (Mark, 2026-11-12: A, all four design defaults). Executor code half only; AC10/AC11 controller rig runs and the 1f baseline data are NOT done here. passes stays false, completed null for the controller.",
+        "FILES: tools/rig_check.sh (+33/-5), tools/test_rig_check.sh (+99/-7), CHANGELOG.md (+6/-0). Held files untouched (AC13 = 0).",
+        "CASE COUNT: the plan's 9/13 are stale; base control had 19 cases; M1b makes 23 (19 + profile-on, profile-off, profile-absent, gmake-missing). caller-poison nested count is 22.",
+        "RED (before rig_check.sh edits; unmodified rig): sh tools/test_rig_check.sh tools/rig_check.sh -> rc 1, \"rig-check control: 23 cases, 5 failures\". The 18 original cases ok; FAIL by name: profile-on, profile-off, profile-absent, gmake-missing, caller-poison (rc 1, 18 of 22 ok). Log: .godot/tmp/red.log.",
+        "GREEN (exact gate command, final code): run1 .godot/tmp/rc.log rc=0 \"rig-check control: 23 cases, 0 failures\"; run2 .godot/tmp/rc2.log rc=0, 23/0; run3 .godot/tmp/rc3.log rc=0, 23/0. Every case prints \"ok\".",
+        "AC5: grep -c -E '^rig-check control (profile-off|profile-absent|gmake-missing): ok$' .godot/tmp/rc.log = 3.",
+        "THROUGH THE TARGET: make rig-check-control (GNU Make 3.81) rc=0, 23 cases 0 failures (.godot/tmp/make381.log); gmake rig-check-control (GNU Make 4.4.1) rc=0, 23 cases 0 failures (.godot/tmp/gmake441.log).",
+        "ANNOTATED GATES:",
+        "- sh -n tools/rig_check.sh rc=0; sh -n tools/test_rig_check.sh rc=0.",
+        "- sh tools/test_suite_profile.sh: \"suite-profile control: 40 cases, 0 failures\", rc=0 (.godot/tmp/sp.log). AC1 holds.",
+        "- git diff --name-only origin/main | grep -c -x -E '<held files>' -> 0 ; git status --porcelain | grep -c '\\.py' -> 0 (AC13).",
+        "- make python-guard rc=0 (\"python-guard: ok (25 allowlisted, 0 awaiting AILANG port)\").",
+        "- make uid-guard rc=0 (\"uid-guard: ok (470 .uid files)\").",
+        "- shellcheck -S warning tools/rig_check.sh tools/test_rig_check.sh rc=0.",
+        "REAL-GMAKE CHECK (scratch, .godot/tmp/m1b-real.sh; fake gh/git, real GNU make 4.4.1 suite): a red fixture named the failing target from gmake's own line (\"gmake: *** [Makefile:3: alpha] Error 1\"): \"make test failed (rc 2; bound 7200s); 1 red: alpha\"; the log ended with the summary (totals line included); the green fixture posted \"make test green on the Studio in 0 min\" with no marker; RIG_PROFILE=0 posted \"make test green (SERIAL FALLBACK: profile-off) ...\".",
+        "GUARD DRILLS (scratch copies of tools/ only; .godot/tmp/m1b-drills.sh, per-drill verdicts .godot/tmp/drill-M*.out). Each drill: unmutated control rc 0; cmp proof; mutated control rc 1; exact FAIL set.",
+        " M1  remove profiler invocation          -> killed, FAIL set [profile-on caller-poison]",
+        " M2  ignore RIG_PROFILE=0                -> killed, [profile-off caller-poison]",
+        " M3  force instrument present            -> killed, [profile-absent keep-going caller-poison]  (DEVIATION: keep-going also fails; its fixture clone has no tools/ and depends on the profile-absent fallback, so forcing the profiler is a real regression for it)",
+        " M4  gmake chosen without PATH check     -> killed, [gmake-missing caller-poison]",
+        " M5  profile-off log line suppressed     -> killed, [profile-off caller-poison]",
+        " M6  profile-absent log line suppressed  -> killed, [profile-absent caller-poison]",
+        " M7  gmake-missing log line suppressed   -> killed, [gmake-missing caller-poison]",
+        " M8  profile-off SERIAL FALLBACK removed -> killed, [profile-off caller-poison]",
+        " M9  profile-absent SERIAL FALLBACK removed -> killed, [profile-absent caller-poison]",
+        " M10 gmake-missing SERIAL FALLBACK removed  -> killed, [gmake-missing caller-poison]",
+        " M11 140-character clamp removed         -> killed, [long-reason long-success profile-absent profile-off gmake-missing caller-poison]  (DEVIATION: the cut is one shared line in status(), so the three per-fallback clamp drills are this single mutation; it also fails long-reason and long-success, which assert the same clamp, and caller-poison)",
+        " M12 caller env sanitisation removed     -> killed, [caller-poison]  (removes RIG_PROFILE RIG_TRACE SUITE_TOP_TARGET from the control's unset line)",
+        "DEVIATIONS: (1) clamp drills collapsed to M11 (above). (2) M3 expected set includes keep-going (above). (3) profile-on uses a short version string; fallback cases use the long one, so the clamp drill names the fallback cases only. (4) Summary in the log is header + top 10 rows + the totals line (totals kept, so it is not cut by head).",
+        "OPEN FOR CONTROLLER: AC10/AC11 rig runs (before-gmake-1/2/3 incl. trace, fallback-make381) and the 1f report; no after-performance claim.",
+        "REVISION 1 (judge round 1: Sonnet 66 FAIL, blocking B1: rig_check.sh:75 removed <sha>.profile on --golden-only too, so the nightly's rig/golden half deleted the rig/full half's rows; confirmed by the controller from tools/rig_nightly.sh lines 85/89). Executor (Haiku, same session): stale-profile removal only when tests=1 (judge's fix verbatim); new cases golden-keeps-profile (B1), profile-trace (N1: RIG_TRACE=1 adds --trace) and profile-red (summary closes a red profiled log). RED: .godot/tmp/red2.log 26 cases, 2 failures (golden-keeps-profile, caller-poison). GREEN: rc.log and rc2.log 26 cases, 0 failures.",
+        "Revision-1 drills (hardened shape, scratch copies): G1 revert B1 fix -> killed [golden-keeps-profile caller-poison]; T1 trace=--trace -> trace= -> killed [profile-trace caller-poison]; R1 suppress summary when trc!=0 -> killed [profile-red caller-poison]; M1 re-run (profiler invocation removed) -> killed with the larger set [profile-on profile-trace profile-red golden-keeps-profile caller-poison] (expected set grew with the new profiled cases).",
+        "Controller-recorded (the executor run hit the controller's 50-min cap during its final gates): sh -n both rc 0; shellcheck -S warning rc 0 after one controller edit (quote PRUN_FAIL='test', SC2209, no behaviour change); make rig-check-control rc 0 and gmake rig-check-control rc 0, both 26 cases 0 failures; AC5 = 3; test_suite_profile.sh 40 cases 0 failures; AC13 0/0; python-guard ok; uid-guard ok; control re-run after the quote 26/0.",
+        "Iteration 94 controller AC11 run 1 (RIG_TRACE=1, RIG_DIR $TMPDIR/rig-check/l4-before-gmake-1, on 58419ddb, the round-1 head; revision 1 changes only the --golden-only cleanup and tests): FAIL, make test ran over 7200s; reds sound-test (mixer pitch 29.6 vs 28.4 Hz), sound-archive-test (startup_timeout), worlds-leak (worlds_leak.py 1200 s subprocess timeout), ui-theme-check (known, row 7as), replay (killed by the watchdog). Sampled load 239 samples median 15.93 max 43.99 (rule: <=5), so NOT comparable and NOT a baseline. Attributed to load, unconfirmed (control: a quiet-rig run). It did show the profiled path end to end on the real suite: GNU Make 4.4.1, 214 profile rows, closure_sha256 c203bf6c..., failing targets named from gmake lines, the summary closing a red log. Baseline (1f) still owed: three comparable runs plus the fallback run."
       ],
       "files": [
         "tools/rig_check.sh",
@@ -424,7 +456,40 @@
         "tools/python_guard.sh"
       ],
       "passes": false,
-      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX."
+      "passes_policy": "Executor never commits or changes passes/status/blockers. Record evidence in notes. Controller reruns every gate outside sandbox and advances only after rig/full, fast tier and independent evaluation; sockets/GPU/launchctl sandbox verdicts are UNINFORMATIVE UNDER SANDBOX.",
+      "started": "2026-11-16T18:22:00Z",
+      "completed": null
+    },
+    {
+      "id": "M1b-fix",
+      "description": "Fix the nightly rig-check-control red since L4 M1b (main 2bb77da7, c69a3bd5; issue #392): the profiler sets TMPDIR to its long --out directory, the control built its temp path under it, the 100-character budget test exited 1 with no output in 14 ms. The control now takes the caller TMPDIR only when its own paths fit, falls back to /tmp otherwise, and names any precondition failure on stdout as rig-check control: FAIL: <reason>. caller-poison carries a TMPDIR of at least 110 characters. No held-file edits (suite_profile.sh, rig_check.sh, Makefile, mk/*.mk untouched).",
+      "status": "evaluated_pass",
+      "depends_on": [
+        "M1b"
+      ],
+      "files": [
+        "tools/test_rig_check.sh",
+        "CHANGELOG.md",
+        ".ailang/state/sprints/sprint_R1-RIG-TEST-SPEED.json"
+      ],
+      "red": [
+        "Pre-fix repro, long TMPDIR (81 chars) on c69a3bd5 base: rc 1, 0.01 s, no output (the silent exit).",
+        "caller-poison with long TMPDIR (>=110 chars), fix not applied: rig-check control caller-poison: FAIL (rc 1, 0 of 25 ok); rig-check control: 26 cases, 1 failures."
+      ],
+      "green": [
+        "sh -n tools/test_rig_check.sh: rc 0",
+        "default TMPDIR: rig-check control: 26 cases, 0 failures (rc 0)",
+        "long TMPDIR (81 chars): rig-check control: 26 cases, 0 failures (rc 0)",
+        "suite_profile.sh run --make gmake --jobs 1 --out <106-character dir> -- rig-check-control: rc 0, rig-check control: 26 cases, 0 failures",
+        "/usr/bin/make (GNU Make 3.81) rig-check-control: rc 0, 26 cases, 0 failures",
+        "make uid-guard: ok (470 .uid files); make python-guard: ok (25 allowlisted, 0 awaiting AILANG port)"
+      ],
+      "drills": {
+        "D1_revert_2a_tmpdir_fallback": "KILLED: long-TMPDIR gate rc 1 with FAIL: temp path is 106 characters (named); default-TMPDIR gate caller-poison FAIL (rc 1, 0 of 25 ok), 1 failure.",
+        "D2_drop_long_TMPDIR_from_caller_poison": "SURVIVED as the drill predicts (not a regression guard by itself): default gate rc 0, 26 cases, 0 failures; the path is exercised only by the caller-poison case when the long TMPDIR is present.",
+        "D3_revert_2b_message_budget_10": "KILLED: mutant rc 1 with 0 bytes of stdout; with 2(b) in place budget 10 prints rig-check control: FAIL: temp path is 73 characters, over the 100-character budget (...) and rc 1."
+      },
+      "not_run": []
     },
     {
       "id": "M2",

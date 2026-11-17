@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### r1-rig-test-speed-m1b-fix (2026-11-17)
+
+#### Fixed
+
+- **The nightly `rig-check-control` is green again** (issue #392; red on both nights since L4 M1b landed, main 2bb77da7 and c69a3bd5; sprint R1-RIG-TEST-SPEED M1b-fix). The profiler sets `TMPDIR` to its `--out` directory, which is long, and the control built its temp path under it; the 100-character budget test then exited 1 with no output in 14 ms. The control takes the caller's `TMPDIR` only when its own paths still fit, falls back to `/tmp` otherwise, and any precondition that fails prints `rig-check control: FAIL: <reason>` before exiting non-zero. `caller-poison` now carries a `TMPDIR` of at least 110 characters, so the control is tested under the profiler's condition. The case count is unchanged (26 outer, 25 nested).
+
+### r1-rig-test-speed-m1b (2026-11-16)
+
+#### Added
+
+- **The rig's nightly `make test` runs profiled** (R1-RIG-TEST-SPEED M1b, design 1d/1e; D-129 A). The make-test half of `tools/rig_check.sh` runs serially under `tools/suite_profile.sh` with gmake, the raw rows land in `<sha>.profile/` beside the log, and the log ends with the summary's top 10; `RIG_TRACE=1` adds `--trace`. Three loud fallbacks log `rig-check FALLBACK <reason>` and mark the success status: `profile-off` (`RIG_PROFILE=0`, plain make), `profile-absent` (plain make), `gmake-missing` (the profiler on the system make). The baseline runs (three comparable serial gmake runs, plus the system-make fallback run) are still owed to the controller.
+- Evaluation: Sonnet 5.5 66/100 FAIL in round 1 (blocking: a `--golden-only` run deleted the same commit's `<sha>.profile/`, so the nightly's golden half would have erased every night's rows), fixed in revision 1 with new cases `golden-keeps-profile`, `profile-trace` and `profile-red` (26 cases); round 2 88/100 PASS. The cross-vendor MiniMax M3 judge timed out without a verdict. Known gaps (non-blocking): the summary's top-10 cut and totals line, the `bounded` wrapper on the `gmake-missing` branch and the stale-profile removal are not pinned by a case; the control reads the host load through the real profiler, so it fails where `sysctl` is denied (the M1a control stubs it). One real `rig/full` of the profiled path on the Studio (mission iteration 94, sampled load median 15.9) ran over its 7,200 s watchdog with load timeouts; it showed gmake, the rows, the named failing targets and the closing summary working end to end, and it is not a baseline run.
+
+### m4-7ar-nightly-live-guard-monitor-count (2026-11-16)
+
+#### Fixed
+
+- **Main's nightly `make test` loses two of its reds** (row 7ar, issue #392; built in mission iteration 92, judged and landed in iteration 93; sprint R1-7AR-NIGHTLY-LIVE-GUARD-MONITOR-COUNT). `ai-live-guard`: the five `--entry` call sites from the universe-lab and reach merges (`mk/lab.mk` lines 62, 63 and 70, `tools/lab_probe.py`, `tools/reach_probe.py`) now clear `AI_LIVE` with `env -u AI_LIVE`; a new `ai-live-guard-static` target runs the static rules under `$(SCRIPT_GATE)` (120 s) and joins `ci-fast`, so this class fails at PR time; every guard run in the mutant loop is bounded (`tools/deadline.sh`, 60 s) and a mutant counts as caught only on rc 1 plus its rule line; a new mutant row covers the `mk/lab.mk` shape. `display-audit-monitor-controls`: the `unbound` and `stale` controls pinned 46 samples, and the crew playthrough gives 45 since #443 (D-148 A); the new `tools/monitor_control_check.sh` reads the count from the run, requires at least 10 samples and fills in the expected counts and frames.
+- Evaluation: Sonnet 5.5 90/100 PASS. The cross-vendor MiniMax M3 run timed out without a verdict; its partial readings agree with Sonnet's. Known gaps (non-blocking): no case tests exactly 10 samples (`-ge` to `-gt` survives); removing the recipe line that requires the vacuous run be refused for the samples-floor reason survives the target (only the floor drill catches it); the rule-E runs' rc-1 branch has no drill. Not in this row: the third red at `36f4ab4c`, `ui-theme-check` (a hard-coded colour override in `ui/survey_map_layer.gd` from the attended telescope merge, #438), is handed to its owner.
+
 ### m4-d149-earth-link-alpha-index (2026-11-13)
 
 #### Fixed

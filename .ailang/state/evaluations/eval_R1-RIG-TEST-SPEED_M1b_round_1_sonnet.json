@@ -1,0 +1,96 @@
+{
+  "sprint_id": "R1-RIG-TEST-SPEED",
+  "milestone": "M1b",
+  "round": 1,
+  "evaluator": "claude-sonnet-5-5 (Agent tool)",
+  "score": 66,
+  "verdict": "FAIL",
+  "rubric": {
+    "design_1d_conformance (30)": 22,
+    "design_1e_control_quality (25)": 18,
+    "gates_and_ac (20)": 20,
+    "mutation_resistance (15)": 6,
+    "changelog_and_notes_honesty (10)": 9,
+    "note": "Gates are all green. Points are lost for B1 (a regression of an invariant the control already pins for the log) and for the survivors listed under non_blocking_findings."
+  },
+  "blocking_findings": [
+    {
+      "id": "B1",
+      "file": "tools/rig_check.sh:75",
+      "defect": "rm -rf \"$dir\" \"$dir.profile\" runs unconditionally, also for --golden-only. A golden-only run keeps its own log name ($dir.golden.log) precisely so it does not destroy the rig/full log of the same commit, but the profile dir is named <sha>.profile for both, so rig/golden deletes the rig/full run's <sha>.profile/.",
+      "failing_scenario": "tools/rig_nightly.sh runs 'rig_check.sh <sha>' (rig/full, profiled, writes <sha>.profile/) and later 'rig_check.sh <sha> --golden-only' on the same main head once the GPU is idle. The second run removes <sha>.profile/ before it starts, so every nightly's raw profile rows are gone as soon as the golden half begins; the rig silently stops keeping what the change exists to measure. Reproduced hermetically: I adapted tools/test_rig_keep_going.sh (git stub copies the instrument, real make 3.81 and gmake 4.4.1) and listed the profile dir around its golden-log-kept step. Before: closure.txt database.txt header.txt load.tsv profile.tsv ... ; after the --golden-only run: 'No such file or directory', on both makes. The existing golden-log-kept case asserts the full log survives, and no case asserts the same for the profile.",
+      "proposed_fix": "Only remove a stale profile dir for runs that write one: change line 75 to rm -rf \"$dir\"; [ $tests = 1 ] && rm -rf \"$dir.profile\" (keep the set -e safe form: if [ $tests = 1 ]; then rm -rf \"$dir.profile\"; fi). Add a control case (or extend golden-log-kept in test_rig_keep_going.sh with the tools copied in) that runs full then --golden-only on one RIG_DIR and asserts <dir>.profile/profile.tsv survives."
+    }
+  ],
+  "non_blocking_findings": [
+    {
+      "id": "N1",
+      "file": "tools/test_rig_check.sh (profile-on)",
+      "defect": "RIG_TRACE=1 is not pinned anywhere: the control unsets RIG_TRACE at the top, the nested caller-poison run only sets it to prove it is ignored, and no case sets it deliberately. Mutant m02 (trace=--trace -> trace=) survives. Design 1d lists RIG_TRACE=1 as a behaviour, and AC3's traced baseline run depends on it.",
+      "fix": "Add a profile-on-trace case: RIG_TRACE=1 exported inside the case's subshell; the gmake stub transcript must contain '--trace -k test'."
+    },
+    {
+      "id": "N2",
+      "file": "tools/rig_check.sh:123-127",
+      "defect": "The summary closing the log is only pinned as 'a ^totals line exists' on a one-row fixture. Mutants m03 (NR <= 11 -> NR <= 3), m19 (drop the /^totals/ alternative), m09 (silent profile-summary-failed line), m29 (suppress the summary when make test is red) and m05 (no summary on the gmake-missing path) all survive. 'Top 10 at the end of the log, pass or fail' is therefore unverified by the control.",
+      "fix": "Use a fixture profile.tsv with 15+ distinct targets and assert header + exactly 10 rows + totals; add a red profile-on case asserting the summary is present; add a corrupt-profile case for the one-line failure."
+    },
+    {
+      "id": "N3",
+      "file": "tools/rig_check.sh:116",
+      "defect": "The gmake-missing branch's bounded wrapper is unpinned: m13 (drop bounded from that branch) survives, because no hang case runs under the no-gmake PATH. The row-7ag promise 'every make call is bounded' can silently lapse on that branch. m06 (profile-absent test shrinks to suite_profile.sh only) also survives: no case has one of the two files without the other.",
+      "fix": "A test-hang variant under NOGMAKE (RIG_TEST_S=2, STUB_MAKE_HANG=test) and a case with only tools/suite_profile.sh present."
+    },
+    {
+      "id": "N4",
+      "file": "tools/test_rig_keep_going.sh:36-41",
+      "defect": "The keep-going control's fake clone has no tools/, so it only ever runs the profile-absent plain-make path; the profiled path's failing-target parser on real gmake output is not covered by any committed case. (The executor says so in M3.) I checked it by hand with a modified copy: two-red, golden, green, nightly cases all pass profiled on make 3.81 and gmake 4.4.1, so behaviour is right, just not pinned. Also m01 (dropping the stale-$dir.profile cleanup) survives.",
+      "fix": "Give keep-going a profiled variant (copy the instrument into the fixture clone) and a stale-profile-dir case."
+    },
+    {
+      "id": "N5",
+      "file": "tools/rig_check.sh",
+      "defect": "Plan wording 'real /opt/homebrew/bin/gmake unreachable from every case' is true only for the rig_check.sh invocations in prun/order. keep-going and suite-profile deliberately run real GNU make and gmake on fixtures (pre-existing, intended). <sha>.profile/ is never pruned (it holds database.txt, a make -p dump), unlike the clones deleted on exit.",
+      "fix": "Document; consider pruning <sha>.profile/ older than N days in rig_nightly.sh."
+    }
+  ],
+  "mutants": [
+    {"id": "m01", "mutation": "drop \"$dir.profile\" from the rm -rf at line 75", "expected_case": "none exists (stale profile dir)", "result": "SURVIVED", "matters": "low; but see B1 for the same line's opposite problem"},
+    {"id": "m02", "mutation": "trace=--trace -> trace=", "expected_case": "a RIG_TRACE=1 case (absent)", "result": "SURVIVED", "matters": "yes, AC3 traced baseline"},
+    {"id": "m03", "mutation": "awk NR <= 11 -> NR <= 3 (top-10 truncation)", "expected_case": "summary row count (absent)", "result": "SURVIVED", "matters": "yes, design says top 10"},
+    {"id": "m04", "mutation": "gmake-missing branch --make make -> --make gmake", "expected_case": "gmake-missing", "result": "KILLED", "fail_set": "gmake-missing, caller-poison"},
+    {"id": "m05", "mutation": "summary only for the default branch, not gmake-missing", "expected_case": "gmake-missing", "result": "SURVIVED", "matters": "low"},
+    {"id": "m06", "mutation": "profile-absent test checks suite_profile.sh only", "expected_case": "profile-absent", "result": "SURVIVED", "matters": "low"},
+    {"id": "m08", "mutation": "profile-off mark emptied", "expected_case": "profile-off", "result": "KILLED", "fail_set": "profile-off, caller-poison"},
+    {"id": "m09", "mutation": "failed-summary line silenced", "expected_case": "none", "result": "SURVIVED", "matters": "low"},
+    {"id": "m11", "mutation": "profiled branch drops -k", "expected_case": "profile-on", "result": "KILLED", "fail_set": "golden-setup, full-no-setup, test-hang, profile-on, caller-poison"},
+    {"id": "m13", "mutation": "gmake-missing branch without bounded", "expected_case": "a hang case under NOGMAKE (absent)", "result": "SURVIVED", "matters": "medium: a hung fallback run is unbounded"},
+    {"id": "m17", "mutation": "command -v gmake check replaced by false", "expected_case": "gmake-missing", "result": "KILLED", "fail_set": "gmake-missing, caller-poison"},
+    {"id": "m18", "mutation": "profile-absent FALLBACK log line removed", "expected_case": "profile-absent", "result": "KILLED", "fail_set": "profile-absent, caller-poison"},
+    {"id": "m19", "mutation": "awk drops the /^totals/ alternative", "expected_case": "totals beyond row 11 (absent)", "result": "SURVIVED", "matters": "yes, the totals line is the part of the summary a 20-row real run would lose"},
+    {"id": "m21", "mutation": "summary appended to /dev/null instead of the log", "expected_case": "profile-on", "result": "KILLED", "fail_set": "profile-on, caller-poison"},
+    {"id": "m27", "mutation": "gmake-missing FALLBACK log line removed", "expected_case": "gmake-missing", "result": "KILLED", "fail_set": "gmake-missing, caller-poison"},
+    {"id": "m29", "mutation": "summary suppressed when make test is red", "expected_case": "a red profiled case (absent)", "result": "SURVIVED", "matters": "medium: the log pointer for a red night would lack the profile"}
+  ],
+  "executor_drills_reproduced": "Re-derived by my own mutants on equivalent lines: m04 (executor M4), m08 (M8), m18 (M6), m27 (M7), m17 (M4), m21/m11 (M1 class). All killed with the expected FAIL names plus caller-poison, as the executor reported. I did not rerun M3/M11/M12 (clamp, caller-env).",
+  "gates": [
+    {"command": "env -u ... sh tools/test_rig_check.sh tools/rig_check.sh (run 1)", "rc": 0, "key": "rig-check control: 23 cases, 0 failures"},
+    {"command": "same, run 2", "rc": 0, "key": "rig-check control: 23 cases, 0 failures (no flake in 2 runs, plus 2 runs through make/gmake, plus the unmutated drills' identical cases)"},
+    {"command": "grep -c -E '^rig-check control (profile-off|profile-absent|gmake-missing): ok$' (run-1 log)", "rc": 0, "key": "3"},
+    {"command": "make rig-check-control (GNU Make 3.81)", "rc": 0, "key": "23 cases, 0 failures"},
+    {"command": "gmake rig-check-control (4.4.1)", "rc": 0, "key": "23 cases, 0 failures"},
+    {"command": "sh tools/test_suite_profile.sh", "rc": 0, "key": "suite-profile control: 40 cases, 0 failures"},
+    {"command": "AC13 held-file grep / .py grep on git diff --name-only origin/main...HEAD", "rc": 1, "key": "0 and 0"},
+    {"command": "sh -n tools/rig_check.sh; sh -n tools/test_rig_check.sh", "rc": 0, "key": "clean"},
+    {"command": "shellcheck -S warning on both scripts", "rc": 0, "key": "no output"},
+    {"command": "make python-guard", "rc": 0, "key": "python-guard: ok (25 allowlisted, 0 awaiting AILANG port)"},
+    {"command": "make uid-guard", "rc": 0, "key": "uid-guard: ok (470 .uid files)"},
+    {"command": "git status --porcelain / git diff --quiet in the eval clone after all drills", "rc": 0, "key": "no tracked change (drills ran on /tmp copies)"}
+  ],
+  "dry_run": "Hermetic real-script run via a modified copy of test_rig_keep_going.sh (stub gh/git, fixture suites, private TMPDIR, no GitHub): profiled path works on make 3.81 and gmake 4.4.1 (two-red parse, green, nightly cases pass; profile dir written); exposed B1.",
+  "other_checks": "Design 1d: profiled serial path, RIG_TRACE wiring, <sha>.profile/ beside the log, top-10 summary at the log end, three loud fallbacks with log line and 'SERIAL FALLBACK: <reason>' kept inside 140 chars (cut -c1-140; the fallback cases use a long version string to prove it): all implemented. Watchdog, runtime staging, sky, golden setup and failure parser are unchanged (diff touches only the profile branch, the rm line and the final status). The gmake-missing case PATH is stubs plus /usr/bin:/bin:/usr/sbin and asserts command -v gmake fails. CHANGELOG is accurate and says the baseline runs are owed; sprint JSON keeps passes false and completed null.",
+  "unmeasured": [
+    "Real nightly/rig run of the profiled path on the Studio with a real make test (controller-owned; not run).",
+    "Executor drills M3, M11, M12 not rerun."
+  ]
+}

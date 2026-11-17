@@ -12,6 +12,9 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 95 | 2026-11-17 | Nightly `rig-check-control` red FIXED FORWARD (PR #453, merge `afff5571`): iteration 94's profiler gave the control a 115-character TMPDIR and it e... |
+| 94 | 2026-11-16 | L4 M1b code half LANDED (PR #451, merge `2bb77da7`): the nightly `rig/full` runs `make test` profiled on gmake with three loud fallbacks; round-1 j... |
+| 93 | 2026-11-16 | Row 7ar LANDED (PR #448, merge `ba3be980`): iteration 92's orphaned build judged and landed; main's nightly loses its `ai-live-guard` and `display-... |
 | 91 | 2026-11-13 | D-149 LANDED (PR #446, merge `dba1c17c`): the Earth-link review capture plans alpha Cen A at map index 2; the source-literal guard's pending mechan... |
 | 90 | 2026-11-12 | Row 7ae LANDED (PR #443, merge `3ce93c9d`): D-148 A, the Voyage and Crew working points at the D-132 snug point (1.50 m from the desk); enforcing d... |
 | 89 | 2026-11-12 | Row 7an LANDED (PR #429, merge `e3e4e5ed`): free-nav-stop's I checks fail for the right reason (sky occlusion, BVH refresh, dark catalogue row, rea... |
