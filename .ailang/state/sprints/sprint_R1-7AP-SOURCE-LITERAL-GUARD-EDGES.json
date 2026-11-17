@@ -33,12 +33,12 @@
         "AC7: the doc's AC block — write the four drill files with the runtime A1 (alpha Cen A's stars.json index + 1), git add them, python3 tools/test_replay.py MapIndex > $W/ac7.log 2>&1; echo rc=$?; grep -o the drill paths; then unstage and delete the drills"
       ],
       "expectations": "AC2: blank, Ran 11 tests ..., OK, rc=0 (base Ran 9 tests in 0.183s / OK — planner-replicated). AC6: eight lines, unclosed/minus/cross/ampid/sqindex/sqid/sqstr/ampsqid each FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail) (doc-quoted expected table; base survival V4/V7 doc-quoted). AC7: rc=1, then exactly four lines tools/_7ap_drill_comment.gd:2, tools/_7ap_drill_flank.gd:1, tools/_7ap_drill_flank.py:1, tools/_7ap_drill_string.py:1 (doc-quoted).",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "started": null,
+      "started": "2026-11-17T20:35:56Z",
       "completed": null,
       "measured": null,
-      "notes": null
+      "notes": "AC2: blank / Ran 11 tests in 0.272s / OK / rc=0 (matched). AC6: 8 lines, each 'FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)' for unclosed, minus, cross, ampid, sqindex, sqid, sqstr, ampsqid (matched). AC7: rc=1 then tools/_7ap_drill_comment.gd:2, tools/_7ap_drill_flank.gd:1, tools/_7ap_drill_flank.py:1, tools/_7ap_drill_string.py:1 (matched; drills unstaged and deleted). AC1 sha 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39, committed, numstat 73 11 (matched). AC15 empty (matched). Executed 2026-11-17 by the sprint executor (Haiku 5.5) on the Mac, arm64. Ran the design doc (rev 2) preamble and AC1-AC15 as one /bin/bash script extracted from the doc's fences (outside the repo). Code commit 2fd20aa0 (AC1's commit, message amended to name the sprint; tree unchanged). Full AC1-AC15 log: /tmp/claude/7ap-run/out.log (not committed)."
     },
     {
       "id": "M2",
@@ -59,12 +59,12 @@
         "AC5: for m in assertin assertin1 assertin2; do mut \"$m\" | grep -m1 \"^FAIL: test_the_7ap_guard_test_can_fail\" | sed \"s/^/$m /\"; done"
       ],
       "expectations": "AC3: Ran 40 tests ..., blank, OK, rc=0 (base Ran 38 tests in 2.971s / OK — planner-replicated). AC4: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail), Ran 11 tests ..., FAILED (failures=1), and NO FAIL for test_source_literals_match_the_map (doc-quoted; the controller's fold-in scenario made permanent; base survival V4). AC5: three lines assertin/assertin1/assertin2 each FAIL: test_the_7ap_guard_test_can_fail (doc-quoted).",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "started": null,
+      "started": "2026-11-17T20:35:56Z",
       "completed": null,
       "measured": null,
-      "notes": null
+      "notes": "AC3: Ran 40 tests in 3.070s / OK / rc=0 (matched). AC4: FAIL: test_the_7ap_guard_test_can_fail (__main__.MapIndex.test_the_7ap_guard_test_can_fail) / Ran 11 tests in 0.213s / FAILED (failures=1); no test_source_literals FAIL (matched). AC5: assertin, assertin1, assertin2 each FAIL test_the_7ap_guard_test_can_fail (matched). Post-run gate: make test_replay.py Ran 40 OK rc=0. Executed 2026-11-17 by the sprint executor (Haiku 5.5) on the Mac, arm64. Ran the design doc (rev 2) preamble and AC1-AC15 as one /bin/bash script extracted from the doc's fences (outside the repo). Code commit 2fd20aa0 (AC1's commit, message amended to name the sprint; tree unchanged). Full AC1-AC15 log: /tmp/claude/7ap-run/out.log (not committed)."
     },
     {
       "id": "M3",
@@ -84,12 +84,12 @@
         "AC9: the doc's AC block — cp Makefile $W/Makefile.keep; delete the 'ci-fast: similar-main-guard similar-guard-controls' rule line with perl; make -s script-gate-lint > $W/ac9a.log 2>&1; echo rc=$?; grep -c \"lost its prerequisite similar-\" $W/ac9a.log; restore; drop one pair from SG_PREREQS; make -s script-gate-lint > $W/ac9b.log 2>&1; echo rc=$?; grep -c the pin message; git checkout -- mk/script-gates.mk; re-run; echo restored=$?"
       ],
       "expectations": "AC8: script-gate-prereqs: ok (9 pairs hold in Makefile: ... ci-fast:session-minor-guard-controls), rc=0 (base ok (5 pairs ...) — planner-replicated). AC9: rc=2, 2 (both 7ah refusals by name); then rc=2, 1 (SG_PREREQS holds 8 pairs (8 distinct) but SG_PREREQS_PAIRS is 9); then restored=0 (doc-quoted expected table; base survival V19 doc-quoted, its positive half planner-replicated PV8).",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "started": null,
+      "started": "2026-11-17T20:35:56Z",
       "completed": null,
       "measured": null,
-      "notes": null
+      "notes": "AC8: script-gate-prereqs: ok (9 pairs hold in Makefile: ... ci-fast:session-minor-guard-controls) rc=0 (matched). AC9: rc=2 / 2 (7ah refusals); rc=2 / 1 (pin message); restored=0 (matched). Post-run gate: make script-gate-lint rc=0, ok 9 pairs. Makefile untouched. Executed 2026-11-17 by the sprint executor (Haiku 5.5) on the Mac, arm64. Ran the design doc (rev 2) preamble and AC1-AC15 as one /bin/bash script extracted from the doc's fences (outside the repo). Code commit 2fd20aa0 (AC1's commit, message amended to name the sprint; tree unchanged). Full AC1-AC15 log: /tmp/claude/7ap-run/out.log (not committed)."
     },
     {
       "id": "M4",
@@ -106,12 +106,12 @@
         "AC10: the doc's AC block — python3 $W/7ap_mut.py sigpipe; dash -c 'trap \"\" PIPE; exec dash tools/script_gate_prereqs.sh Makefile '\"$PAIRS\" 2>$W/ac10a.err >/dev/null; echo rc=$?; grep -c \"printf: I/O error\" $W/ac10a.err; git checkout -- tools/script_gate_prereqs.sh; the same again -> $W/ac10b.err; then dash tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_negative.mk.txt $PAIRS missing-target:x > $W/ac10c.out 2> $W/ac10c.err; echo rc=$?; grep -c the refusal lines and the I/O errors"
       ],
       "expectations": "rc=0, 10 (pre-fix noise); then rc=0, 0; then rc=1, 2, 0 (the negative control keeps its exactly-two named refusals with no I/O error) — doc-quoted expected table (mechanism V12). If dash is absent: print 'dash absent', run the three with sh; the verdict columns (rc=..., the 2) still hold, the two I/O-error counts are skipped — say so in the evidence (design AC table). dash present on the executor's host (planner-verified PV10).",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "started": null,
+      "started": "2026-11-17T20:35:56Z",
       "completed": null,
       "measured": null,
-      "notes": null
+      "notes": "AC10 (dash present, ran both I/O-error drills): rc=0 / 10; rc=0 / 0; rc=1 / 2 / 0 (matched). Verdicts unchanged; the negative control keeps its two named refusals with no I/O error. Executed 2026-11-17 by the sprint executor (Haiku 5.5) on the Mac, arm64. Ran the design doc (rev 2) preamble and AC1-AC15 as one /bin/bash script extracted from the doc's fences (outside the repo). Code commit 2fd20aa0 (AC1's commit, message amended to name the sprint; tree unchanged). Full AC1-AC15 log: /tmp/claude/7ap-run/out.log (not committed)."
     },
     {
       "id": "M5",
@@ -145,12 +145,12 @@
         "AC15 (last): rm -rf $W; git status --porcelain --untracked-files=all"
       ],
       "expectations": "AC1: 66f65140d506f69abf3526be01a9a76038661e64a1e9fabbcf207c3918892e39, committed, 73 11 (planner-replicated on the extracted fence). AC11: guards=0, shellcheck=clean, check=0, then the four paths mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt tools/script_gate_prereqs.sh tools/test_replay.py. AC12: 16 [], the sorted 16 names, sha 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 (planner-replicated at the base, valid by V8; a legitimate new tracked pair moves the pin — name the delta; a shrunk/changed set with no new pair is a blinding regression: stop). AC13: files 503 (planner-replicated), old_pairs 41 new_pairs 41, blinded [], gained [], neg_index_pairs [], amp_or_caret_tokens 0, levels_with_second_token [], comment_line_tokens [('tools/bright_star_audit.gd', 8)] (doc-quoted). AC14: pr435/pr380/pr373 files=... makefile=1 (counts re-measured at landing; pick time 27/31/57, V21 doc-quoted), rc 0; any hit or gh failure halts and is recorded. AC15: empty.",
-      "status": "pending",
+      "status": "in_progress",
       "passes": false,
-      "started": null,
+      "started": "2026-11-17T20:35:56Z",
       "completed": null,
       "measured": null,
-      "notes": null
+      "notes": "AC11: guards=0, shellcheck=clean (sh and dash), check=0, paths mk/script-gates.mk tests/fixtures/script_gate/prereq_negative.mk.txt tools/script_gate_prereqs.sh tools/test_replay.py (matched). AC12: 16 [], the 16 sorted names as in the doc, sha256 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 (matched; no pair moved). AC13: files 503, old_pairs 41 new_pairs 41, blinded [], gained [], neg_index_pairs [], amp_or_caret_tokens 0, levels_with_second_token [], comment_line_tokens [('tools/bright_star_audit.gd', 8)] (matched). AC14 (gh, 30 s bound, no timeout or auth failure): pr435 files=27 makefile=1; pr380 files=31 makefile=1; pr373 files=57 makefile=1; no 7ap-file hit, exit 0 (matched the doc's counts). Changelog fragment commit d85746ca (changelogs/unreleased/2026-11-17-source-literal-guard-edges.md). Targeted gates (bash, rc captured): make replay-map-index Ran 11 OK rc=0; python3 tools/test_replay.py Ran 40 OK rc=0; make script-gate-lint ok 9 pairs rc=0; make python-guard ok (25 allowlisted, 0 awaiting AILANG port) rc=0; make uid-guard ok (495 .uid files) rc=0. Not run: make test, golden, capture, GPU, script-gate-selftest. Executed 2026-11-17 by the sprint executor (Haiku 5.5) on the Mac, arm64. Ran the design doc (rev 2) preamble and AC1-AC15 as one /bin/bash script extracted from the doc's fences (outside the repo). Code commit 2fd20aa0 (AC1's commit, message amended to name the sprint; tree unchanged). Full AC1-AC15 log: /tmp/claude/7ap-run/out.log (not committed)."
     }
   ],
   "acceptance_criteria": [
