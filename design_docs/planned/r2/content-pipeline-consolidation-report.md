@@ -54,8 +54,22 @@ Captain stills: 12,217,078 disk / 134,217,664 decoded bytes, separate from anima
 
 ## Remaining acceptance
 
-- **AC9 remains not run:** no new `--export-pack`, native build, GPU check or publication occurred. The combined build must run the existing `make export-pack-check-strict` with the new hook. Fixture success is not native pack acceptance.
+- **AC9 now passes for the source-clone pack:** see the follow-up below. The parent combined integration/native build must still validate its own exact bytes; no native app, GPU acceptance or publication is claimed.
 - The integrator must add exactly `include mk/content.mk` to the top Makefile and rerun its normal focused integration gates. The new fragment adds only small budget/pack fixtures to `ci-fast`; the full four-bundle scan is targeted, not a hidden CI regeneration step.
 - Cross-family evaluation, GitHub fast-tier status and Mark's combined native visual/performance review remain with the integration owner. The design stays under `planned/` until its outstanding packaging/landing requirements are met.
 
 CP1 and CP2 committed as `211fd52b` and `42eeb816`; CP3 records this evidence. The original 750 LOC estimate excluded the size of retained pin data; no measured LOC/day or calendar velocity is inferred from this single run.
+
+## AC9 follow-up: fresh headless resource pack
+
+Mark authorized local pack validation on 2026-11-17 after the initial pilot. In this same isolated source clone at `352552aa8990044e9df0a28b73b38030ca963794`, `make export-pack-check-strict` created a **new** `.godot/tmp/export-pack/game.zip`. It was not copied from the older sibling archive. Godot headless `--export-pack` requires no export templates and does not run the sim journey or use a GPU window. No native `.app` or publication was made.
+
+Preparation copied only known ignored runtime/bundle inputs: `runtime/` from the integration clone; `areas_bundle/`, `audio_bundle/`, `observation_bundle/`, `planet_bundle/`, `ai_core/` and the two lens `.bin` files from the clean painted-level candidate. Existing ship bundle witnesses had already been staged locally; the make target ran its existing civic stage. The copied lens files match committed pins `69cf728d…` and `419c0fd5…`. No new generation or network fetch occurred.
+
+The initial strict audit found **66 failures**, all captain imported textures. Inspecting the actual ZIP showed that Godot 4.7.2 packs texture metadata as `<image>.import` plus `.godot/imported/<image>-<hash>.ctex`; the new auditor had assumed the script/scene `.remap` convention. This was a demonstrated audit bug, not missing art. The fixture now reproduces the observed `.import` format, including its terminating NUL, importer/type fields and external texture path. It failed before the fix. The auditor accepts this measured representation while retaining exact imported target-path and byte-hash checks. Controls also reject missing/corrupt imported textures, an incorrect importer and a valid raw source attempting to mask a corrupt active imported texture.
+
+- `make -f Makefile -f mk/content.mk content-pack-test`: **24 passed, 0 failures**.
+- `sh tools/script_gate.sh content-real-pack /private/tmp/content-ac9-strict.log 180 '^export-pack-check: [1-9][0-9]* checked, 0 skips, 0 failures$' -- STRICT=1 godot --headless --path . --log-file /private/tmp/content-ac9-strict-engine.log --script tests/test_export_pack.gd -- .godot/tmp/export-pack/game.zip`: **2,869 checked, 0 skips, 0 failures**, 15 seconds, rc 0, no script errors.
+- Pack: **336,137,617 bytes**, SHA256 **`9b26623d9224f2d2283de1329278ae7cfa11fb6d0d89e888721b646abd9d9975`**, generated 2026-11-17 at 08:53 local time. Lens SHA256 pins were independently rechecked.
+
+Only excluded test/audit files changed after the export, so the corrected strict auditor checked the same new package bytes without an unnecessary regeneration. This closes the pilot's AC9. It does **not** validate the parent's later combined integration commit (`48120f99` plus subsequent ship work), a native app, visual performance or publication. The ignored pack remains available in this clone; it is not committed.
