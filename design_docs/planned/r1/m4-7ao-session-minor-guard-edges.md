@@ -1,10 +1,10 @@
 # Session-minor guard: its lexical edges (7ao)
 
-**Status:** Planned 2026-11-17 (mission iteration 96, row 7ao; designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED 2 of 3; neither reject disputes the direction). It applies glm-5.3's self-floor fix verbatim, measures kimi-k3's backstop question and acts on it (a new R26 check), and takes gemini's two notes. See "Quorum log". Measured at `origin/main` `5b33b62a` on the Studio, load 5–17. **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ao**).
-**Priority:** low (clause 5 hygiene). Nothing is red. The four guard targets pass at the base (V1). The row asks which mutations of the session minor the fast tier still lets through. Measured here, ten get through: a downgrade, three test spellings, a vacuous self-floor (r1), a ternary around the prefetch call (r1), two `_adopt_warm` refusals and two `_run_map` range edges. This doc closes those ten. It defers the ones with no cheap exact check and says which of them no tier catches (Deferred items).
+**Status:** Planned 2026-11-17 (mission iteration 96, row 7ao; designer Opus 5.5). **Revision 1** answers design-quorum round 1 (BLOCKED 2 of 3; neither reject disputes the direction). It applies glm-5.3's self-floor fix verbatim, measures kimi-k3's backstop question and acts on it (a new R26 check), and takes gemini's two notes. **Revision 2** (controller, narrow-refinement carve-out after round 2) applies round 2's two rejects verbatim: kimi-k3's anchored floor scan, control R27 `commentfloor`, meta-drill C5 and the C1 fix; glm-5.3's Priority paragraph. See "Quorum log". Measured at `origin/main` `5b33b62a` on the Studio, load 5–17. **Release:** r1. **Milestone:** none (suite hygiene, queue row **7ao**).
+**Priority:** low (clause 5 hygiene). Nothing is red. The four guard targets pass at the base (V1). The row asks which mutations of the session minor the fast tier still lets through. Measured here, thirteen do: twelve against the base fast tier (V2, V6, V8) — a downgrade; four rewritten-comparison spellings (constant-first, a tab after ==, a parenthesised constant, an aliased receiver); a new test file in a tests/ subdirectory; a helper's write; a ternary around the prefetch call; the two single-condition deletions of _adopt_warm's refusal; and the two _run_map range edges — and one against this row's own r0 floor check, a vacuous self-floor (V24, glm-5.3, found in quorum round 1), which the base guard could not see because it has no floor check. This doc closes ten of the thirteen (the downgrade, the three cheap spellings, the self-floor, the ternary, both refusals, both range edges) and defers the three with no cheap exact check — the alias, the subdirectory and the helper write, the last caught by the nightly (V25) — and files the wider condition-before-write class, which no tier is shown to catch, to the charter (V27). It defers the ones with no cheap exact check and says which of them no tier catches (Deferred items).
 **Implements:** row 7ao of the charter (`design_docs/stapledon-mission.md:559`, V20). The row comes from the design follow-ups F1, F2 and F4 and the judge findings of the parent row 7al ([`design_docs/implemented/r1/m4-7al-session-minors.md`](../../implemented/r1/m4-7al-session-minors.md), [sprint](../../implemented/r1/m4-7al-session-minors-sprint.md)). It also touches 7ah's `similar-main-guard` ([`m4-7ah-similar-guard-minor.md`](../../implemented/r1/m4-7ah-similar-guard-minor.md)). It protects the loading jump's simulation prefetch ([`lightspeed-loading.md`](../../implemented/r1/lightspeed-loading.md)) and serves definition-of-done gate 1. Design-repo context: the NDJSON protocol and its minor negotiation follow ADR 0001 ([`../stapledons-design/decisions/0001-engine-and-architecture.md`](../../../../stapledons-design/decisions/0001-engine-and-architecture.md)). No physics-spec section applies.
 **Depends on:** nothing.
-**Estimated LOC:** 98 changed lines in four files (`git apply --numstat`, V15), plus a changelog fragment. There is no product, asset, shader, golden or `*.ail` change, and `bridge/sim_bridge.gd` and the three session files are not edited. Appendix A has the exact patch, so the doc does not depend on `/tmp`.
+**Estimated LOC:** 103 changed lines in four files (`git apply --numstat`, V15), plus a changelog fragment. There is no product, asset, shader, golden or `*.ail` change, and `bridge/sim_bridge.gd` and the three session files are not edited. Appendix A has the exact patch, so the doc does not depend on `/tmp`.
 - `Makefile` +19 −3, inside the 7ah `similar-main-guard` recipe and the 7al `session-minor-guard` recipe and comments only;
 - `tools/session_minor_guard_controls.sh` +39 −4;
 - `tools/similar_guard_controls.sh` +19 −1;
@@ -93,7 +93,7 @@ Nothing a player sees or hears changes. Every change is in a guard recipe, a con
   One `sed` then turns each hit into `FILE:SimBridge.NAME`. The existing count, `bad` and reason lines then work unchanged.
   - The grep's rc is still checked before the rewrite, so R19 (unreadable test, rc 2) keeps its reason.
   - The pristine tree still yields 4 hits (V11).
-- **Floor.** After the comparison check, `grep -ohE "SimBridge\.SESSION_MINOR$w>=$w$c" tests/*.gd` collects the floor names. A floor counts only in the canonical form `SimBridge.SESSION_MINOR >= SimBridge.<NAME>_MINOR` (gemini, r1). A floor written another way, such as `EARTH_LOG_MINOR <= SESSION_MINOR` or a bare number, is not seen, and if it is the only one, the guard fails `no test asserts a floor`. The guard then:
+- **Floor.** After the comparison check, `grep -hE "^[^#]*SimBridge\.SESSION_MINOR$w>=$w$c" tests/*.gd | grep -ohE "SimBridge\.SESSION_MINOR$w>=$w$c"` collects the floor names. The first stage keeps only lines whose canonical floor sits before any `#`, so a floor commented out does not count (r2, kimi-k3 verbatim; V28). A floor counts only in the canonical form `SimBridge.SESSION_MINOR >= SimBridge.<NAME>_MINOR` (gemini, r1). A floor written another way, such as `EARTH_LOG_MINOR <= SESSION_MINOR` or a bare number, is not seen, and if it is the only one, the guard fails `no test asserts a floor`. The guard then:
   - fails `no test asserts a floor for SESSION_MINOR` if there are none;
   - fails `floor SESSION_MINOR is not a floor a test asserts` if a floor names `SESSION_MINOR` itself. This runs before the resolve, and is glm-5.3's fix verbatim (r1);
   - resolves each floor with the same `const NAME := <digits>` grammar, failing `floor NAME unresolved` otherwise;
@@ -102,14 +102,15 @@ Nothing a player sees or hears changes. Every change is in a guard recipe, a con
   A bump passes: the B case, 19 ≥ 18, stays accepted (V11). A minor defined before the game adopts it also passes, since only a downgrade below an asserted floor fails.
 - **Prefetch statement (r1, kimi-k3).** The prefetch's ask regex was `^[^#]*SimBridge\.warm\(SimBridge\.SESSION_MINOR\)…`, and its `^[^#]*` prefix admitted `holder["value"] = null if … else SimBridge.warm(…)`. It becomes `^[[:space:]]*holder\["value"\][[:space:]]*=[[:space:]]*SimBridge\.warm\(SimBridge\.SESSION_MINOR\)[[:space:]]*(#.*)?$`. That is the whole statement as `ui/loading_jump.gd:254` writes it (V22). Any condition before the call, or a renamed holder, now fails `ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR`, closed.
   - The two `want_minor` sites keep their `^[^#]*` prefix. The map's real ask is itself conditional (`if not capture:sim.want_minor=…`, `main.gd:333`) and the ship's follows a statement on the same line (V22). See Deferred items for what that leaves.
-- **Controls** (R20–R26, Appendix A):
+- **Controls** (R20–R27, Appendix A):
   - `downgrade`: `SESSION_MINOR` moved to the highest defined minor below the `EARTH_LOG_MINOR` floor, both read from ROOT. That is 17 today.
   - `nofloor`: the floor clause deleted from `test_comms_station.gd`. This is the floor scan's known-positive control.
   - `constfirst`, `tab`, `paren`: the test names `EARTH_LOG_MINOR` constant-first, after a tab, and in parentheses.
   - `selffloor` (R25, glm-5.3): the floor rewritten to `SimBridge.SESSION_MINOR >= SimBridge.SESSION_MINOR`.
   - `wrapped` (R26, kimi-k3): V2's and V26's ternary, `= null if OS.has_feature("x") else SimBridge.warm(SimBridge.SESSION_MINOR)`.
+  - `commentfloor` (R27, kimi-k3, r2): the floor clause on `test_comms_station.gd:133` put behind a `#`.
 
-  The rejected count goes from 19 to 26.
+  The rejected count goes from 19 to 27.
 - **Case G stays narrow (gemini, r1).** Case G at the bottom of the controls asserts that the pristine copy has at least 4 comparisons in the committed direct spelling (`journey_sim.<minor> == SimBridge.SESSION_MINOR`). The narrow regex is the right one there. G guards the mutation targets: R15, R22, R23, R24 and R25 rewrite exactly those direct-spelling lines with `sed`, so G must count what they match. The wide count is pinned separately by AC2's ok line (`4 test comparisons name it`). On the pristine tree the two counts agree at 4 (V5 control, V11).
 
 ### M2. The orphan minor is derived (d): `tools/session_minor_guard_controls.sh`
@@ -207,7 +208,7 @@ shasum -a 256 "$W/7ao.patch" | cut -d' ' -f1; git apply -R --check "$W/7ao.patch
 # AC2
 make -s --no-print-directory session-minor-guard; echo rc=$?
 # AC3
-make -s --no-print-directory session-minor-guard-controls | grep -E ': (orphan|downgrade|nofloor|constfirst|tab|paren|selffloor|wrapped) rejected|rejected, '
+make -s --no-print-directory session-minor-guard-controls | grep -E ': (orphan|downgrade|nofloor|constfirst|tab|paren|selffloor|wrapped|commentfloor) rejected|rejected, '
 # AC4
 make -s --no-print-directory similar-main-guard; echo rc=$?
 # AC5
@@ -238,19 +239,19 @@ rm -rf "$W"; git status --porcelain --untracked-files=all
 
 | # | Criterion | Expected |
 |---|---|---|
-| AC1 | The patch is Appendix A, byte for byte, and is what the clone holds | `d3dce36fa21547e7d0660a0bb951a6995f3a16ebda08f59e4fe1e9b1a4407c5a`, then ` 4 files changed, 86 insertions(+), 12 deletions(-)` |
+| AC1 | The patch is Appendix A, byte for byte, and is what the clone holds | `3eca953a3065f31357e1306da052e5393caf3accfb534b10850926cb02801a0a`, then ` 4 files changed, 91 insertions(+), 12 deletions(-)` |
 | AC2 | The guard passes the tree; the count is unchanged | `session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it`, then `rc=0` |
-| AC3 | (a)(b)(c)(d) Every control holds, with seven new rejections and the derived orphan | 9 lines, each prefixed `session-minor-guard-controls: `:<br>`orphan rejected (session-minor guard: SESSION_MINOR (19) is no protocol minor in bridge/sim_bridge.gd)`<br>`downgrade rejected (session-minor guard: SESSION_MINOR (17) is below EARTH_LOG_MINOR (18), a floor a test asserts)`<br>`nofloor rejected (session-minor guard: no test asserts a floor for SESSION_MINOR)`<br>`constfirst`, `tab` and `paren`, each `rejected (session-minor guard: tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR)`<br>`selffloor rejected (session-minor guard: floor SESSION_MINOR is not a floor a test asserts)`<br>`wrapped rejected (session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR)`<br>last, `26 rejected, 3 accepted` |
+| AC3 | (a)(b)(c)(d) Every control holds, with eight new rejections and the derived orphan | 10 lines, each prefixed `session-minor-guard-controls: `:<br>`orphan rejected (session-minor guard: SESSION_MINOR (19) is no protocol minor in bridge/sim_bridge.gd)`<br>`downgrade rejected (session-minor guard: SESSION_MINOR (17) is below EARTH_LOG_MINOR (18), a floor a test asserts)`<br>`nofloor rejected (session-minor guard: no test asserts a floor for SESSION_MINOR)`<br>`constfirst`, `tab` and `paren`, each `rejected (session-minor guard: tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR)`<br>`selffloor rejected (session-minor guard: floor SESSION_MINOR is not a floor a test asserts)`<br>`wrapped rejected (session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR)`<br>`commentfloor rejected (session-minor guard: no test asserts a floor for SESSION_MINOR)`<br>last, `27 rejected, 3 accepted` |
 | AC4 | (f) 7ah's guard passes the tree | `similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14)`, then `rc=0` |
 | AC5 | (f) Its controls hold, with two new rejections | `similar-guard-controls: stray rejected (similar-test guard: main.gd _run_map mentions want_minor 0 times, want 1)`<br>`similar-guard-controls: unbounded rejected (similar-test guard: main.gd _run_map has no following top-level line; range unbounded)`<br>`similar-guard-controls: 15 rejected, 3 accepted` |
-| AC6 | Each new guard clause is load-bearing: weakened alone, its control goes red at the named case | the 13 lines of V12, ending `meta: 9 weakenings caught`, then `rc=0` |
+| AC6 | Each new guard clause is load-bearing: weakened alone, its control goes red at the named case | the 14 lines of V28, ending `meta: 10 weakenings caught`, then `rc=0` |
 | AC7 | (d) The base controls fail on a defined minor 99 (the new ones pass it: AC6's `D1_spare99` line) | `1` |
 | AC8 | (e) The split test passes the tree | `script-gate: sw_base ok: sim-warm: 6 passed, 0 failures (…)`, then `6` |
 | AC9 | (e) It kills the minor mutant (`_adopt_warm` stops checking the minor) | `script-gate: sw_minor ok: sim-warm: 3 passed, 3 failures (…)`, then `FAIL a start() asking another minor leaves the warm sim` |
 | AC10 | (e) It kills the override mutant (`_adopt_warm` stops checking the launch override) | `script-gate: sw_ovr ok: sim-warm: 4 passed, 2 failures (…)`, then `FAIL a start() with a launch override leaves the warm sim` |
 | AC11 | The mutations left nothing behind | `diff=0`, then `0` |
 | AC12 | The whole loading-jump target is green, with one more check | the last two lines are `script-gate: loading-jump-test ok: loading-jump: 78 passed, 0 failures (…)` and `rc=0`. The target's `import` prerequisite prints Godot's import log first, including two `Cannot create file 'res://data/starmap/truth/positions. …` errors from a CSV's comment header; they are pre-existing, outside the gate, and not this row's (V23). |
-| AC13 | Portable to dash and gmake; shellcheck silent | `session-minor-guard-controls: 26 rejected, 3 accepted`, `similar-guard-controls: 15 rejected, 3 accepted`, `rc=0` |
+| AC13 | Portable to dash and gmake; shellcheck silent | `session-minor-guard-controls: 27 rejected, 3 accepted`, `similar-guard-controls: 15 rejected, 3 accepted`, `rc=0` |
 | AC14 | The fast tier's hygiene gates still pass | `rc=0`, `check=0` |
 | AC15 | Scope: only the Files paths, and every Makefile hunk inside the two blocks (base lines 123–190) | `Makefile tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/similar_guard_controls.sh `, then `8 0` |
 | AC16 | No evidence file is left in the clone | empty |
@@ -268,6 +269,7 @@ rm -rf "$W"; git status --porcelain --untracked-files=all
 | "No floor asserted" | guard clause | the floor clause deleted (`nofloor`) | same | V11; V12 `C2_nofloorscan` red at `nofloor` |
 | Self-floor refused (r1, glm-5.3) | guard clause | the floor rewritten to `SESSION_MINOR >= SESSION_MINOR` (`selffloor`); compound with `:= 17` | same | V11, V24 (compound rc 2); V12 `C3_selffloor` red at `selffloor` |
 | Prefetch anchored to its statement (r1, kimi-k3) | guard clause | a ternary around the prefetch call (`wrapped`) | same | V11; V26 (the nightly misses it); V12 `C4_prefixfree` red at `wrapped` |
+| Floor scan anchored before any `#` (r2, kimi-k3) | guard clause | the floor commented out (`commentfloor`) | same | V28 (r1 patch passes it, rc 0); V28 `C5_unanchored` red at `commentfloor` |
 | Derived orphan | control | a bridge that defines a minor 99 | controls | V13 (base red at `orphan`); V12 `D1_spare99` (new green) |
 | `a start() asking another minor leaves the warm sim` | test check | `or w.want_minor != want_minor` deleted from `_adopt_warm` | `test_sim_warm` alone (Appendix C) | V6 `split_minor` (FAIL); the old check passes it (`orig_minor` 5/0) |
 | `a start() with a launch override leaves the warm sim` | test check | `not launch_override.is_empty() or` deleted | same | V6 `split_ovr` (FAIL); the old check passes it (`orig_ovr` 5/0) |
@@ -280,7 +282,7 @@ Each mutation runs against its own check only: the controls drive one make targe
 
 | Id | Sub-items | Files | Lines | Order |
 |---|---|---|---|---|
-| M1 | (a) both orders, blanks, parentheses; (b) the prefetch anchored to its statement; (c) the asserted floors, self-floor refused; controls R20–R26 | `Makefile` (session block), `tools/session_minor_guard_controls.sh` | ~50 | 1 |
+| M1 | (a) both orders, blanks, parentheses; (b) the prefetch anchored to its statement; (c) the asserted floors, self-floor refused, commented floor unseen; controls R20–R27 | `Makefile` (session block), `tools/session_minor_guard_controls.sh` | ~50 | 1 |
 | M2 | (d) derived orphan minor, `TAB` | `tools/session_minor_guard_controls.sh` | ~6 | with M1 (same file) |
 | M3 | (e) `test_sim_warm` split | `tests/test_loading_jump.gd` | 13 | independent |
 | M4 | (f) 7al's range on `similar-main-guard`; controls D14, D15 | `Makefile` (similar block), `tools/similar_guard_controls.sh` | ~23 | independent |
@@ -323,7 +325,7 @@ None.
 ## Deliverables
 
 - The Appendix A patch applied and committed with the changelog fragment `changelogs/unreleased/2026-11-17-session-minor-guard-edges.md`.
-- Sprint evidence: AC1–AC16 output in the sprint JSON, including AC6's 13 lines and AC9's and AC10's `FAIL` lines.
+- Sprint evidence: AC1–AC16 output in the sprint JSON, including AC6's 14 lines and AC9's and AC10's `FAIL` lines.
 - A charter follow-up noting the uncovered hole in Deferred items (a test-untaken condition before a `want_minor` write). The controller files it; this row does not fix it.
 - Landing: this doc moves to `design_docs/implemented/r1/`, with a README index row and the charter row 7ao marked done.
 
@@ -360,6 +362,7 @@ Measured at `5b33b62a` in `/Users/voightkampff/dev/sunholo-data/stapledons-godot
 | V25 | (r1, kimi-k3) The nightly backstop on V2's `helper` mutant | `/tmp/iter96r/kimi.sh`: `git clone` of this clone into a `mktemp -d`, `checkout 5b33b62a`, `runtime` symlinked, `make import`; for each case, `perl -e 'alarm shift; exec @ARGV' 900 make -s loading-jump-test` (through `tools/script_gate.sh`, 600 s), then `git checkout -- main.gd ui/loading_jump.gd`. Base first, as the control. `helper` = V2's awk (`\t_downgrade()` after the `_run_map` ask, plus `func _downgrade() -> void: sim.want_minor = SimBridge.EARTH_MINOR` appended) | base: `rc=0 wall=60s :: script-gate: loading-jump-test ok: loading-jump: 77 passed, 0 failures (rc 0, no SCRIPT ERROR, 57 s of 600 s)`, restored, status empty. helper: `git diff --numstat` `4 0 main.gd`; `rc=2 wall=50s :: script-gate: loading-jump-test FAIL; rc 1, want 0; no summary line matching ^loading-jump: [1-9][0-9]* passed, 0 failures$ …`; log `FAIL map: the map's simulation is the prefetched one`, `loading-jump: 76 passed, 1 failures`; restored, status empty. **Caught.** (script_gate's suffix `rc 1 with no summary is a load failure` is its generic wording for a summary that misses the pass ERE; the `76 passed, 1 failures` summary is in the log.) |
 | V26 | (r1, kimi-k3) The nightly backstop on V2's ternary around `warm(…)` | the same script and clone: `tern_x` = V2's `tern2` verbatim (`sed -E 's/= SimBridge\.warm\(SimBridge\.SESSION_MINOR\)/= null if OS.has_feature("x") else SimBridge.warm(SimBridge.SESSION_MINOR)/' ui/loading_jump.gd`); `tern_pc` = the same with `"pc"`, a feature this host has (the control) | tern_x: `1 1 ui/loading_jump.gd`; `rc=0 wall=42s :: script-gate: loading-jump-test ok: loading-jump: 77 passed, 0 failures (rc 0, no SCRIPT ERROR, 38 s of 600 s)`. **Not caught.** tern_pc: `1 1 ui/loading_jump.gd`; `rc=2 wall=44s :: script-gate: loading-jump-test FAIL; rc 1, want 0; …`; log `FAIL guided: the tour runs on the prefetched simulation`, `FAIL map: the map's simulation is the prefetched one`, `loading-jump: 74 passed, 3 failures` (the third FAIL is above script_gate's 40-line tail). Each restored, status empty; leftover sims 0; clone removed; `KIMI rc=0` |
 | V27 | (r1) The uncovered hole: a condition before the map's `want_minor` write | On a copy of the r1 prototype's 7 guard files: `sed -i '' 's/if not capture:sim\.want_minor=SimBridge\.SESSION_MINOR/if not capture and not OS.has_feature("template"):sim.want_minor=SimBridge.SESSION_MINOR/' main.gd` (`cond`), and as the control `s/sim\.want_minor=SimBridge\.SESSION_MINOR/sim.want_minor=SimBridge.EARTH_MINOR/` (`ctl`); `make -s -C <proto> session-minor-guard SESSION_GUARD_ROOT=<copy>` | `cond edit: 1`; `ctl rc=2 :: session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR`; `cond rc=0 :: session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; …`. Static only: no Godot run of `cond`. |
+| V28 | (r2, controller) kimi-k3's round-2 objection and the reissued patch | On a `git archive 5b33b62a Makefile mk tools bridge/sim_bridge.gd main.gd demos/ship_geometry_demo.gd ui/loading_jump.gd tests` root: (1) the r1 patch (`d3dce36f…`) applied, the `:133` floor rewritten to ` # and SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR` (`grep -c` = 1), `make -s session-minor-guard`; (2) kimi's fix applied verbatim (the anchored `fl=` line, R27 `commentfloor`, the count 26 → 27), then `make -s session-minor-guard`, the AC3 grep, `perl -e 'alarm shift; exec @ARGV' 600 sh 7ao_meta.sh .` (Appendix B with C5 and the narrowed C1), the AC4/AC5/AC13/AC15 commands, `git apply --check`/`--numstat`/`shasum -a 256` of the reissued patch on this clone | (1) `session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; … 4 test comparisons name it`, rc 0: the commented floor passed the r1 guard (kimi reproduced). (2) guard ok line unchanged, rc 0; AC3's 10 lines ending `commentfloor rejected (session-minor guard: no test asserts a floor for SESSION_MINOR)` and `27 rejected, 3 accepted`; meta: `base_s` `27 rejected, 3 accepted`, `base_q` `15 rejected, 3 accepted`, A1–A3, C1 `downgrade`, C2 `nofloor`, C3 `selffloor`, C4 `wrapped`, C5 `commentfloor`, F1 `stray`, F2 `unbounded` each `rc 2 :: …: make rc 0, want 2`, `D1_spare99` rc 0, `meta: 10 weakenings caught`, rc 0, 38 s; AC4/AC5 as stated; AC13 `27 rejected, 3 accepted`, `15 rejected, 3 accepted`, rc 0; AC15 `8 0`; patch `apply-ok`, numstat `19 3 Makefile` / `9 4 tests/test_loading_jump.gd` / `44 4 tools/session_minor_guard_controls.sh` / `19 1 tools/similar_guard_controls.sh`, sha256 `3eca953a…`. C1's DEL is now the downgrade echo alone (`is below $$x ($$fv), a floor a test asserts`), so it deletes one Makefile line, not two (kimi's second point). |
 
 ## Quorum log
 
@@ -373,7 +376,17 @@ Measured at `5b33b62a` in `/Users/voightkampff/dev/sunholo-data/stapledons-godot
 
 Every AC whose expected output changed (AC1, AC3, AC6, AC13 and AC15) was re-run against the reissued patch in a throwaway clone (V23). AC5's expected output did not change; it was re-run there too. The patch grew from 82 to 98 changed lines.
 
-## Appendix A. The patch (`7ao.patch`, 201 lines, sha256 `d3dce36f…`, against `5b33b62a`; revision 1)
+**Round 2** (artifact `m4-7ao-session-minor-guard-edges-2026-11-17T11-53-18Z.json`; on revision 1, patch sha256 `d3dce36f…`; same seats): **BLOCKED, 2 of 3.** Neither reject disputes the design direction, and each carries a concrete `proposed_fix`, so the controller made revision 2 under the narrow-refinement carve-out (Gate 2), applying the reviewers' text verbatim. No round 3.
+
+| Seat | Verdict | Finding | Disposition in revision 2 |
+|---|---|---|---|
+| gemini-4-argon | PASS | Non-blocking: the `want_minor` sites keep the V27 hole; the forward/reversed patterns do not pair parentheses. | The V27 follow-up row is filed in the charter at landing (Deliverables). Unbalanced parentheses do not compile in GDScript; no change. |
+| oc-kimi-k3 | REJECT | The floor scan is unanchored: a floor behind a `#` still counts, so `no test asserts a floor` never fires for it. Secondary: C1's DEL string also deleted the self-floor line. | Reproduced by the controller on the r1 patch (V28 (1): ok line, rc 0). Applied verbatim: the `fl=` line with the `^[^#]*` first stage, R27 `commentfloor` with the given `mutate` and reason, the count 26 → 27, and meta-drill C5 (the anchor removed, red at `commentfloor`). C1's DEL tightened to the downgrade echo alone (kimi's first option). Note: kimi wrote "DEL the anchored grep"; deleting the whole `fl=` line breaks the pristine run, so C5 removes only the `^[^#]*` anchor (a `sub`), which is the weakening the control exists to catch. |
+| oc-glm-5-3 (reserve, for codex:gpt-6.1-sol, absent: quota) | REJECT | The Priority paragraph undercounts the escapes (twelve against the base, not ten) and attributes the self-floor to the wrong tier. | Applied verbatim: the Priority sentences replaced with glm's text. No other section changed, as glm said. |
+
+Revision 2 re-measured AC1, AC3, AC4, AC5, AC6, AC13 and AC15 on the reissued patch (V28). The patch grew from 98 to 103 changed lines (+91 −12).
+
+## Appendix A. The patch (`7ao.patch`, 206 lines, sha256 `3eca953a…`, against `5b33b62a`; revision 2)
 
 Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$W/7ao.patch"`.
 
@@ -428,7 +441,7 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
  	  test "$$k" -ge 1 || { echo "$$p no test compares journey_sim's minor with a SimBridge constant" >&2; exit 1; }; \
  	  bad=$$(printf '%s\n' "$$hits" | grep -v 'SimBridge\.SESSION_MINOR$$' | sed -n 1p); \
  	  test -z "$$bad" || { echo "$$p $${bad%%:*} compares journey_sim's minor with SimBridge.$${bad##*.}, not SESSION_MINOR" >&2; exit 1; }; \
-+	  fl=$$(cd "$$r" && grep -ohE "SimBridge\.SESSION_MINOR$$w>=$$w$$c" tests/*.gd | sed -E 's/.*\.//' | sort -u); \
++	  fl=$$(cd "$$r" && grep -hE "^[^#]*SimBridge\.SESSION_MINOR$$w>=$$w$$c" tests/*.gd | grep -ohE "SimBridge\.SESSION_MINOR$$w>=$$w$$c" | sed -E 's/.*\.//' | sort -u); \
 +	  test -n "$$fl" || { echo "$$p no test asserts a floor for SESSION_MINOR" >&2; exit 1; }; \
 +	  for x in $$fl; do \
 +	    case "$$x" in SESSION_MINOR) echo "$$p floor SESSION_MINOR is not a floor a test asserts" >&2; exit 1;; esac; \
@@ -439,6 +452,29 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
  	  echo "$$p ok, SESSION_MINOR ($$v) = $$names; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; $$k test comparisons name it"
  session-minor-guard-controls: ## 7al: session-minor-guard rejects each mutation of a session minor and accepts a one-line bump
  	@MAKE='$(MAKE)' sh tools/session_minor_guard_controls.sh .
+--- a/tests/test_loading_jump.gd
++++ b/tests/test_loading_jump.gd
+@@ -156,11 +156,16 @@
+ 		return
+ 	var pid := w.child_pid
+ 	SimBridge.offer_warm(w)
+-	var other := SimBridge.new() # a different protocol minor never takes it
++	var other := SimBridge.new() # 7ao: another protocol minor alone, no override, never takes it
+ 	other.want_minor = SimBridge.PROTO_MINOR
+-	other.launch_override = {"bin": "/bin/false", "args": []}
+-	other.start()
+-	check(SimBridge.has_warm(), "a start() with a launch override or another minor leaves the warm sim")
++	check(not other._adopt_warm() and SimBridge.has_warm(), "a start() asking another minor leaves the warm sim")
++	other.stop() # a no-op unless it took the child
++	var ovr := SimBridge.new() # the same minor with a launch override never takes it
++	ovr.want_minor = SimBridge.DEPARTURE_MINOR
++	ovr.launch_override = {"bin": "/bin/false", "args": []}
++	ovr.start()
++	check(SimBridge.has_warm(), "a start() with a launch override leaves the warm sim")
++	ovr.stop()
+ 	var b := SimBridge.new()
+ 	b.want_minor = SimBridge.DEPARTURE_MINOR
+ 	check(b.start() and b.child_pid == pid and not SimBridge.has_warm(), "the next default start() takes the warm sim (same child)")
 --- a/tools/session_minor_guard_controls.sh
 +++ b/tools/session_minor_guard_controls.sh
 @@ -73,6 +73,9 @@
@@ -462,7 +498,7 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
  
  # R15: a feature test names today's constant again.
  copy testname
-@@ -182,10 +185,42 @@
+@@ -182,10 +185,47 @@
  { test -L "$tmp/brokentest/tests/broken.gd" && test ! -e "$tmp/brokentest/tests/broken.gd"; } || { echo "session-minor-guard-controls: brokentest: no dangling symlink" >&2; exit 3; }
  reject brokentest "$P test scan error (grep rc 2)"
  
@@ -499,6 +535,11 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
 +mutate wrapped ui/loading_jump.gd "${JUMP}s/= SimBridge\\.warm\\(SimBridge\\.SESSION_MINOR\\)/= null if OS.has_feature(\"x\") else SimBridge.warm(SimBridge.SESSION_MINOR)/"
 +reject wrapped "$P ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR"
 +
++# R27 (7ao r2, kimi-k3): the floor commented out behind a `#` (the natural way to disable that assert).
++copy commentfloor
++mutate commentfloor tests/test_comms_station.gd 's/ and SimBridge\.SESSION_MINOR >= SimBridge\.EARTH_LOG_MINOR/ # and SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR/'
++reject commentfloor "$P no test asserts a floor for SESSION_MINOR"
++
  # B: a protocol bump the game adopts: a new constant one above the highest minor, and SESSION_MINOR moved to
  # it. No session file and no test is edited.
  copy bump
@@ -506,12 +547,12 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
  test "$next" -gt 18 || { echo "session-minor-guard-controls: bump: next minor $next" >&2; exit 1; }
  mutate bump bridge/sim_bridge.gd "s/^const SESSION_MINOR := [0-9]+\$/const SESSION_MINOR := $next/"
  append bump bridge/sim_bridge.gd "const FUTURE_MINOR := $next"
-@@ -199,6 +234,6 @@
+@@ -199,6 +239,6 @@
  # G: the comparisons' count is the real one (4 today: test_bh_hud x2, test_comms_station, test_ship_ui).
  test "$(grep -oE 'journey_sim\.(want_minor|hello_reply\.proto\.minor) *[=!<>]=? *SimBridge\.SESSION_MINOR' "$tmp/pristine/tests/"*.gd | wc -l | tr -d ' ')" -ge 4 || { echo "session-minor-guard-controls: fewer than 4 comparisons in the pristine copy" >&2; exit 1; }
  
 -test "$rejected" -eq 19 || { echo "session-minor-guard-controls: $rejected rejected, want 19" >&2; exit 1; }
-+test "$rejected" -eq 26 || { echo "session-minor-guard-controls: $rejected rejected, want 26" >&2; exit 1; }
++test "$rejected" -eq 27 || { echo "session-minor-guard-controls: $rejected rejected, want 27" >&2; exit 1; }
  test "$accepted" -eq 3 || { echo "session-minor-guard-controls: $accepted accepted, want 3" >&2; exit 1; }
  echo "session-minor-guard-controls: $rejected rejected, $accepted accepted"
 --- a/tools/similar_guard_controls.sh
@@ -556,32 +597,9 @@ Extract it with the preamble's `fence 7ao.patch` and apply it with `git apply "$
 +test "$rejected" -eq 15 || { echo "similar-guard-controls: $rejected rejected, want 15" >&2; exit 1; }
  test "$accepted" -eq 3 || { echo "similar-guard-controls: $accepted accepted, want 3" >&2; exit 1; }
  echo "similar-guard-controls: $rejected rejected, $accepted accepted"
---- a/tests/test_loading_jump.gd
-+++ b/tests/test_loading_jump.gd
-@@ -156,11 +156,16 @@
- 		return
- 	var pid := w.child_pid
- 	SimBridge.offer_warm(w)
--	var other := SimBridge.new() # a different protocol minor never takes it
-+	var other := SimBridge.new() # 7ao: another protocol minor alone, no override, never takes it
- 	other.want_minor = SimBridge.PROTO_MINOR
--	other.launch_override = {"bin": "/bin/false", "args": []}
--	other.start()
--	check(SimBridge.has_warm(), "a start() with a launch override or another minor leaves the warm sim")
-+	check(not other._adopt_warm() and SimBridge.has_warm(), "a start() asking another minor leaves the warm sim")
-+	other.stop() # a no-op unless it took the child
-+	var ovr := SimBridge.new() # the same minor with a launch override never takes it
-+	ovr.want_minor = SimBridge.DEPARTURE_MINOR
-+	ovr.launch_override = {"bin": "/bin/false", "args": []}
-+	ovr.start()
-+	check(SimBridge.has_warm(), "a start() with a launch override leaves the warm sim")
-+	ovr.stop()
- 	var b := SimBridge.new()
- 	b.want_minor = SimBridge.DEPARTURE_MINOR
- 	check(b.start() and b.child_pid == pid and not SimBridge.has_warm(), "the next default start() takes the warm sim (same child)")
 ```
 
-## Appendix B. Meta-drills (`7ao_meta.sh`, sprint evidence, not committed; the exact file run in V12; revision 1 adds C3 and C4)
+## Appendix B. Meta-drills (`7ao_meta.sh`, sprint evidence, not committed; the exact file run in V12 and V28; revision 1 adds C3 and C4, revision 2 adds C5 and narrows C1's DEL to the downgrade echo)
 
 Run as AC6, from the clone root after Appendix A is applied (`ROOT` is `.`). Each drill copies the guard files, `mk/` and both controls scripts into a `mktemp -d` root, weakens ONE new guard clause literally (or appends one line to the bridge copy), and runs that clause's controls target there. The tree is never written.
 
@@ -625,10 +643,11 @@ drill base_q $Q base ''
 OLD=' -e "$$c$$w\)?$$w[=!<>]=?$$w([A-Za-z0-9_]+\.)*$$m"' NEW='' drill A1_noreverse $S sub 'constfirst: make rc 0, want 2'
 OLD='"$$m$$w[=!<>]=?$$w\(?$$w$$c"' NEW='"$$m *[=!<>]=? *\(? *$$c"' drill A2_spaceonly $S sub 'tab: make rc 0, want 2'
 OLD='[=!<>]=?$$w\(?$$w$$c"' NEW='[=!<>]=?$$w$$c"' drill A3_noparen $S sub 'paren: make rc 0, want 2'
-DEL='a floor a test asserts' drill C1_nofloorcheck $S del 'downgrade: make rc 0, want 2'
+DEL='is below $$x ($$fv), a floor a test asserts' drill C1_nofloorcheck $S del 'downgrade: make rc 0, want 2'
 DEL='no test asserts a floor' drill C2_nofloorscan $S del 'nofloor: make rc 0, want 2'
 DEL='floor SESSION_MINOR is not a floor a test asserts' drill C3_selffloor $S del 'selffloor: make rc 0, want 2'
 OLD='e='"'"'^[[:space:]]*holder\["value"\][[:space:]]*=[[:space:]]*SimBridge' NEW='e='"'"'^[^#]*SimBridge' drill C4_prefixfree $S sub 'wrapped: make rc 0, want 2'
+OLD='grep -hE "^[^#]*SimBridge' NEW='grep -ohE "SimBridge' drill C5_unanchored $S sub 'commentfloor: make rc 0, want 2'
 OLD='/^func _run_map(/,/^[^[:space:]#]/p' NEW='/^func _run_map(/,/^func /p' drill F1_funcend $Q sub 'stray: make rc 0, want 2'
 DEL='main.gd _run_map has no following top-level line' drill F2_nobound $Q del 'unbounded: make rc 0, want 2'
 BRIDGE_APPEND='const SPARE_MINOR := 99' drill D1_spare99 $S bridge ''
