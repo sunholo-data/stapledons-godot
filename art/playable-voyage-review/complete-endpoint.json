@@ -1,0 +1,51 @@
+{
+	"commits": 2,
+	"errors": [],
+	"final_journey": "arrived",
+	"final_phase": "at_rest",
+	"final_target": "Sol",
+	"final_tick": 2423,
+	"new_game": 1,
+	"status": "pass",
+	"witness": {
+		"arrivals": [
+			"CNS5:3627",
+			"Sol"
+		],
+		"phases": {
+			"CNS5:3627": [
+				"boosting",
+				"cruising",
+				"braking"
+			],
+			"Sol": [
+				"boosting",
+				"cruising",
+				"braking"
+			]
+		},
+		"reads": [
+			{
+				"journey_state": "arrived",
+				"location": "CNS5:3627",
+				"phase": "at_rest",
+				"tick": 1206,
+				"what": "news"
+			},
+			{
+				"journey_state": "arrived",
+				"location": "Sol",
+				"phase": "at_rest",
+				"tick": 2423,
+				"what": "news"
+			},
+			{
+				"journey_state": "arrived",
+				"location": "Sol",
+				"phase": "at_rest",
+				"tick": 2423,
+				"what": "log"
+			}
+		]
+	}
+}

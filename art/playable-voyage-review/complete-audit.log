@@ -1,0 +1,14 @@
+ERROR: Failed to open 'user://logs/godot2026-11-17T08.38.57.log'.
+   at: copy (core/io/dir_access.cpp:429)
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+ai-mode: none news_samples=6 settled=6 fallback=false result=PASS
+display-audit monitors: clocks=2451 course=3072 crew=8170 signal=2451
+display-audit known: unbound 714
+display-audit known: transit-ISM 43
+ac4: MET (5 accepted by D-77/D-78)
+display-audit: samples=817 checks=259146 mismatches=0 missing=0 new=0 known=757 stale=0 failures=0

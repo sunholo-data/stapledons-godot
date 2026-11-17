@@ -10,7 +10,7 @@
 
 TDD witnesses: the first contract test failed because the observer was absent; after implementation it passes14/0. Before endpoint integration, the old real-scene driver accepted the route missing home news (143079/0,111s). The new driver rejects that omission for `completion missing home news`, and the other omissions for their declared reasons. The historical synthetic timing divisor and frozen scene input/golden remain unchanged.
 
-**Status:** Proposed, unapproved, 2026-11-17. Planning artifacts only; no executor handoff, build, publication or runtime change is authorized by their creation.
+**Status:** Executing approved PV1–PV3, Mark attended 2026-11-17: “approved lets go”. PV4 human review remains pending. Headless implementation/checks and scoped commits are authorized; no GPU work, build or publication.
 **Design:** [playable-voyage-acceptance.md](playable-voyage-acceptance.md).
 **Progress:** `.ailang/state/sprints/sprint_PLAYABLE-VOYAGE-ACCEPTANCE.json`.
 **Scope:** qualify one existing Sol → alpha Cen A → Sol trip in the reconciled combined painted ship, including home news and log. No new gameplay or campaign ending.
@@ -35,7 +35,7 @@ Recent git/CHANGELOG work includes small guard fixes, merges and ledger changes.
 - Ship-finish owns shared readiness, complete painted integration, current-main combination, packaging and native art/performance acceptance. This sprint consumes its exact candidate/evidence.
 - Current no-local-GPU restriction applies. This plan adds no GPU, build or publishing authorization.
 
-Open implementation gate **OQ1** is [design §Open questions for Mark, question 1](playable-voyage-acceptance.md#open-questions-for-mark). Approval must identify this plan and combined baseline. OQ2 is the newly proposed human owner review, not an old R1 requirement.
+Implementation gate **OQ1 is resolved** by Mark's attended approval of PV1–PV3; see [design §Open questions for Mark, question 1](playable-voyage-acceptance.md#open-questions-for-mark). Integration baseline `ec415f33` plus shared SF0 supplies the combined source. OQ2 is the newly proposed human owner review, not an old R1 requirement.
 
 Before approval: **STOP: report `BLOCKED: OQ1 sprint approval` and end the run; do not execute.** After approval, if the shared candidate/readiness dependency is unavailable, **STOP: commit only owned task work if any, report `BLOCKED: combined ship readiness dependency`, and end the run.** If OQ2 is unanswered at PV4, **STOP: commit only owned completed work, report `BLOCKED: OQ2 human product review decision`, and end the run.** These are terminal gates, not open-ended polling. This planning task does not itself commit anything.
 
@@ -129,4 +129,4 @@ These are proposed execution commands, **not a planning-run transcript**. Existi
 
 Success: implemented completion fixture; same-pin checks and meaningful negative controls pass; frozen replay unchanged; evidence levels explicit; human outcome recorded accurately if adopted. All four `passes` fields begin null; approval begins false. PV4 may be marked technically complete with `not_requested` only after an explicit OQ2 decline, never from silence.
 
-This plan remains in `planned/`. Do not send `plan_ready`, launch an executor, merge a coordinator planning PR, tag, build or publish as a side effect. Parent-owned tracker links design, sprint and JSON. After Mark approves and dependencies are satisfied, the normal project execute/evaluate/landing cycle applies.
+This plan remains in `planned/` through independent evaluation. Mark has approved execution of PV1–PV3; do not send an external handoff, tag, build or publish as a side effect. Parent-owned tracker links design, sprint and JSON. The normal project execute/evaluate/landing cycle applies, with PV4 left pending.
