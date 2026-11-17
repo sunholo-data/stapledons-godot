@@ -74,10 +74,10 @@
         "Existing default remote-summary behavior is preserved for existing callers with a positive uploader control.",
         "Report contains actual build/finish/captain pins, viewport/hardware, raw timings and validity fields; insufficient/fake samples fail and unavailable GPU timing is not zero-cost evidence."
       ],
-      "passes": null,
-      "started": null,
-      "completed": null,
-      "notes": "Extend existing ShipDemoBenchmark; do not create another benchmark or change canonical performance gates."
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "RED missing save boundary; GREEN profile15/0 and legacy benchmark3/0. Real scratch writes and uploader spy prove local-only zero sends and preserved default upload. Default user path is redirected to scratch by the writer seam; no player data or network touched. Sampler/hardware metadata reused."
     },
     {
       "id": "SF1b",

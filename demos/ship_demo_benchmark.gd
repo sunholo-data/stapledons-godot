@@ -2,7 +2,8 @@ extends RefCounted
 ## In-app reproducible review benchmark. Studio results are never laptop results.
 const OUTPUT := "user://ship_demo_benchmark.json"
 var running := false
-var upload:=preload("res://demos/benchmark_upload.gd").new()
+var upload: Object = preload("res://demos/benchmark_upload.gd").new()
+var report_writer := Callable() # Optional sink for harnesses; default is real local FileAccess I/O.
 ## The exported build's own tag (make export-macos writes git describe into the bundle);
 ## a run from the editor or a checkout says so instead of claiming a release.
 const BUILD_FILE:="res://runtime/build_version.txt"
@@ -22,8 +23,63 @@ static func summarize_counts(values:Array)->Dictionary:
 	var out:Dictionary={}
 	for key:String in stats:out[key.trim_suffix("_ms")]=stats[key]
 	return out
-func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictionary:
+## Explicit boundary keeps local review offline, including when OUTPUT is chosen.
+func save_report(report: Dictionary, path: String, local_only := false) -> bool:
+	var saved: bool = report_writer.call(report, path) if report_writer.is_valid() else write_report(report, path)
+	if not saved: return false
+	if not local_only and path == OUTPUT: upload.start(report)
+	return true
+
+static func write_report(report: Dictionary, path: String) -> bool:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null: return false
+	f.store_string(JSON.stringify(report, "  ")); f.close()
+	return true
+
+static func sample_errors(view: Dictionary, minimum := 300) -> Array[String]:
+	var errors: Array[String] = []
+	var times: Variant = view.get("frame_times_ms")
+	if not times is Array or times.size() < minimum: return ["insufficient raw frame samples"]
+	for value: Variant in times:
+		if not (value is float or value is int) or not is_finite(float(value)) or float(value) <= 0.:
+			return ["nonfinite or nonpositive frame sample"]
+	var actual := summarize(times)
+	var claimed: Variant = view.get("frame_times")
+	if not claimed is Dictionary: return ["missing frame summary"]
+	for key in actual:
+		if not claimed.get(key) is float and not claimed.get(key) is int:
+			errors.append("missing numeric summary: " + key)
+		elif not is_finite(float(claimed[key])) or not is_equal_approx(float(claimed[key]), float(actual[key])):
+			errors.append("raw samples disagree with summary: " + key)
+	return errors
+
+## Reused by normal benchmark and the production-scene review route.
+func measure_view(demo: Node, name: String, samples := 300, warmup := 120) -> Dictionary:
+	demo.caption = "BENCHMARK %s · warm-up" % name
+	for i in warmup: await demo.get_tree().process_frame
+	var times := []; var draws := []; var tris := []
+	var previous := Time.get_ticks_usec()
+	demo.caption = "BENCHMARK %s · measuring %d frames" % [name, samples]
+	for i in samples:
+		await demo.get_tree().process_frame
+		var now := Time.get_ticks_usec(); times.append((now-previous)/1000.); previous = now
+		draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		tris.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var timing := summarize(times)
+	return {"view":name,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"view_direction":[-demo.camera.basis.z.x,-demo.camera.basis.z.y,-demo.camera.basis.z.z],"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize_counts(draws),"rendered_primitives":summarize_counts(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"gpu_ms":null,"gpu_timing_status":"unavailable; wall-frame time is not GPU time","p95_within_60fps_budget":timing.get("p95_ms",INF)<=1000./60.,"p99_within_60fps_budget":timing.get("p99_ms",INF)<=1000./60.}
+
+static func hardware() -> Dictionary:
+	var model_output := []
+	var status := OS.execute("/usr/sbin/sysctl",PackedStringArray(["-n","hw.model"]),model_output) if OS.get_name()=="macOS" else -1
+	return {"model":str(model_output[0]).strip_edges() if status==0 and not model_output.is_empty() else "unavailable","os":OS.get_name(),"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"renderer":RenderingServer.get_current_rendering_method(),"driver":RenderingServer.get_current_rendering_driver_name(),"vsync":DisplayServer.window_get_vsync_mode(),"memory":OS.get_memory_info()}
+
+func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT, local_only:=false) -> Dictionary:
 	if running or demo.live_journey:return {}
+	var identity := {}
+	if local_only:
+		var ready: Dictionary = await preload("res://demos/ship_review_readiness.gd").wait(demo)
+		if not ready.ok: push_error(str(ready.errors)); return {}
+		identity = ready.identity
 	var previous_sky_only:bool=demo.sky_only
 	if previous_sky_only:demo.toggle_sky_only()
 	running=true;demo.auto=false;
@@ -31,10 +87,8 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 	for button in buttons:button.disabled=true
 	demo.get_window().size=Vector2i(1920,1080)
 	demo._resize()
-	var model_output:=[]
-	var model_status:=OS.execute("/usr/sbin/sysctl",PackedStringArray(["-n","hw.model"]),model_output) if OS.get_name()=="macOS" else -1
-	var hardware:={"model":str(model_output[0]).strip_edges() if model_status==0 and not model_output.is_empty() else "unavailable","os":OS.get_name(),"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"vendor":RenderingServer.get_video_adapter_vendor(),"renderer":RenderingServer.get_current_rendering_method(),"memory":OS.get_memory_info()}
-	var report:={"version":2,"build":build_label(),"measured_hardware":hardware,"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[1920,1080],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":demo.gr_status() if demo.has_method("gr_status") else "off"}
+	var report:={"version":2,"build":build_label(),"measured_hardware":hardware(),"user_target":"MacBook Air M2 (2022),24GB","target_measurement_pending":true,"target_confirmation":"Confirm report came from the specified MacBook Air; GPU substring alone cannot identify the laptop","resolution":[demo.get_window().size.x,demo.get_window().size.y],"warmup_frames":warmup,"sample_frames":samples,"timer":"wall time between process frames, includes presentation/vsync; not GPU-only time","views":[],"GR":demo.gr_status() if demo.has_method("gr_status") else "off"}
+	if local_only: report["production_identity"] = identity; report["local_only"] = true
 	report["sky_review"]={"state":demo.sky_state,"beta":demo.sky.beta,"gamma":demo.sky_world.ship.gamma,"heading":Array(demo.camera.heading),"snapshot_tick":demo.sky_world.tick,"sky_only":false}
 	report["commons_enabled"]=not demo.commons.is_empty()
 	report["sky_exposure_trial"]={"stops":demo.brightness_stops,"label":demo.brightness_label(),"bias_ev":demo.sky.exposure.bias}
@@ -61,26 +115,14 @@ func run(demo: Node, samples:=300, warmup:=120, output_path:=OUTPUT) -> Dictiona
 			demo.camera_mode="player";demo.camera.reference=false
 			demo.camera.follow(demo.avatar_pos,0.,-PI*.5,0.);demo._sync_observer() # D-92: the bow
 		else:demo.set_preset(name)
-		demo.caption="BENCHMARK %s · warm-up" % name
-		for i in warmup:await demo.get_tree().process_frame
-		var times:=[];var previous:=Time.get_ticks_usec()
-		var draws:=[];var tris:=[]
-		demo.caption="BENCHMARK %s · measuring %d frames" % [name,samples]
-		for i in samples:
-			await demo.get_tree().process_frame
-			var now:=Time.get_ticks_usec();times.append((now-previous)/1000.);previous=now
-			draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME));tris.append(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
-		var timing:=summarize(times)
-		report.views.append({"view":name,"eye_gltf_m":[demo.camera.position.x,demo.camera.position.y,demo.camera.position.z],"view_direction":[-demo.camera.basis.z.x,-demo.camera.basis.z.y,-demo.camera.basis.z.z],"frame_times":timing,"frame_times_ms":times,"draw_calls":summarize_counts(draws),"rendered_primitives":summarize_counts(tris),"video_memory_bytes":Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED),"texture_memory_bytes":Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED),"p95_within_60fps_budget":timing.p95_ms<=1000./60.})
-	var f:=FileAccess.open(output_path,FileAccess.WRITE)
-	if f!=null:f.store_string(JSON.stringify(report,"  "));f.close()
+		report.views.append(await measure_view(demo, name, samples, warmup))
+	var saved := save_report(report, output_path, local_only)
 	demo.set_preset("reset");demo.auto=true
-	demo.caption="Benchmark saved locally: "+output_path.get_file() if f!=null else "Benchmark report could not be saved."
-	print("ship-demo-benchmark-report: ",ProjectSettings.globalize_path(output_path) if f!=null else "WRITE FAILED")
+	demo.caption="Benchmark saved locally: "+output_path.get_file() if saved else "Benchmark report could not be saved."
+	print("ship-demo-benchmark-report: ",ProjectSettings.globalize_path(output_path) if saved else "WRITE FAILED")
 	for button in buttons:button.disabled=false
 	running=false
-	if f!=null and output_path==OUTPUT:
-		upload.start(report)
+	if saved and output_path==OUTPUT and not local_only:
 		demo.caption+=" · "+upload.status
 	if previous_sky_only:demo.toggle_sky_only()
 	return report
