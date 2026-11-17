@@ -53,6 +53,8 @@ include mk/lab.mk
 include mk/npc-painted.mk
 include mk/worlds.mk
 include mk/reach.mk
+include mk/ship-finish.mk
+include mk/playable-voyage.mk
 
 import:            ## register class_name scripts (needed once after clone)
 	$(GODOT) --headless --path . --import
