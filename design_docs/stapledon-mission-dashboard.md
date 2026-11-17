@@ -10,7 +10,7 @@ Owed: the L4 M1b baseline (three comparable serial gmake runs plus one 3.81 run,
 Watch: no cross-vendor judge this fire (D-166 default C, FLAGGED). Executor stopped correctly on a defective AC (AC14's whole-tree `git diff --check` saw the design doc's embedded patch); controller corrected the AC (design V29).
 Next: L11 once attended #435 merges (RT2b); 7m AC1 and the M1b baseline on a quiet rig; then guard rows 7ap, 7aq; the iteration-96 backlog line (V27 condition-before-write hole, judge survivors S12/S1).
 Critical path: 7m AC1 (clause 4) routable only on a quiet rig; at pick: 1-min load 20.2, GPU 98 %; at 12:20Z load 7.5.
-Human gates: D-166 OPEN (may a loop row merge on a same-vendor judge when the cross-vendor judge has no verdict? default C applied).
+Human gates: D-166 OPEN (same-vendor judge when the cross-vendor one has no verdict; default C applied). D-168 OPEN, new: the routable queue is guard hygiene only (harness share 12 of 19); A keep going, B idle, C finish 7ap and 7aq then idle (recommended, default).
 Action for Mark (not a ledger decision): row 7as (telescope's theme lint); the codex lanes read "quota UNREADABLE" and the quorum's OpenAI seat was absent (quota) twice.
 Routing this fire: controller Opus 5.5; designer Opus 5.5 (claude CLI, r0 + r1); planner Kimi K3 (pi); executor Haiku 5.5 (claude CLI); judge Sonnet 5.5 (Agent tool).
 Quorum: r1 and r2 BLOCKED 2/3 (kimi, glm reject; gemini pass; sol absent quota); designer revision 1, controller revision 2 under the narrow-refinement carve-out.
