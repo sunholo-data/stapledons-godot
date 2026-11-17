@@ -8,6 +8,7 @@ var report_writer := Callable() # Optional sink for harnesses; default is real l
 ## a run from the editor or a checkout says so instead of claiming a release.
 const BUILD_FILE:="res://runtime/build_version.txt"
 static func build_label()->String:
+	if OS.has_feature("editor"):return "unexported (source checkout)"
 	var f:=FileAccess.open(BUILD_FILE,FileAccess.READ)
 	if f==null:return "unexported (source checkout)"
 	return f.get_as_text().strip_edges()

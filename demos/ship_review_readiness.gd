@@ -34,15 +34,18 @@ static func inspect(demo: Node) -> Dictionary:
 		if not FileAccess.file_exists(path): return _failure("missing manifest: " + path)
 		hashes[path] = FileAccess.get_sha256(path)
 	var packed := not OS.has_feature("editor")
-	var build := FileAccess.get_file_as_string("res://runtime/build_version.txt").strip_edges() if FileAccess.file_exists("res://runtime/build_version.txt") else "unexported (source checkout)"
-	if packed and build.begins_with("unexported"): return _failure("packed build identity missing")
-	return {"ok":true, "errors":[], "identity":{"build":build,"packed":packed,"counts":counts,"manifest_hashes":hashes,"captain_stage":demo.avatar.stage,"residents":"static painted poses; no crowd simulation"}}
+	var stamp := FileAccess.get_file_as_string("res://runtime/build_version.txt").strip_edges() if FileAccess.file_exists("res://runtime/build_version.txt") else ""
+	var build := stamp if packed else "unexported (source checkout)"
+	if packed and (build.is_empty() or build.begins_with("unexported")): return _failure("packed build identity missing")
+	return {"ok":true, "errors":[], "identity":{"build":build,"runtime_stamp":stamp,"packed":packed,"counts":counts,"manifest_hashes":hashes,"captain_stage":demo.avatar.stage,"residents":"static painted poses; no crowd simulation"}}
 
 static func matches(actual: Dictionary, expected: Dictionary) -> bool:
 	for key in expected:
 		if not actual.has(key): return false
 		if expected[key] is Dictionary:
 			if not actual[key] is Dictionary or not matches(actual[key], expected[key]): return false
+		elif (expected[key] is float or expected[key] is int) and (actual[key] is float or actual[key] is int):
+			if float(actual[key]) != float(expected[key]): return false
 		elif actual[key] != expected[key]: return false
 	return true
 

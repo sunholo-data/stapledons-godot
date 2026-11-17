@@ -1,6 +1,6 @@
 # Sprint PLAYABLE-SHIP-FINISH: production-scene evidence before repair
 
-**Status:** Proposed / awaiting Mark's approval, 2026-11-17. Planning artifacts only. No executor handoff, implementation, build, GPU work, publication or commit in this session.
+**Status:** SF0/SF1a/SF1b approved by Mark in the attended session, 2026-11-17. SF0/SF1a headless gates pass; SF1b implementation and static/report controls pass, with the real-transit fixture queued for serialized integration qualification. SF2 and native/laptop acceptance remain open. No GPU, build or publication performed.
 **Design:** [playable-ship-finish.md](playable-ship-finish.md). **Progress:** `.ailang/state/sprints/sprint_PLAYABLE-SHIP-FINISH.json`.
 **Goal:** make one combined painted-ship review prove the exact scene, captain and hardware it measured, using the existing native benchmark and existing finish integration.
 **Duration:** provisional 2–3 working days (JSON midpoint 2.5), ~390 implementation/test LOC. Human review, archive publication and laptop availability are excluded. This is an effort allowance with ~25% uncertainty, not measured velocity.
@@ -100,7 +100,7 @@ make ship-finish-review-report REPORT="$REVIEW_OUT/report.json"
 
 ## Human gates, dependencies and cut line
 
-**Before execution:** this sprint is awaiting approval. STOP: preserve the three planning artifacts, report `BLOCKED: sprint approval`, and end the planning run. No executor message is sent.
+**Approval recorded:** Mark approved SF0/SF1a/SF1b in the attended session on 2026-11-17. These implementation slices proceed without another milestone approval. SF2's independent evaluation and native acceptance are not claimed complete.
 
 The native laptop session is design OQ1; actual appearance verdicts are OQ2 and original S3/S5/CA review gates; outstanding external publication is OQ3. They do not block independently useful headless harness work **after** sprint approval. At their boundary, STOP: commit only approved current task work under project policy, report `BLOCKED: <specific pending native review or delivery action>`, and end the executor run. Do not mark those acceptance rows complete or retry an external action rejected by automatic approval review without resolved authorization.
 
@@ -113,3 +113,12 @@ Settled rulings are retained, not reopened: one combined app (shared D-152), no 
 The sprint succeeds when the actual production scene is identified before profiling, local review cannot upload, validators reject incomplete/stale evidence, focused regressions and independent evaluation pass, and Mark receives a single concrete native review package. Laptop performance and S3/S5 completion remain separate evidence-dependent outcomes. The representative working example is the packaged normal-entry review argument, with a deterministic headless report fixture and failure controls; no artificial example module is needed.
 
 At execution, update existing sprint progress/evidence links rather than duplicating completed art milestones. Maintain this sprint JSON, the design verification log and a concise execution report. Planning approval is required before all implementation work.
+
+## Execution evidence, 2026-11-17
+
+- [x] SF0: shared bounded readiness and counted normal-entry/geometry tests; final readiness **14/0**, existing invariants **1,168/0**.
+- [x] SF1a: local-only file writes/no-uploader controls **15/0**; legacy benchmark **3/0**.
+- [ ] SF1b: implemented main review argument, same-scene original/painted sampler reuse, phase inputs, longer miss repeats and report validator. Report controls **14/0**, static actual-world phase wiring **17/0**, real main headless refusal returns expected **2**. `ship-finish-route-live-test` remains to qualify the real sidecar sequence after the voyage agent releases the serialized slot; `passes` remains null until that check.
+- [ ] SF2: independent evaluation, laptop/native review, Mark's S3/S5/CA verdicts and publication remain open.
+
+Exact commands, red-to-green evidence and limits: [execution report](playable-ship-finish-execution-report.md). Parent integration must include `mk/ship-finish.mk`; until then invoke these targets with `make -f Makefile -f mk/ship-finish.mk ...`.

@@ -73,7 +73,7 @@ const SKY_NOTE := "sky background not bundled in this build"
 
 ## One player entry; explicit legacy/capture modes remain reference tools.
 static func current_ship_entry(args: Dictionary) -> bool:
-	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke")
+	return args.is_empty() or args.has("ship-demo") or args.has("ship-demo-smoke") or args.has("ship-identification-smoke") or args.has("solar-departure-smoke") or args.has("ship-finish-review")
 ## What a launch opens: "title" (a plain launch, no user args), "ship" (an explicit
 ## current-ship flag or smoke) or "reference" (every other developer, capture,
 ## golden or smoke mode, unchanged). The menu is for a normal double-click only.
@@ -123,7 +123,7 @@ func _start_current_ship(live_start: bool, extra := {}, guided := false) -> void
 	if guided:
 		var ok:bool=demo.ready_ok and demo.start_solar_departure()
 		print("guided-voyage-startup: %s" % ("OK" if ok else "FAIL"))
-	queue_free()
+	if not extra.get("review_keep_launcher", false): queue_free()
 
 
 func _show_title() -> void:
@@ -196,8 +196,16 @@ func _route_now(route: String) -> void:
 			get_tree().quit()
 
 
+func _run_ship_finish_review(output: String) -> void:
+	var result: Dictionary = await load("res://tools/ship_finish_review.gd").new().run(self, output)
+	print("ship-finish-review: ", "OK" if result.ok else "REFUSED "+str(result.errors))
+	get_tree().quit(0 if result.ok else 2)
+
 func _ready() -> void:
 	var args := _user_args()
+	if args.has("ship-finish-review"):
+		_run_ship_finish_review.call_deferred(str(args["ship-finish-review"]))
+		return
 	if args.has("painted-levels-smoke"):
 		_painted_levels_smoke.call_deferred();return
 	# Deliberately supported in release and debug exports: this explicit,

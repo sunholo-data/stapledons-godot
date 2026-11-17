@@ -93,9 +93,9 @@
         "New make ship-finish-review-report validates fixtures and rejects stale hashes, missing phases or fabricated hardware confirmation; no GPU work is required on the training host."
       ],
       "passes": null,
-      "started": null,
+      "started": "2026-11-17",
       "completed": null,
-      "notes": "One executor session target; reslice if route integration exceeds the cap. The new argument is absent from the current archive."
+      "notes": "Implementation and headless static/report controls complete: report14/0, actual-world static route17/0, real main native-headless refusal expected rc2. Real sidecar route qualification is queued behind voyage serialization: run ship-finish-route-live-test on integration before setting passes true. No native timing or SF2 acceptance claim."
     },
     {
       "id": "SF2",
@@ -117,14 +117,13 @@
     }
   ],
   "pending_external_gates": [
-    "Mark approves this proposed sprint before implementation.",
     "Design OQ1: actual target laptop confirmation and native local measurement session.",
     "Design OQ2: Mark's existing native S3/S5/CA visual review verdicts.",
     "Design OQ3: resolve prior external publication rejection and concrete archive delivery through the normal channel."
   ],
   "constraints": [
-    "No executor handoff or implementation during planning.",
-    "No local GPU while training; no build, push, upload or commit in this session.",
+    "Mark approved SF0/SF1a/SF1b; SF2 remains open.",
+    "No local GPU, build, push, upload or external send in this execution. Local milestone commits are authorized.",
     "Preserve dirty authoring work; reconcile current main before a future code-bearing review archive.",
     "Local-only review never uploads; existing default benchmark behavior remains scoped to its current callers.",
     "No new physics, .ail code, geometry/controls change, asset generation or captain renderer switch.",
