@@ -11,12 +11,15 @@ shift
 # The database is printed even though the probe target does not exist (make then exits 2); MAKEFLAGS from an outer
 # make (command-line variables, -n) must not change what the inner one reads.
 db=$(env -u MAKEFLAGS -u MFLAGS -u MAKELEVEL make -pq --no-print-directory -f "$mf" script-gate-prereqs-probe 2>/dev/null)
-printf '%s\n' "$db" | grep -q '^# Make data base' || { echo "script-gate-prereqs: make printed no database for $mf"; exit 1; }
+# 7ap: both consumers below read the database to its end. grep -q and awk's exit both quit at the first
+# match, and dash's builtin printf then reports "I/O error" under the runner (SIGPIPE ignored there);
+# verdicts never changed, only stderr noise reached every fast-tier log.
+printf '%s\n' "$db" | grep '^# Make data base' >/dev/null || { echo "script-gate-prereqs: make printed no database for $mf"; exit 1; }
 fail=0 n=0
 for pair in "$@"; do
   t=${pair%%:*} p=${pair#*:}
   n=$((n + 1))
-  line=$(printf '%s\n' "$db" | awk -v t="$t:" 'index($0, t) == 1 && $0 !~ /=/ { print; exit }')
+  line=$(printf '%s\n' "$db" | awk -v t="$t:" 'index($0, t) == 1 && $0 !~ /=/ && !seen { print; seen = 1 }')
   if [ -z "$line" ]; then echo "script-gate-prereqs: $t has no rule in $mf"; fail=1; continue; fi
   case " ${line#*:} " in
     *" $p "*) ;;

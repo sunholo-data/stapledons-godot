@@ -335,7 +335,15 @@ def plan_index_mismatches(log_texts, stars):
 #  The pair is taken within one dictionary: SOURCE_TOKEN lists each "index" and "id" literal and each
 # brace, and other string literals are consumed whole, so a "pos": {...} between the keys does not hide
 # the pair, and a nested dictionary's id is never paired with the outer index (both key orders).
-SOURCE_TOKEN = re.compile(r'"index"\s*:\s*(-?\d+)|"id"\s*:\s*"((?:[^"\\\n]|\\.)*)"|"(?:[^"\\\n]|\\.)*"|([{}])')
+#  7ap: single-quoted Python/GDScript keys pair with single-quoted ids, an id value may carry GDScript's &/^
+# literal prefix, and every index at one level pairs with every id there (a second pair in one dictionary is
+# cross-checked, not first-wins). Other single-quoted strings are NOT consumed: a consumption alternative
+# blinded matched apostrophes around a pair (a comment like "node's ... {\"index\": 1, ...} ... Barnard's"
+# lost its pair), so a pair inside single-quoted string text, or flanked by apostrophes in a comment, is
+# still seen and fails closed (comment-awareness is deferred). An unclosed dictionary still counts.
+SOURCE_TOKEN = re.compile(r'"index"\s*:\s*(-?\d+)|\'index\'\s*:\s*(-?\d+)|'
+                          r'"id"\s*:\s*[&^]?"((?:[^"\\\n]|\\.)*)"|\'id\'\s*:\s*[&^]?\'((?:[^\'\\\n]|\\.)*)\'|'
+                          r'"(?:[^"\\\n]|\\.)*"|([{}])')
 SOURCE_EXEMPT = ("tools/test_replay.py",)
 
 
@@ -375,15 +383,17 @@ def source_pairs(text):
     """(start, index, raw id) for each dictionary in text, in source order (dictionary-aware, see SOURCE_TOKEN)."""
     out, frames = [], [[]]
     for m in SOURCE_TOKEN.finditer(text):
-        if m.group(3) == "{":
+        i = m.group(1) if m.group(1) is not None else m.group(2)
+        d = m.group(3) if m.group(3) is not None else m.group(4)
+        if m.group(5) == "{":
             frames.append([])
-        elif m.group(3) == "}":
+        elif m.group(5) == "}":
             if len(frames) > 1:
                 out.extend(_level_pairs(frames.pop()))
-        elif m.group(1) is not None:
-            frames[-1].append((m.start(), "index", m.group(1)))
-        elif m.group(2) is not None:
-            frames[-1].append((m.start(), "id", m.group(2)))
+        elif i is not None:
+            frames[-1].append((m.start(), "index", i))
+        elif d is not None:
+            frames[-1].append((m.start(), "id", d))
     for level in frames:  # unclosed braces: the open dictionaries still count
         out.extend(_level_pairs(level))
     return sorted(out)
@@ -503,6 +513,52 @@ class MapIndex(unittest.TestCase):
         self.assertEqual(bad, ["p.gd:1 CNS5:3627 index 1, stars.json %d" % a,
                                "q.gd:1 CNS5:3627 index 1, stars.json %d" % a])
         self.assertEqual(checked, ["p.gd:1", "q.gd:1", "ok.gd:1"])  # n.gd: the nested id is not paired with the outer index
+
+    def test_the_7ap_spellings_fail(self):  # control: 7ap spellings, at a wrong index or in a hidden shape, are caught by name
+        stars = self.stars()
+        a, b = self.at(stars, "CNS5:3627"), self.at(stars, "HIP 71681")
+        texts = [("sq.py", "t = {'index': %d, 'id': 'CNS5:3627'}\n" % (a + 1)),
+                 ("amp.gd", 'const A := {&"index": %d, &"id": &"CNS5:3627"}\n' % (a + 1)),
+                 ("neg.gd", 'const N := {"index": -1, "id": "CNS5:3627"}\n'),
+                 ("two.gd", 'const T := {"index": %d, "id": "CNS5:3627", "index": %d, "id": "HIP 71681"}\n' % (a, b)),
+                 ("unc.gd", 'const U := {"index": %d, "id": "CNS5:3627"\n' % (a + 1)),
+                 ("str.py", "S = '{\"index\": %d, \"id\": \"CNS5:3627\"}'\n" % (a + 1)),
+                 ("flank.gd", "# node's old pair: {\"index\": %d, \"id\": \"CNS5:3627\"}, per Barnard's audit\n" % (a + 1)),
+                 ("flank.py", "# it's {\"index\": %d, \"id\": \"CNS5:3627\"} that's wrong\n" % (a + 1)),
+                 ("ampsq.gd", "const S := {'index': %d, 'id': &'CNS5:3627'}\n" % (a + 1))]
+        checked, bad = source_index_pairs(texts, stars)
+        self.assertEqual(bad, ["sq.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "amp.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "neg.gd:1 CNS5:3627 index -1, stars.json %d" % a,
+                               "two.gd:1 HIP 71681 index %d, stars.json %d" % (a, b),
+                               "two.gd:1 CNS5:3627 index %d, stars.json %d" % (b, a),
+                               "unc.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "str.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "flank.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "flank.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "ampsq.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a)])
+        self.assertEqual(checked, ["sq.py:1", "amp.gd:1", "neg.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "unc.gd:1", "str.py:1", "flank.gd:1", "flank.py:1", "ampsq.gd:1"])
+
+    def test_the_7ap_guard_test_can_fail(self):  # meta (iteration-91 fold-in): each assertion in the source-literal test is live
+        m = MapIndex("test_source_literals_match_the_map")
+        stars = self.stars()
+        a = self.at(stars, "CNS5:3627")
+        named = [("ui/transit_harness.gd", "\n" * 9 + 'const T := {"index": %d, "id": "CNS5:3627"}\n' % a),
+                 ("tools/earth_link_capture.gd", "\n" * 15 + 'const E := {"index": %d, "id": "CNS5:3627"}\n' % a)]
+        m.sources = lambda: named + [("fixture.gd", 'const BAD := {"index": %d, "id": "CNS5:3627"}\n' % (a + 1))]
+        with self.assertRaises(AssertionError):
+            m.test_source_literals_match_the_map()  # the bad-list assertion fails on the wrong pair; assertEqual(bad, bad) would not
+        m.sources = lambda: named
+        m.stars = lambda: []  # a scan that checks no pair: only the positive control can fail it
+        with self.assertRaises(AssertionError):
+            m.test_source_literals_match_the_map()
+        m.stars = lambda: stars
+        m.sources = lambda: named[:1]  # the scan sees only the transit_harness positive
+        with self.assertRaises(AssertionError):
+            m.test_source_literals_match_the_map()  # the earth_link assertIn fails on a scan that misses its pair
+        m.sources = lambda: named[1:]  # the scan sees only the earth_link positive
+        with self.assertRaises(AssertionError):
+            m.test_source_literals_match_the_map()  # the transit_harness assertIn fails on a scan that misses its pair
 
 
 class AiSession(unittest.TestCase):
