@@ -1,6 +1,6 @@
 # Sprint PLAYABLE-SHIP-FINISH: production-scene evidence before repair
 
-**Status:** SF0/SF1a/SF1b approved by Mark in the attended session, 2026-11-17. SF0/SF1a headless gates pass; SF1b implementation and static/report controls pass, with the real-transit fixture queued for serialized integration qualification. SF2 and native/laptop acceptance remain open. No GPU, build or publication performed.
+**Status:** Approved SF0–SF1b locally qualified, including live transit and real exported entry. SF2/native laptop acceptance and remote landing remain open. See [integration report](../../reports/playable-batch-integration.md).
 **Design:** [playable-ship-finish.md](playable-ship-finish.md). **Progress:** `.ailang/state/sprints/sprint_PLAYABLE-SHIP-FINISH.json`.
 **Goal:** make one combined painted-ship review prove the exact scene, captain and hardware it measured, using the existing native benchmark and existing finish integration.
 **Duration:** provisional 2–3 working days (JSON midpoint 2.5), ~390 implementation/test LOC. Human review, archive publication and laptop availability are excluded. This is an effort allowance with ~25% uncertainty, not measured velocity.

@@ -4,15 +4,15 @@
 
 - [x] Approval: Mark authorized PV1–PV3; integration baseline refreshed through `ec415f33` (main `ae5394dd`), shared SF0 `7cde56f5` consumed without duplicating readiness.
 - [x] PV2 endpoint contract: unit 14/0; complete route 143640/0; display audit 259146 checks, zero failures/new findings; six bounded rejection controls pass.
-- [ ] PV1 final compatibility gate: installed identity and the complete route are verified; 20 compatibility targets pass, with the historical-cache-only `ship-console-test` retry retained by parent.
-- [ ] PV3 final combined qualification: executor evidence is in [the report](playable-voyage-acceptance-report.md). Strict, M4 parity and frozen scene replay pass. Parent owns the remaining console retry, combined CI/runtime-path reconciliation, fresh recording comparison and final independent-review conditions.
+- [x] PV1: combined console retry 136/0; installed readiness and compatibility checks pass.
+- [x] PV3: combined qualification, real pack, fresh-session VM/interpreter parity (2425 identical lines) and independent review condition pass. See [integration report](../../reports/playable-batch-integration.md).
 - [ ] PV4 attended human voyage/native appearance/sound/performance acceptance remains pending and is not claimed.
 
 TDD witnesses: the first contract test failed because the observer was absent; after implementation it passes14/0. Before endpoint integration, the old real-scene driver accepted the route missing home news (143079/0,111s). The new driver rejects that omission for `completion missing home news`, and the other omissions for their declared reasons. The historical synthetic timing divisor and frozen scene input/golden remain unchanged.
 
-Sidecar slot was released after the existing frozen replay passed. No further tests are launched by this strand. Parent reports SF1b live route 18/0 in 24 s and combined `ci-fast` running; neither is substituted for a final pinned parent witness. PV4 remains pending.
+Parent qualification is complete: console 136/0, live route 18/0, strict pack 2884/0, fast-tier coverage, and fresh recording parity all pass. Sonnet 5.5 review 88/100 has its final condition discharged; PV4 remains pending.
 
-**Status:** Executing approved PV1–PV3, Mark attended 2026-11-17: “approved lets go”. PV4 human review remains pending. Headless implementation/checks and scoped commits are authorized; no GPU work, build or publication.
+**Status:** Approved PV1–PV3 locally qualified. PV4 human review and remote landing remain pending. No GPU or app publication claimed.
 **Design:** [playable-voyage-acceptance.md](playable-voyage-acceptance.md).
 **Progress:** `.ailang/state/sprints/sprint_PLAYABLE-VOYAGE-ACCEPTANCE.json`.
 **Scope:** qualify one existing Sol → alpha Cen A → Sol trip in the reconciled combined painted ship, including home news and log. No new gameplay or campaign ending.

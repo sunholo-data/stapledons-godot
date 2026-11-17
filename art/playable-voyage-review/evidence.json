@@ -58,7 +58,9 @@
   "build_or_publication_performed": false,
   "endpoint": {
     "commits": 2,
-    "errors": [],
+    "errors": [
+
+    ],
     "final_journey": "arrived",
     "final_phase": "at_rest",
     "final_target": "Sol",
@@ -397,5 +399,26 @@
       "status": "awaiting_parent_integration",
       "commit": "f4b3f307"
     }
+  },
+  "parent_integration": {
+    "source_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+    "console": "136/0; user-data sandbox retry, no source change",
+    "live_route": "18/0",
+    "strict_pack": "2884 checked, 0 skips, 0 failures",
+    "fast_tier": "all prerequisites passed: original ci-fast stopped at sandbox pgrep; exact18/0 selftest rerun passed; final changed-area gates rerun",
+    "fresh_parity": {
+      "source_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+      "runtime": "0.56.1",
+      "session_sha256": "461f705102a7d160b22f4f211616adca737fbfd99fbd9ac232f5dfad3f9a1375",
+      "vm_exit": 0,
+      "interpreter_exit": 0,
+      "cmp_exit": 0,
+      "output_lines": 2425,
+      "output_sha256": "0eff93bec753264cbadd4c74dedd7c2a030ca8012eda59ea2ded351ea4a7d903",
+      "completed_at": "2026-11-17T08:57:39Z",
+      "note": "Initial interpreter attempt stopped after 781 matching prefix lines because the original 600-second deadline was insufficient; complete restart used 1800-second bound. Completed VM output retained. Only full completed producers and cmp establish this pass."
+    },
+    "independent_review": "Sonnet5.5 round2 88/100; sole parity condition discharged",
+    "human_accepted": false
   }
 }

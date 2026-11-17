@@ -1,7 +1,7 @@
 {
   "sprint_id": "PLAYABLE-SHIP-FINISH",
   "title": "Production-scene evidence before painted ship repair",
-  "status": "in_progress",
+  "status": "approved_batch_complete_pending_landing",
   "created": "2026-11-17",
   "design_doc": "design_docs/planned/r2/playable-ship-finish.md",
   "sprint_plan": "design_docs/planned/r2/playable-ship-finish-sprint.md",
@@ -11,7 +11,9 @@
   "base_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
   "base_main": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
   "runtime_version": "0.56.1",
-  "github_issues": [],
+  "github_issues": [
+
+  ],
   "velocity": {
     "target_loc_per_day": null,
     "estimated_total_loc": 390,
@@ -50,7 +52,9 @@
       "description": "Shared bounded normal-entry readiness and production closure identity",
       "estimated_loc": 120,
       "estimated_days": 0.25,
-      "dependencies": [],
+      "dependencies": [
+
+      ],
       "acceptance_criteria": [
         "New make ship-finish-test validates actual normal-entry finish counts 141/1000/42, closure and production captain identity.",
         "ShipReviewReadiness.wait(demo, timeout_ms) returns bounded ok/errors/identity; stalled, failed and missing install controls fail closed.",
@@ -59,7 +63,7 @@
       "passes": true,
       "started": "2026-11-17",
       "completed": "2026-11-17",
-      "notes": "Shared bounded ShipReviewReadiness.wait helper and production receipt implemented. RED missing helper then GREEN readiness13/0 and existing painted invariants1168/0 via SCRIPT_GATE, headless. Main keeps install ordering; no GPU/native timing claim."
+      "notes": "Shared bounded ShipReviewReadiness.wait helper and production receipt implemented. RED missing helper then GREEN readiness13/0 and existing painted invariants1168/0 via SCRIPT_GATE, headless. Main keeps install ordering; no GPU/native timing claim. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
     },
     {
       "id": "SF1a",
@@ -77,7 +81,7 @@
       "passes": true,
       "started": "2026-11-17",
       "completed": "2026-11-17",
-      "notes": "RED missing save boundary; GREEN profile15/0 and legacy benchmark3/0. Real scratch writes and uploader spy prove local-only zero sends and preserved default upload. Default user path is redirected to scratch by the writer seam; no player data or network touched. Sampler/hardware metadata reused."
+      "notes": "RED missing save boundary; GREEN profile15/0 and legacy benchmark3/0. Real scratch writes and uploader spy prove local-only zero sends and preserved default upload. Default user path is redirected to scratch by the writer seam; no player data or network touched. Sampler/hardware metadata reused. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
     },
     {
       "id": "SF1b",
@@ -92,10 +96,10 @@
         "Bridge, Commons, lift, seated selection and real-transit phases carry reproducible seed/input/camera/phase metadata and original/painted material conditions with exact restoration.",
         "New make ship-finish-review-report validates fixtures and rejects stale hashes, missing phases or fabricated hardware confirmation; no GPU work is required on the training host."
       ],
-      "passes": null,
+      "passes": true,
       "started": "2026-11-17",
-      "completed": null,
-      "notes": "Implementation and headless static/report controls complete: report14/0, actual-world static route17/0, real main native-headless refusal expected rc2. Real sidecar route qualification is queued behind voyage serialization: run ship-finish-route-live-test on integration before setting passes true. No native timing or SF2 acceptance claim."
+      "completed": "2026-11-17T08:57:39Z",
+      "notes": "Implementation and headless static/report controls complete: report14/0, actual-world static route17/0, real main native-headless refusal expected rc2. Real sidecar route qualification is queued behind voyage serialization: run ship-finish-route-live-test on integration before setting passes true. No native timing or SF2 acceptance claim. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
     },
     {
       "id": "SF2",
@@ -119,7 +123,7 @@
   "pending_external_gates": [
     "Design OQ1: actual target laptop confirmation and native local measurement session.",
     "Design OQ2: Mark's existing native S3/S5/CA visual review verdicts.",
-    "Design OQ3: resolve prior external publication rejection and concrete archive delivery through the normal channel."
+    "Native review build delivery through the normal app channel remains separate; Mark authorized the source backup push and it completed."
   ],
   "constraints": [
     "Mark approved SF0/SF1a/SF1b; SF2 remains open.",
@@ -135,5 +139,17 @@
     "SF0",
     "SF1a",
     "SF1b"
-  ]
+  ],
+  "approved_batch_completed_at": "2026-11-17T08:57:39Z",
+  "integration_code_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+  "integration_report": "design_docs/reports/playable-batch-integration.md",
+  "independent_review": {
+    "model": "claude-sonnet-5-5",
+    "round": 2,
+    "score": 88,
+    "original_verdict": "CONDITIONAL_PASS",
+    "remaining_condition": "fresh session parity",
+    "condition_resolved": true,
+    "effective_local_acceptance": "PASS"
+  }
 }

@@ -1,6 +1,6 @@
 # Playable voyage acceptance: one complete journey in the combined ship
 
-**Status:** PV1–PV3 approved by Mark, attended 2026-11-17: “approved lets go”; executing with headless checks only. PV4 human review remains pending. Created for concrete planning before implementation; this is an acceptance overlay for existing M4, not a replacement journey design or a claim that R1 is finished.
+**Status:** Approved PV1–PV3 implemented and locally qualified, 2026-11-17. PV4 human acceptance and remote landing remain open.
 **Release:** r1 acceptance · **Milestone:** new; the roadmap has no separate row.
 **Priority:** P1. Establishes what “playable” means for the combined painted review candidate.
 **Implements:**

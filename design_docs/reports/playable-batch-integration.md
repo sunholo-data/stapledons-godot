@@ -20,8 +20,8 @@ Final implementation code: `d10d0d20f03dc7efa6a99e6d886a8e051ee05ece`. Base cand
 | Actual packed entry | The packed benchmark entry loads and reaches the expected headless refusal (rc 2, no script error). [Log](playable-batch-evidence/packed-entry.log). |
 | Console compatibility | 136/0 after granting the existing test access to its Godot user-data recording/stub-cache directory. The sandbox attempt failed three assertions; no code change was needed. [Log](playable-batch-evidence/console.log). |
 | Complete voyage | 143640/0; display audit 259146/0; completion unit 14/0; six declared negative cases pass. [Hashed evidence](../../art/playable-voyage-review/evidence.json). Twenty compatibility targets passed in the executor; console retry above closes the remaining environment issue. |
-| Fresh recorded-session parity | Pending full producer completion and `cmp`; partial outputs are not accepted. |
-| Independent review | Round 2: conditional 88/100, no remaining source defect; fresh-session parity is the sole remaining automated condition. [Review](../../.ailang/state/evaluations/eval_PLAYABLE-BATCH_round_2_sonnet.json). |
+| Fresh recorded-session parity | PASS: both producers exit 0; `cmp` succeeds; 2425 identical lines, SHA256 `0eff93bec753264cbadd4c74dedd7c2a030ca8012eda59ea2ded351ea4a7d903`. [Receipt](playable-batch-evidence/fresh-parity.json). |
+| Independent review | Round 2: 88/100, no remaining source defect. Its sole condition, fresh-session parity, is now discharged; local implementation accepted under the reviewer’s explicit rule. [Review](../../.ailang/state/evaluations/eval_PLAYABLE-BATCH_round_2_sonnet.json). |
 
 ## Defects found during qualification
 

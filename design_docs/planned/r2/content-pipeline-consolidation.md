@@ -1,6 +1,6 @@
 # R2: Content pipeline consolidation
 
-**Status:** Approved 2026-11-17; CP1–CP3 verification pilot implemented, awaiting integration/evaluation; real-pack AC9 passed for the source clone. See [execution evidence](content-pipeline-consolidation-report.md). Created from Mark's attended request for a concrete plan to consolidate AI-authored captain, environment and NPC resources before implementation.
+**Status:** Approved CP1–CP3 implemented and locally qualified, 2026-11-17. Remote landing remains open.
 **Release:** r2 · **Milestone:** new; no roadmap row yet.
 **Priority:** P2. Make the existing painted-content paths reproducible and reviewable without blocking their current art reviews.
 **Implements:** [AI showcase](https://github.com/sunholo-data/stapledons-design/blob/c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa/features/ai-showcase.md) §§3–5 (identity, generated assets and recorded selection), [ship exploration](https://github.com/sunholo-data/stapledons-design/blob/c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa/features/phase2-core-views/ship-exploration.md) “Ship Layout Philosophy”, and ledger D-7, D-18, D-139–D-141, D-164–D-165. Only the offline, authored-resource part is in scope.

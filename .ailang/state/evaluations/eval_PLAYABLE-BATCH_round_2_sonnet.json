@@ -15,5 +15,18 @@
   "remaining_condition": "Fresh complete-session VM/interpreter cmp must pass; reviewer explicitly accepts local implementation when this closes",
   "native_acceptance": false,
   "remote_ci": false,
-  "published": false
+  "published": false,
+  "condition_resolution": {
+    "source_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+    "runtime": "0.56.1",
+    "session_sha256": "461f705102a7d160b22f4f211616adca737fbfd99fbd9ac232f5dfad3f9a1375",
+    "vm_exit": 0,
+    "interpreter_exit": 0,
+    "cmp_exit": 0,
+    "output_lines": 2425,
+    "output_sha256": "0eff93bec753264cbadd4c74dedd7c2a030ca8012eda59ea2ded351ea4a7d903",
+    "completed_at": "2026-11-17T08:57:39Z",
+    "note": "Initial interpreter attempt stopped after 781 matching prefix lines because the original 600-second deadline was insufficient; complete restart used 1800-second bound. Completed VM output retained. Only full completed producers and cmp establish this pass."
+  },
+  "effective_local_acceptance": "PASS: reviewer-stated sole condition discharged"
 }

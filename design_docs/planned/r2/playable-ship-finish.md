@@ -1,6 +1,6 @@
 # PLAYABLE-SHIP-FINISH: close the painted ship's native review gap
 
-**Status:** Proposed design and bounded sprint, awaiting Mark's sprint review. Created 2026-11-17 for the attended request to document and plan the remaining strands toward playable Stapledon. No implementation, build, publication or GPU work is authorized by this document.
+**Status:** Approved SF0–SF1b implemented and locally qualified, 2026-11-17. SF2/native acceptance and remote landing remain open.
 **Release:** r2 · **Milestone:** continuation of R2-VIEW-FINISH / R2-LEVELS and R2-CAPTAIN-ANIMATION; no new roadmap row.
 **Priority:** P1. Makes the already packaged painted bridge/Commons review assessable on the laptop; broader gameplay is owned by the other playable strands.
 **Implements:**
