@@ -896,8 +896,9 @@ func _civic_playtest_smoke()->void:
 	auto=false;journey_auto_tick=false
 	var ok:=await await_civic_art()
 	if not ok:print("civic-playtest-smoke: FAIL art load");get_tree().quit(1);return
-	# Let the normal entry finish its live-rest assertions before the diagnostic changes views.
+	# Let the normal entry finish its live-rest assertions and painted presentation.
 	await get_tree().physics_frame
+	while get_meta("painted_levels_pending",false):await get_tree().process_frame
 	ok=ok and str(civic_art.source_config)=="res://assets/levels/commons/civic/placements.json"
 	var life:Node=civic_art.node.find_child("CommonsLifePilot",true,false)
 	ok=ok and life!=null and life._people.size()==42
@@ -918,7 +919,10 @@ func _civic_playtest_smoke()->void:
 		await _civic_playtest_shot("commons_"+view)
 	var elapsed:float=life.elapsed
 	set_camera_motion("full");life.advance(.25)
-	ok=ok and life.elapsed>elapsed
+	if has_meta("painted_levels_result"):
+		var residents:Dictionary=get_meta("painted_levels_result").people.residents
+		ok=ok and residents.size()==42 and not life.visible and life.elapsed==elapsed
+	else:ok=ok and life.elapsed>elapsed
 	elapsed=life.elapsed;set_camera_motion("reduced");life.advance(.25)
 	ok=ok and life.elapsed==elapsed
 	set_camera_motion("full")
@@ -929,7 +933,7 @@ func _civic_playtest_smoke()->void:
 	ok=ok and avatar_pos.distance_to(Vector3(8,57,-4.8))<.1 and lift.board()
 	lift.advance(.81);lift.advance(5.);lift.advance(.81)
 	ok=ok and active_level==0 and lift.state=="bridge_ready"
-	print("civic-playtest-smoke: %s packed-art live-activity walk lift-roundtrip"%("OK" if ok else "FAIL"))
+	print("civic-playtest-smoke: %s packed-art %s walk lift-roundtrip"%["OK" if ok else "FAIL","painted-residents" if has_meta("painted_levels_result") else "live-activity"])
 	get_tree().quit(0 if ok else 1)
 
 func _civic_playtest_shot(name:String)->void:

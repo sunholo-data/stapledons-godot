@@ -1,0 +1,5 @@
+script-gate: levels-regress ok: levels-regress: ok (1 levels: bridge) (rc 0, no SCRIPT ERROR, 3 s of 600 s)
+script-gate: levels-regress-seed-box ok: FAIL bridge: numbers moved from the baseline: /stages/deck/near_astern: 0.063 -> 0.069 (rc 1, no SCRIPT ERROR, 3 s of 600 s)
+script-gate: levels-regress-fake-sha ok: FAIL bridge: its document res://assets/levels/bridge/manifest.json changed (sha256 00000000, baseline 8e7212fa) without re-pinning (make levels-regress-pin LEVEL=bridge, and a change-log row) (rc 1, no SCRIPT ERROR, 3 s of 600 s)
+levels-regress: negative controls (a seeded box, a changed document) fail as they must, each for its own reason
+qualification: 1 passed, 0 failures

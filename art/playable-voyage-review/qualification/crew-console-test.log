@@ -1,0 +1,102 @@
+ok AC6 palette: contrast >= 3:1 on the panel, chip words >= 4.5:1, neighbours apart under deutan/protan/tritan (or icon and edge differ)
+ok AC6 every work_state and sending has exactly one token, icon and word
+ok AC6 CIEDE2000 matches Sharma et al. (pairs 1 and 17)
+ok OQ9: a decline reads 'Needs you: declined, open to talk'
+ok colour is never alone: every token has an icon, and the legend names them all
+ok D2 every state's token and icon is pinned (declined and concern are needs-you, alert) []
+ok no crew: the console says so
+ok the board: five rows, title for the board
+ok every free member's row offers Offer, and their chip says Can offer
+ok the header strip: ship default Ask (consent), auto-run, the free resources as gauges
+ok V7b the legend waits behind ? (no intent); opened, it shows every token
+ok V7: every Label on the board is a binding that re-derives its text []
+ok D-21: no digits on the board
+ok no label under 12 logical
+ok needs-you rows sort first, then the rest in crew order (["medic", "pilot", "engineer", "analyst", "counselor"])
+ok the pulsing row says so (an inset ring)
+ok needs-you rows offer Answer; working rows have no quick action
+ok V7 on the mixed board []
+ok AC10 an incoming decline opens that call when nothing is open; the pilot's concern, after it, pulses
+ok End call returns to the board
+ok picking a member opens their call (no intent), on the internal videocom
+ok the call portrait is >= 240 logical at the sim's emotion
+ok AC7 a concern: Start is disabled and the reason is a visible line
+ok AC7 four answers, Insist last, with its cost in one line (the full rule on ?)
+ok V7b ? opens the full rule, no intent; again closes it
+ok V7b each answer has its own icon ["clear_scope", "ask_advice", "explain_priority", "assert_authority"]
+ok strained is the pack's overextended threshold (70.0)
+ok V7b the terms are icons: a day pip per day, each resource with its pips, each effect with its arrow; the sentence is the tooltip
+ok icons ? is in the focus order (keyboard and pad reach it)
+ok icons ? opens a key: days, each resource, each effect, and the bars in words
+ok closed again, the key is gone (the words stay few)
+ok V7b the bars carry icons, not word captions
+ok AC7 the first focus is the first answer
+ok the concern's words are theirs, in the call
+ok Make it an order is offered, with its cost in one line
+ok the mini-roster shows the four others
+ok V7 in the concern call []
+ok a mini-roster chip switches the call
+ok the sim's emotion picks the call's face (mutated to loving)
+ok AC10 with a call open, incoming concerns pulse and the call stays
+ok AC10 with a confirm armed, nothing opens; the rows pulse
+ok working: the day in words and the others as faces with their state (V7b)
+ok working: the chip carries the start terms (agreed)
+ok V7 in the working call []
+ok a hold opens on the held person, with the sim's words and Resume
+ok V7 in the hold call []
+ok the call never closes on a timer (no Timer nodes, no _process)
+ok D2 concern: four answers enabled, Start disabled with its reason, Make it an order enabled
+ok D2 free: the offer is enabled
+ok D2 sending: every action disabled, each with why
+ok D2 agreed: Start enabled
+ok D2 the console's Start follows the model (enabled when agreed)
+ok D2 and disabled when the model says so (a concern)
+ok AC11 the How selector changes without an intent
+ok AC11 How starts at the ship default (Ask under consent)
+ok AC12 Offer arms on the first press (no intent)
+ok AC12 the confirm sends offer (start on_accept) and ask
+ok AC8 sending: the member's state is sending, every action disabled, with why
+ok AC8 a second press on that member emits nothing
+ok AC8 other members stay actionable
+ok AC11 an Order offer carries start now
+ok AC8 the tick that carried the counselor's intents lifts only her lock
+ok a refusal is never silent: the pilot's lock lifts and the reason shows on the row
+ok AC11 the ship default is a confirmed crew_policy
+ok AC11 auto-run is a confirmed crew_orders
+ok V6 down focuses the first row
+ok V6 Enter opens the focused member's call (no intent)
+ok V6 the call's first focus is its first action
+ok V6 O toggles Ask and Order (no intent)
+ok V6 Enter arms the offer; nothing is sent
+ok V6 Esc disarms first
+ok V6 Enter twice sends the offer (the confirm)
+ok V6 ] switches the call to the next member
+ok V6 Esc ends the call, then is left for the ship (step back)
+ok V6 2 arms the second answer; nothing is sent
+ok V6 2 again sends that answer
+ok V6 pad: D-pad and A open a call; RB switches; B ends it
+ok V6 pad: the left stick moves the focus once per push
+ok V6 NT1/NT3: no single key or pad button sends a decision, in any state []
+ok V8 the stand-down hold opens the call with its words and both answers
+ok D1 the stand-down answers come first; the focus is on Let them rest
+ok D1 Resume is unavailable until the stand-down is answered, and says why
+ok D1 no resume can be sent before the answer, by press or by keys
+ok V8 Let them rest needs a second press
+ok D3 the bridge lists crew_stand_down among the crew intents
+ok V8 the confirmed answer is crew_stand_down resolve_stand_down, release true
+ok V8 unheld, the state is stand_down_asked: Needs you, with both answers
+ok V8 granted, they rest (the sim's resting state, its chip)
+ok V7 on the stand-down calls
+ok 2.11 game with a consent crew ()
+ok AC12 Ask, accepted: working in 2 presses (answer accept, terms agreed_start)
+ok the sim names each answer's state (no client derivation)
+ok someone needs the captain after the offers (seed 1: a concern or a decline)
+ok OQ5 Insist is a captain_reply the real sim accepts, carrying start on_accept (V4) ([])
+ok V4 after the reply they reconsider at once: no longer asked (working)
+ok a rebuilt console in the same crew turn makes new task and request ids
+ok re-sending an old id is refused (altered_duplicate, request capacity/id/clock)
+ok plain words for crew:blocked:altered_duplicate:offer-tc0-0-10-counselor: Couldn't do that: it repeated an earlier request. Try again.
+ok plain words for crew:{"host":"request capacity/id/clock"}: Couldn't ask them: that question was already asked, or too many are waiting for answers.
+ok below 2.11 an offer with start is bad_intent (bad_intent)
+crew-console: 0 failures
+qualification: 1 passed, 0 failures

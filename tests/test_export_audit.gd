@@ -139,6 +139,7 @@ func _initialize() -> void:
 	kill("M16", ExportAudit.audit(inc, exc, {"extra_literals": ["res://ui/theme.tres"]}), [
 		"F res://ui/theme.tres not covered",
 		"unmeasured extension tres"])
+	check("required runtime entry cannot be excluded", _has(ExportAudit.audit(inc, _with(exc, "demos/ship_finish_review.gd")), "required runtime script excluded: demos/ship_finish_review.gd"))
 
 	print("\n%d passed, %d failed" % [passes, failures])
 	quit(1 if failures > 0 else 0)

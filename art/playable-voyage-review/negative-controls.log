@@ -1,0 +1,13 @@
+script-gate: playthrough-negative-unknown_station ok: playthrough: 8 passed, 1 failures (rc 1, no SCRIPT ERROR, 7 s of 1200 s)
+playthrough-negative: unknown_station rejected (exit=1): walk has a path: missing_station
+script-gate: playthrough-negative-unfocused ok: playthrough: 8 passed, 1 failures (rc 1, no SCRIPT ERROR, 6 s of 1200 s)
+playthrough-negative: unfocused rejected (exit=1): unscripted refusal: Use the Archive terminal first.
+script-gate: playthrough-negative-unscripted ok: playthrough: 6587 passed, 1 failures (rc 1, no SCRIPT ERROR, 8 s of 1200 s)
+playthrough-negative: unscripted rejected (exit=1): unscripted refusal: No news from home has reached the ship yet.
+script-gate: playthrough-negative-missing_return ok: playthrough: 68145 passed, 8 failures (rc 1, no SCRIPT ERROR, 46 s of 1200 s)
+playthrough-negative: missing_return rejected (exit=1): completion missing return to Sol at rest
+script-gate: playthrough-negative-missing_home_news ok: playthrough: 143082 passed, 2 failures (rc 1, no SCRIPT ERROR, 95 s of 1200 s)
+playthrough-negative: missing_home_news rejected (exit=1): completion missing home news
+script-gate: playthrough-negative-missing_final_log ok: playthrough: 142767 passed, 1 failures (rc 1, no SCRIPT ERROR, 93 s of 1200 s)
+playthrough-negative: missing_final_log rejected (exit=1): completion missing final home log
+playthrough-negative: 6 passed, 0 failures

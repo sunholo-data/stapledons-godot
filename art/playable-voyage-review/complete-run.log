@@ -1,0 +1,604 @@
+ERROR: Failed to open 'user://logs/godot2026-11-17T08.37.02.log'.
+   at: copy (core/io/dir_access.cpp:429)
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ERROR: Condition "ret != noErr" is true. Returning: ""
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:54)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:55)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:57)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:60)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:111)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:112)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:113)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:114)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:123)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:125)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+WARNING: Loaded resource as image file, this will not work on export: 'res://ui/theme/ink_panel.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] _panel (res://ui/stapledon_theme.gd:204)
+         [1] build (res://ui/stapledon_theme.gd:125)
+         [2] theme (res://ui/stapledon_theme.gd:42)
+         [3] _init (res://ui/credits.gd:34)
+         [4] @implicit_new (res://main.gd:57)
+         [5] _run (res://tests/m4_playthrough_ship.gd:489)
+title-screen: OK 6 buttons, sky off, build v0.4.0-dev.37-living-bridge-474-g46c5e9e3
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/frond.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:190)
+         [3] _ready (res://demos/ship_geometry_demo.gd:151)
+         [4] _start_current_ship (res://main.gd:107)
+         [5] _route_now (res://main.gd:174)
+         [6] _on_title_route (res://main.gd:162)
+         [7] press (res://ui/title_screen.gd:206)
+         [8] _run (res://tests/m4_playthrough_ship.gd:493)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/shrub.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:190)
+         [3] _ready (res://demos/ship_geometry_demo.gd:151)
+         [4] _start_current_ship (res://main.gd:107)
+         [5] _route_now (res://main.gd:174)
+         [6] _on_title_route (res://main.gd:162)
+         [7] press (res://ui/title_screen.gd:206)
+         [8] _run (res://tests/m4_playthrough_ship.gd:493)
+WARNING: Loaded resource as image file, this will not work on export: 'res://assets/foliage/grown_planter.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] card_texture (res://interior/stapledon_style.gd:81)
+         [1] build (res://demos/ship_dressing.gd:26)
+         [2] setup (res://demos/ship_geometry_demo.gd:190)
+         [3] _ready (res://demos/ship_geometry_demo.gd:151)
+         [4] _start_current_ship (res://main.gd:107)
+         [5] _route_now (res://main.gd:174)
+         [6] _on_title_route (res://main.gd:162)
+         [7] press (res://ui/title_screen.gd:206)
+         [8] _run (res://tests/m4_playthrough_ship.gd:493)
+voyage seed 424242 (free_nav)
+ship-demo-ready: OK
+commons-civic-playtest: ready, reviewed art and live activity installed
+painted-levels: 141 bridge meshes, 1000 Commons meshes, 42 painted residents
+current-ship-startup: OK live-rest deck-view single-navigation
+walk navigation path_m=2.207106769
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] walk (res://tests/m4_playthrough_ship.gd:159)
+         [8] _run (res://tests/m4_playthrough_ship.gd:521)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_happy.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] walk (res://tests/m4_playthrough_ship.gd:159)
+         [8] _run (res://tests/m4_playthrough_ship.gd:521)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_happy.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] walk (res://tests/m4_playthrough_ship.gd:159)
+         [8] _run (res://tests/m4_playthrough_ship.gd:521)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_happy.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] walk (res://tests/m4_playthrough_ship.gd:159)
+         [8] _run (res://tests/m4_playthrough_ship.gd:521)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] walk (res://tests/m4_playthrough_ship.gd:159)
+         [8] _run (res://tests/m4_playthrough_ship.gd:521)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_loving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_loving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_loving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_loving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_loving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_curious.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_curious.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_curious.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_curious.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+walk archive path_m=20.445859909
+walk navigation path_m=20.238754153
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_happy.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/analyst_grieving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_sad.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_grieving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/pilot_grieving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/counselor_grieving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_grieving.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_curious.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/medic_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+WARNING: Loaded resource as image file, this will not work on export: 'res://data/crew/portraits/engineer_neutral.png'. Instead, import the image file as an Image resource and load it normally as a resource.
+     at: load_from_file (core/io/image.cpp:2780)
+     GDScript backtrace (most recent call first):
+         [0] make_texture (res://interior/captain_avatar.gd:311)
+         [1] face_path (res://ui/crew_page.gd:229)
+         [2] face (res://ui/crew_page.gd:236)
+         [3] refresh (res://ui/comms_station.gd:324)
+         [4] refresh (res://ui/bridge_screens.gd:219)
+         [5] sample (res://tests/m4_playthrough_ship.gd:76)
+         [6] step (res://tests/m4_playthrough_ship.gd:139)
+         [7] until (res://tests/m4_playthrough_ship.gd:281)
+         [8] _run (res://tests/m4_playthrough_ship.gd:524)
+walk archive path_m=20.445859909
+session lines=2426 new_game=1 commit=2
+voyage-completion: PASS 2 commits 2 arrivals 3 ordered reads
+pole boosting max_px=0.077606224
+pole cruising max_px=0.077606224
+pole braking max_px=0.077606224
+playthrough: 143640 passed, 0 failures
+WARNING: 51 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+ERROR: Pages in use exist at exit in PagedAllocator: N20RasterizerSceneDummy21GeometryInstanceDummyE
+   at: ~PagedAllocator (./core/templates/paged_allocator.h:170)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: Leaked instance dependency: Bug - did not call instance_notify_deleted when freeing.
+   at: ~Dependency (servers/rendering/storage/utilities.cpp:56)
+WARNING: 513 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 32 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)
+ERROR: 1 RID allocations of type 'N13RendererDummy15MaterialStorage13DummyMaterialE' were leaked at exit.
+ERROR: 1 RID allocations of type 'N13RendererDummy15MaterialStorage11DummyShaderE' were leaked at exit.
+ERROR: 3 RID allocations of type 'N13RendererDummy9DummyMeshE' were leaked at exit.
+ERROR: 80 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+ERROR: 4 RID allocations of type 'N17RendererSceneCull8InstanceE' were leaked at exit.
+ERROR: 1 RID allocations of type 'N17RendererSceneCull6CameraE' were leaked at exit.
+ERROR: 86 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 6 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.

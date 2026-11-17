@@ -1,0 +1,176 @@
+{
+  "sprint_id": "CONTENT-PIPELINE-CONSOLIDATION",
+  "status": "approved_batch_complete_pending_landing",
+  "approved": true,
+  "approved_by": "Mark, attended 2026-11-17: approved lets go",
+  "approved_on": null,
+  "created": "2026-11-17",
+  "base_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
+  "candidate_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
+  "design_doc": "design_docs/planned/r2/content-pipeline-consolidation.md",
+  "sprint_plan": "design_docs/planned/r2/content-pipeline-consolidation-sprint.md",
+  "github_issues": [
+
+  ],
+  "executor_handoff": false,
+  "scope": "Four existing bundles, three typed adapters, one additional fixture asset; verification and pack-fixture pilot only. No generation, GPU, build, publish, broad migration or runtime-loader replacement.",
+  "velocity": {
+    "target_loc_per_day": null,
+    "estimated_total_loc": 750,
+    "estimated_days": 2,
+    "basis": "Provisional active engineering allocation; reviewed git/CHANGELOG history has no comparable measured asset-pipeline LOC/day. Review/integration wait excluded."
+  },
+  "registry_reuse": [
+    {
+      "milestone": "CP1",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Registry validator checks ailang.toml/.ail exports; image candidates parse/upload documents. Reuse Godot JSON/FileAccess/HashingContext and existing typed manifests."
+    },
+    {
+      "milestone": "CP2",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Independent decoded resource sizes and geometry checks require existing Godot Image/resource I/O; reuse captain budgets and existing stages, no new package mathematics."
+    },
+    {
+      "milestone": "CP3",
+      "package": null,
+      "action": "none",
+      "searches": [
+        "asset",
+        "manifest",
+        "image"
+      ],
+      "inspected": [
+        "sunholo/registry_validator@0.1.2: pkg info and pkg docs"
+      ],
+      "reason": "Reuse repository ZIPReader/remap audits and SCRIPT_GATE wiring. No suitable published Godot pack validator or package capability to add."
+    }
+  ],
+  "features": [
+    {
+      "id": "CP1",
+      "description": "Four-record authoring catalog, three typed enumerators and one extension fixture",
+      "estimated_loc": 285,
+      "estimated_days": 0.75,
+      "dependencies": [
+
+      ],
+      "acceptance_criteria": [
+        "AC1/AC2: proposed make content-contract-test validates schema, kind, IDs, paths and pins; each seeded defect fails by name",
+        "AC3: one additional fixture asset changes deterministic closure accounting; corruption fails without altering production fixed-count gates",
+        "AC5: runtime validation needs only runtime bytes; authoring validation rejects required missing source inputs; neither mode mutates outputs or re-pins"
+      ],
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP1: 25 contract checks pass, including all four real bundles, extra fixture, source/runtime separation and named negative controls. Red-first missing helper observed. Inputs reconciled to ec415f33 + candidate19e4a763; existing ship-demo/Commons raw staging run explicitly to ignored output directories. Existing loaders/manifests untouched. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    },
+    {
+      "id": "CP2",
+      "description": "Independent bundle budgets, typed regressions and isolated repeat-stage evidence",
+      "estimated_loc": 265,
+      "estimated_days": 0.75,
+      "dependencies": [
+        "CP1"
+      ],
+      "acceptance_criteria": [
+        "AC4: proposed make content-budget-test recomputes independent decoded/mip/file/mesh metrics and kills per-ceiling defects; captain 3/32 MiB stage caps stay intact",
+        "AC6: proposed make content-stage-test compares two same-input scratch closures and face hashes with unchanged source pins; no production write, generation, network or GPU",
+        "AC7: make captain-anim-test captain-frames-check npc-painted-assets-check npc-painted-test deck-assets-check and proposed make painted-levels-test preserve type-owned checks and late-failure rollback"
+      ],
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP2: budget30/0; scratch stage7/0, exact byte/face/source-pin checks; full authoring4/0 in92s, runtime4/0 in91s. Existing captain anim87/0, frame50+selftest50, NPC assets5/25, deck12pins+negative controls, NPC pilot23/0, painted actual-world1168/0. Existing per-stage3/32MiB caps retained. No production asset or runtime loader changes. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    },
+    {
+      "id": "CP3",
+      "description": "Dynamic pack-closure negative controls and bounded focused gate integration",
+      "estimated_loc": 200,
+      "estimated_days": 0.5,
+      "dependencies": [
+        "CP2"
+      ],
+      "acceptance_criteria": [
+        "AC8: proposed make content-pack-test passes a complete fixture and rejects missing raw image/portrait/resource/manifest and leaked authoring catalog",
+        "AC8/AC10: make export-filter-audit level-export-test script-gate-lint uid-guard python-guard plus proposed content fixture targets pass",
+        "Report exact local evidence and mark real-pack AC9 deferred to separately authorized make export-pack-check-strict; no fixture-to-native acceptance substitution"
+      ],
+      "passes": true,
+      "started": "2026-11-17",
+      "completed": "2026-11-17",
+      "notes": "CP3: pack fixtures19/0; source export audit159literals/0failures with16mutants killed; level export4/0; UID/Python guards pass; script-gate lint passes with integrator include temporarily applied and restored. Added narrow classifications for inherited three painted export gaps. Top Makefile include left to integrator. AC9 remains not_run: no new export/build/GPU/publication. AC9 follow-up: real Godot4.7.2 texture .import support corrected test-first, retaining importer/type/path/imported-byte checks and rejecting raw-source masking; pack fixtures24/0 and fresh source pack strict2869/0skips/0failures. Combined parent integration acceptance remains separate. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    }
+  ],
+  "deferred_acceptance": [
+    {
+      "id": "AC9",
+      "status": "passed",
+      "command": "STRICT=1 godot --headless --path . --script tests/test_export_pack.gd -- .godot/tmp/export-pack/game.zip (through SCRIPT_GATE)",
+      "result": "2869 checked, 0 skips, 0 failures; 15s",
+      "package": {
+        "path": ".godot/tmp/export-pack/game.zip",
+        "source_commit": "352552aa8990044e9df0a28b73b38030ca963794",
+        "bytes": 336137617,
+        "sha256": "9b26623d9224f2d2283de1329278ae7cfa11fb6d0d89e888721b646abd9d9975"
+      },
+      "reason": "Fresh local headless export-pack made by make export-pack-check-strict, not the old sibling archive. First audit caught66 false negatives from Godot texture .import metadata; fixed auditor and real-format fixtures24/0. Only excluded tests changed after export, then strict audit of the same new pack passed. Parent combined integration/native visual build remains separate."
+    }
+  ],
+  "human_decision_gates": [
+    {
+      "id": "sprint_approval",
+      "source": "CLAUDE.md: Development cycle, step 2",
+      "instruction": "STOP: report BLOCKED: sprint approval pending and end without implementation mutations while approved is false."
+    }
+  ],
+  "approval": "Mark, attended 2026-11-17: approved lets go",
+  "execution_authorized": true,
+  "approved_scope": [
+    "CP1",
+    "CP2",
+    "CP3"
+  ],
+  "implementation_scope_complete": true,
+  "design_acceptance_complete": true,
+  "report": "design_docs/planned/r2/content-pipeline-consolidation-report.md",
+  "integration_acceptance_complete": true,
+  "independent_evaluation_pending": false,
+  "approved_batch_completed_at": "2026-11-17T08:57:39Z",
+  "integration_code_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+  "integration_report": "design_docs/reports/playable-batch-integration.md",
+  "independent_review": {
+    "model": "claude-sonnet-5-5",
+    "round": 2,
+    "score": 88,
+    "original_verdict": "CONDITIONAL_PASS",
+    "remaining_condition": "fresh session parity",
+    "condition_resolved": true,
+    "effective_local_acceptance": "PASS"
+  },
+  "combined_pack": {
+    "source_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+    "checked": 2884,
+    "skips": 0,
+    "failures": 0,
+    "sha256": "529630a24fed5f77bddc9144cdfd00038a6d23e29ec12bda49f0a23a1966a0d8"
+  }
+}

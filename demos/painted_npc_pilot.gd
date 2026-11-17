@@ -7,9 +7,9 @@ var host: Node
 var people: Array[Dictionary] = []
 var catalog: Dictionary = {}
 static func _png(path: String) -> Image:
-	if not FileAccess.file_exists(path): return null
+	if not FileAccess.file_exists(_raw_file(path)): return null
 	var image := Image.new()
-	return image if image.load_png_from_buffer(FileAccess.get_file_as_bytes(path)) == OK else null
+	return image if image.load_png_from_buffer(FileAccess.get_file_as_bytes(_raw_file(path))) == OK else null
 
 static func read_catalog(path: String = CATALOG) -> Dictionary:
 	var value: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
@@ -23,13 +23,13 @@ static func read_catalog(path: String = CATALOG) -> Dictionary:
 		if not row.get("entity_id") is String or not row.get("poses") is Dictionary: return {}
 		if not str(row.entity_id).is_empty():
 			if crew.has(row.entity_id) or row.entity_id != row.id or not str(row.get("portrait", "")).begins_with("res://data/crew/portraits/"): return {}
-			if FileAccess.get_sha256(row.portrait) != str(row.get("portrait_sha256", "")): return {}
+			if FileAccess.get_sha256(_raw_file(row.portrait)) != str(row.get("portrait_sha256", "")): return {}
 			crew[row.entity_id] = true
 		for pose: String in POSES:
 			var frame: Variant = row.poses.get(pose)
 			if not frame is Dictionary or not frame.get("file") is String or str(frame.file).get_file() != frame.file: return {}
 			var file := path.get_base_dir().path_join(frame.file)
-			if not FileAccess.file_exists(file) or FileAccess.get_sha256(file) != str(frame.get("sha256", "")): return {}
+			if not FileAccess.file_exists(_raw_file(file)) or FileAccess.get_sha256(_raw_file(file)) != str(frame.get("sha256", "")): return {}
 		ids[row.id] = true
 	return value
 
@@ -113,3 +113,7 @@ func update_view() -> void:
 		var painted_x: int = int(person.character.front_x) if pose in ["front", "seated_front"] else (1 if pose in ["back", "seated_back"] else -1)
 		sprite.flip_h = (desired_x < 0.) != (painted_x < 0.) if absf(desired_x) > .1 else false
 		sprite.set_meta("pose", pose)
+
+## Raw image hashes and PNG buffers survive export through explicit .bin siblings.
+static func _raw_file(path: String) -> String:
+	return path+".bin" if FileAccess.file_exists(path+".bin") else path

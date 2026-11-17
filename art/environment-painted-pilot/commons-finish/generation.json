@@ -1,0 +1,15 @@
+{
+  "authority": "D-165 Commons painted finish",
+  "mode": "built-in image_gen.imagegen",
+  "artifacts": [
+    {
+      "file": "commons-floor-albedo.png",
+      "prompt": "Use case: stylized-concept. Reusable diffuse floor colour texture for the entire Commons civic deck of the illustrated spaceship. Use the attached accepted Commons paintover ONLY as the palette, fine ink and matte gouache style reference. Produce one opaque landscape 2:1 texture, exactly orthographic straight down, flat colour only, edge to edge. Deep muted petrol-teal enamel/pigment field throughout, warm hand-painted gouache grain and fine brush variation. Several graceful large ochre/golden ginkgo botanical sprays sweep across the field, with small ivory leaves and subdued amber accents. Arrange four distinct sweeping sprays asymmetrically with generous calm petrol negative space between them, matching the refined floor ornament in the accepted art. This texture will cover a 48 by 24 metre repeat zone and join across the whole existing deck; make left and right edges match and top and bottom edges match with uninterrupted quiet petrol pigment, keeping all botanical stems/leaves at least 12 percent away from every image edge. It must have no visible tile frame, square border, medallion, room perspective or rug shape. Do not draw walkways, architectural boundaries or floor seams, because native raised path/ribbon geometry already supplies the actual lanes. NO furniture, buildings, people, shadows, directional lighting, gloss, ambient occlusion, relief, bevels, text, labels, logos, sky or stars. A beautifully painted flat albedo surface, not a scene or simulated material render. The engine supplies all light.",
+      "reference": "art/environment-painted-pilot/whole-room/commons-whole-room-paintover-v2.png",
+      "reference_role": "accepted style reference",
+      "transparent_background": false,
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-efe87c4d-0b47-4d44-85d3-2f1ee96bc2c0.png",
+      "sha256": "c376a446baa26766b45c61e1d074166c054238e6b800d15468dececa541d56d9"
+    }
+  ]
+}

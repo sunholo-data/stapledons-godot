@@ -1,0 +1,30 @@
+{
+  "authority": "D-164: Mark accepts whole-room coverage targets; build the bridge finish",
+  "mode": "built-in image_gen.imagegen",
+  "artifacts": [
+    {
+      "file": "bridge-floor-albedo.png",
+      "prompt": "Use case: stylized-concept. Make a reusable DIFFUSE COLOUR TEXTURE for the entire circular bridge floor, using the attached approved whole-bridge illustration only as the authoritative colour/ink/botanical style reference. Output a square 2048 by 2048 flat orthographic top-down painted surface, no perspective. This is one continuous 48 metre-wide floor colour map, not a small insert or floor tile, and is not meant to tile. The circular bridge occupies the centred circle of radius 43 percent of image width; all space outside this circle must simply continue the petrol-teal pigment field to all four edges. Within that circle: a warm ochre/plum central medallion of radius 10 percent of image width; a broad warm ivory field from radius 11 to 34 percent of width; a petrol perimeter band from radius 35 to 43 percent. Fine double ochre circular rules connect these regions. Arrange sixteen graceful botanical stems and ochre/cream ginkgo-like leaves around the broad ivory field, radially oriented, with ample calm ivory space. Each stem forms a refined asymmetric spray a few metres long and spans one radial sector, as in the accepted room design. Additional sparse ochre leaf sprays in the petrol outer band. Refined hand-inked French science-fiction comic linework, matte gouache pigment variation, quiet visible brush grain, beautiful surface craft. All pigment is completely FLAT albedo. Do NOT draw radial structural seams, because the real floor has its own raised seams which must remain visible. No furniture, people, hardware, hole cutouts, room view, diagrams, labels, numbers, text, light/shadow, ambient occlusion, fake bevels, relief, reflections, highlights, gradients from illumination or drop shadows. Opaque edge to edge. Exactly one room-wide circular composition in a square canvas, seen straight from above.",
+      "reference": "art/environment-painted-pilot/whole-room/bridge-whole-room-paintover-v1.png",
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-661de524-f9f3-4fc7-9f37-c9a43eb3c3b6.png",
+      "sha256": "487bd49c6bd555536b6995e4f05b6484b941720151cada820d1ef72d7a63869a",
+      "bytes": 2757597
+    },
+    {
+      "file": "crafted-pigment-atlas.png",
+      "prompt": "Use case: stylized-concept. Create a reusable flat DIFFUSE pigment texture atlas matching the subtle hand-painted enamel and gouache colours in the attached approved bridge illustration. Output a square image divided EXACTLY into four equal edge-to-edge rectangular quadrants with perfectly straight boundaries at x=50 percent and y=50 percent, no gaps, borders or gutters: TOP LEFT warm ivory pigment (#e4d7b6); TOP RIGHT deep muted petrol enamel (#31575a); BOTTOM LEFT restrained ochre brass pigment (#bb914c); BOTTOM RIGHT soft deep plum upholstery pigment (#604759). Each quadrant is an unadorned field of that colour with fine warm ink/gouache grain, gentle brush variation and tasteful handmade surface richness. Make them flat colour texture swatches rather than shaded objects. Texture variation within each field should be subtle, consistent average colour, and readable when applied to furniture. Absolutely no botanical ornaments, line borders, symbols, text, labels, diagrams, furniture, spheres, lighting, directional gradients, cast shadows, glossy spots, relief, ambient occlusion or simulated depth. No separator lines. Every quadrant must be completely filled all the way to its boundaries with its specified pigment. The engine supplies all lighting.",
+      "reference": "art/environment-painted-pilot/whole-room/bridge-whole-room-paintover-v1.png",
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-68d1b365-acbf-44d9-a086-734a06058e6e.png",
+      "sha256": "12632167abc77aa49b271bf48d99bf44a8099c874b0aa0ca242cba2f00f9c6d8",
+      "bytes": 2362012
+    },
+    {
+      "file": "ivory-botanical-enamel.png",
+      "prompt": "Use case: stylized-concept. Create a flat reusable DIFFUSE colour texture for ivory console shells and furniture in the attached approved painted bridge, using that image solely as style/palette reference. Landscape 2:1 rectangular canvas seen perfectly head-on. Warm matte ivory enamel field fills all edges. Across the central 65 percent of its height, an elegant thin dark-ochre ink stem curves horizontally carrying several ochre/golden-brown ginkgo leaves and muted petrol accent leaves, like fine hand-painted Art Nouveau botanical enamel. Keep ample calm ivory space around the sparse refined decoration so it works as a painted panel rather than busy wallpaper. No separate border or pictured frame. Gentle gouache pigment and fine hand-ink contour craftsmanship matching the accepted game artwork. No perspective, room, object, furniture, person, text, lighting effects, shaded corners, cast shadows, gloss, fake depth, carving or ambient occlusion. Opaque and flat pigment only; the game supplies lighting. No obvious central emblem or tile shape.",
+      "reference": "art/environment-painted-pilot/whole-room/bridge-whole-room-paintover-v1.png",
+      "original_generated_file": "/Users/voightkampff/.codex/generated_images/01a1d06b-5fb0-7c40-bff4-02301dba9429/exec-6ae8a86c-9be0-41c1-9a4a-4b4a1185f113.png",
+      "sha256": "d6fb1d9107878ae4a20721c9823693387a9afb80539c816d1889ae166d47d0c0",
+      "bytes": 1348525
+    }
+  ]
+}

@@ -1,0 +1,278 @@
+7 tests: 7 passed, 0 failed, 0 skipped (11.685068708s)
+strict stellarSurfaceVm: VM stellar-surface-ok 28671 | interpreter stellar-surface-ok 28671
+stellar-protocol: OK 5 finite stars (Sun, alpha Cen A and B, Aldebaran, TRAPPIST-1), clock: OK
+script-gate: observation-import-parity ok: observation-import-parity: 40 real sources, 0 mismatches (rc 0, no SCRIPT ERROR, 0 s of 180 s)
+script-gate: survey-footprint-parity ok: survey-footprint-parity: 1 real registered field, 0 mismatches (rc 0, no SCRIPT ERROR, 0 s of 180 s)
+script-gate: content-budget ok: content-budget: 30 passed, 0 failures (rc 0, no SCRIPT ERROR, 1 s of 60 s)
+script-gate: content-pack ok: content-pack: 24 passed, 0 failures (rc 0, no SCRIPT ERROR, 0 s of 60 s)
+cd sim && ailang lock
+Resolving dependencies in /private/tmp/stapledons-playable-integration-20261117/sim
+✓ Generated ailang.lock (8 packages)
+  → sunholo/celestial@0.7.0 (registry)
+  → sunholo/content_library@0.1.0 (registry)
+  → sunholo/decisions@0.4.0 (registry)
+  → sunholo/social_dynamics@0.4.0 (registry)
+  → sunholo/crew_core@0.6.0 (registry)
+  → sunholo/relativity@0.12.0 (registry)
+  → sunholo/observe@0.1.0 (registry)
+  → sunholo/worlds@0.2.1 (registry)
+cd tools/audio && ailang lock # sunholo/audio for the sound tools (R2-SUNHOLO-AUDIO)
+Resolving dependencies in /private/tmp/stapledons-playable-integration-20261117/tools/audio
+✓ Generated ailang.lock (1 packages)
+  → sunholo/audio@0.6.0 (registry)
+git diff --exit-code -I '"generated_at"' sim/ailang.lock tools/audio/ailang.lock; rc=$?; git checkout -q sim/ailang.lock tools/audio/ailang.lock; exit $rc
+python-guard: ok (25 allowlisted, 0 awaiting AILANG port)
+audio-silent-guard: ok (89 windowed godot invocations; 5 allowlisted to keep sound)
+uid-guard: ok (494 .uid files)
+lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)
+finder-parity: finderVm finder-ok; finderProbe 3206 bytes identical (strict VM = interpreter)
+lab-probe-parity: draws, quadrature, intervals, filter identical (strict VM = interpreter)
+lab-parity: scenarioVm scenario-ok (strict VM = interpreter)
+lab-parity: scenarioProbe 18744 bytes (strict VM = interpreter)
+lab-parity: statsVm stats-ok (strict VM = interpreter)
+lab-parity: statsProbe 10722 bytes (strict VM = interpreter)
+lab-parity: 4 checks NOT on the strict VM (they run under ailang test only; add them back at the fix): lab_scenario_test.checkShape (ailang#2310), lab_scenario_test.checkValues (ailang#2310); lab_stats_test.checkQuantiles (ailang#2311), lab_stats_test.checkVerdict (ailang#2310)
+rng-keyed: keyed-rng-ok (10000 uniforms, strict VM = interpreter)
+worlds-parity: worldsVm worlds-ok (strict VM = interpreter)
+worlds-parity: protocolWorldsVm protocol-worlds-ok (strict VM = interpreter)
+worlds-parity: censusVm census-ok (strict VM = interpreter)
+worlds-parity: calibVm 2 development seeds byte-identical
+strict VM 21.392852753780428 | interpreter 21.392852753780428 | closed form 21.392852753780602
+strict off-axis VM 27.637939595105987 | interpreter 27.637939595105987 | closed form 27.637939595106303
+strict protocolVm: protocol-ok, 18 lines, digest f736163faa6de646 (strict VM = interpreter)
+strict worldVm: VM world-ok | interpreter world-ok
+strict planVm: VM plan-ok | interpreter plan-ok
+strict journeyVm VM 4.491447784623953 | interpreter 4.491447784623953 | closed form 4.491447784623963
+strict voyageVm: VM voyage-ok | interpreter voyage-ok
+strict scriptedRoundTrip(0): VM 8.79634285135256 | interpreter 8.79634285135256 | closed form 8.796342851352557
+strict scriptedRoundTrip(1): VM 1.2408854209687783 | interpreter 1.2408854209687783 | closed form 1.2408854209687783
+strict scriptedRoundTrip(2): VM 0.043983933086099825 | interpreter 0.043983933086099825 | closed form 0.043983933086098936
+strict scriptedRoundTrip(3): VM 7.555457430383781 | interpreter 7.555457430383781 | closed form 7.555457430383779
+strict scriptedRoundTrip(4): VM 0.0 | interpreter 0.0 | closed form 0.0
+strict scriptedRoundTrip(5): VM 2.0 | interpreter 2.0 | closed form 2.0
+strict scriptedApproach VM 1.0000016182849817e+07 | interpreter 1.0000016182849817e+07 | closed form 10000016.182849806
+strict grVm (M3.4): VM gr-ok | interpreter gr-ok
+strict stopsVm (D-54): VM stops-ok 24643.227462158196 107061.51570942107 154673.2 14830.067950667371 8836461.99690889 62034037.14693895 4479288.726595116 | interpreter stops-ok 24643.227462158196 107061.51570942107 154673.2 14830.067950667371 8836461.99690889 62034037.14693895 4479288.726595116
+strict consequenceVm: VM consequence-ok | interpreter consequence-ok
+strict earthLinkVm (R3-EARTH-LINK): VM earth-link-ok | interpreter earth-link-ok
+strict earthLogVm (R3-COMMS-V2): VM earth-log-ok | interpreter earth-log-ok
+strict earthFeedVm (R3-EARTH-LINK): VM earth-feed-ok | interpreter earth-feed-ok
+strict transitVm (M4.3a): VM transit-ok | interpreter transit-ok
+strict rngVm seed 7: VM rng-ok -9169153163131597079 | interpreter rng-ok -9169153163131597079 | reference rng-ok -9169153163131597079
+strict rngVm seed 9007199254740991: VM rng-ok -1099755262192378830 | interpreter rng-ok -1099755262192378830 | reference rng-ok -1099755262192378830
+strict crew: consent turn 6 lines 12 draws 2 sha 47f105e69a9fb69c68df256c76e581048dcfb269fe3fca782a11a5c295eab100 | orders turn 7 lines 11 draws 1 sha 08cd5542e2bcbfe07a5936f865a20d65e3170f514b35bdb6a1d7b58c96f941e7 | shipevent turn 4 lines 10 draws 1 sha c13be03cdcd75574278d147dbff7efa74203bdcf4653007d22031b26326342d5 | argument turn 5 lines 9 draws 0 sha 4bd36a17e357c94405f1bd9afeb6af551eb2786c21ea720ad93ea9082bf624cd | console_v2 turn 6 lines 35 draws 6 sha d39fbfc05e61091a1890f5c72a759668894fe5699251b60a487091aaf4f0b076
+strict console: console_v2 turn 6 lines 35 draws 6 sha d39fbfc05e61091a1890f5c72a759668894fe5699251b60a487091aaf4f0b076
+strict namesVm: names regions 14 given 224 family 224 crew Lena Ferreira, Abena Appiah, Nomvula Sithole, Joko Saputra, Dakota Begay
+strict digestScripted: crossing chunks 15 holds 1 turn 391 digest a9a7c96e3b78a6c05cdfd7ef6e23c3d7b76fe9d664ef0a660b26911b6d766b03
+parity-v2: silent until the first input; first output is the hello reply (VM and interpreter)
+ailang run --bytecode --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/v2_session.ndjson > .godot/tmp/v2_vm.txt
+ailang run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/v2_session.ndjson > .godot/tmp/v2_interp.txt
+cmp .godot/tmp/v2_vm.txt .godot/tmp/v2_interp.txt && echo "parity-v2: identical ($(wc -l < .godot/tmp/v2_vm.txt) lines)"
+parity-v2: identical (      23 lines)
+parity-v2: rest tolerance edge (turn at phi 0.9e-9 accepted, 1.1e-9 refused moving)
+AILANG="ailang" python3 tools/replay.py --case diag_thrust600
+replay: AILANG v0.56.1, arm64 (ailang)
+  ok    diag_thrust600            602 lines    338780 bytes  VM   2.31 s  interpreter   5.86 s  sha256 1e9413ef538f0b0a  sha256 tests/replays/diag_thrust600.state.arm64.sha256
+replay: 1 cases, all identical (5.9 s wall)
+ailang run --bytecode --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/gr.ndjson > .godot/tmp/gr.out
+ailang run --quiet --package-dir sim --caps IO --entry main sim/ship.ail < tests/fixtures/gr.ndjson > .godot/tmp/gr_interp.out
+parity-gr: VM = interpreter (25 lines, 3 archive events)
+parity-gr: archive events in order: bh_enter bh_hover bh_ring
+parity-gr: hello 2.6 (relativity 0.10.0); sgr_a reports mass_msun 4297000 (4.297e6)
+parity-gr: refusals bad_radius, bad_gr, moving, in_gr; a bad_gr line; hover at 10, orbit at 3; first_black_hole unlocks the tides and shadow entries
+AILANG="ailang" python3 tools/replay.py  
+replay: AILANG v0.56.1, arm64 (ailang)
+  ok    ai_sim_session            182 lines    119681 bytes  VM   2.83 s  interpreter   3.30 s  sha256 b6c27cc93b1e854d  cmp tests/replays/ai_sim_session.state.arm64.ndjson
+  ok    ai_stub_session             7 lines      5500 bytes  VM   2.64 s  interpreter   1.52 s  sha256 66a2651c2f056af4  cmp tests/replays/ai_stub_session.state.arm64.ndjson
+  ok    alpha_cen                  66 lines     38988 bytes  VM   2.68 s  interpreter   2.25 s  sha256 aedf1784dd98aa77  cmp tests/replays/alpha_cen.state.arm64.ndjson
+  ok    diag_thrust600            602 lines    338780 bytes  VM   2.83 s  interpreter   6.87 s  sha256 1e9413ef538f0b0a  sha256 tests/replays/diag_thrust600.state.arm64.sha256
+  ok    earth_log_voyage           45 lines   1389901 bytes  VM   4.06 s  interpreter  25.89 s  sha256 07dcdfc610228499  sha256 tests/replays/earth_log_voyage.state.arm64.sha256
+  ok    godot_map_voyage           72 lines     49398 bytes  VM   2.76 s  interpreter   2.28 s  sha256 8d1397fc1546e595  cmp tests/replays/godot_map_voyage.state.arm64.ndjson
+  ok    m4_adversarial           2708 lines   4226899 bytes  VM   5.16 s  interpreter  44.70 s  sha256 bfb959dbab6dfd76  sha256 tests/replays/m4_adversarial.state.arm64.sha256
+  ok    m4_min_path              2702 lines   4226131 bytes  VM   5.15 s  interpreter  44.72 s  sha256 bc7de5df15abe489  sha256 tests/replays/m4_min_path.state.arm64.sha256
+  ok    m4_transit_harness        428 lines    563034 bytes  VM   2.70 s  interpreter   7.72 s  sha256 e8cabac62833d388  sha256 tests/replays/m4_transit_harness.state.arm64.sha256
+  ok    medic_rehearsal             7 lines      3421 bytes  VM   2.39 s  interpreter   1.23 s  sha256 ef5193f4587b30a7  cmp tests/replays/medic_rehearsal.state.arm64.ndjson
+  ok    offaxis_v11_equiv          17 lines      4987 bytes  VM   2.35 s  interpreter   1.34 s  sha256 ad3369b2fdf68397  cmp tests/replays/offaxis_v11_equiv.state.arm64.ndjson
+        offaxis-v11-equiv: 16 requests, beta gamma tau t x pos bit-identical, outcomes equal
+  ok    session10k              10016 lines   4296576 bytes  VM   7.83 s  interpreter 106.72 s  sha256 e8863a867c78251b  sha256 tests/replays/session10k.state.arm64.sha256
+replay: 12 cases, all identical (110.1 s wall)
+crew-sync-check: ok (ee58b27)
+crew-parity: consent ok lines 12 sha 47f105e69a9fb69c68df256c76e581048dcfb269fe3fca782a11a5c295eab100
+crew-parity: orders ok lines 11 sha 08cd5542e2bcbfe07a5936f865a20d65e3170f514b35bdb6a1d7b58c96f941e7
+crew-parity: shipevent ok lines 10 sha c13be03cdcd75574278d147dbff7efa74203bdcf4653007d22031b26326342d5
+crew-parity: argument ok lines 9 sha 4bd36a17e357c94405f1bd9afeb6af551eb2786c21ea720ad93ea9082bf624cd
+crew-parity: console_v2 ok lines 35 sha d39fbfc05e61091a1890f5c72a759668894fe5699251b60a487091aaf4f0b076
+crew-parity: crossing_hold ok lines 15 sha 6f0cccf698810d64bbf218fc836675079b4361788734b03d018a2430d25adafd
+crew-parity: ok (6 recordings, VM == interpreter; console_v2: offers that start on agreement, a concern answered, orders over it; crossing_hold: the digest per chunk, repeat run identical)
+lore-import: 20 files in data/lore hash-equal the manifest
+lore-import: cross-repo: skipped (no design checkout with commit 270f95882bc96d8ed3977db72133c00e78af9278 at D=../stapledons-design; clone sunholo-data/stapledons-design and pass D=)
+capture-m4-publish-test: ok complete (GNU Make 3.81)
+capture-m4-publish-test: ok worlds-missing (GNU Make 3.81)
+capture-m4-publish-test: ok worlds-empty (GNU Make 3.81)
+capture-m4-publish-test: ok worlds-short (GNU Make 3.81)
+capture-m4-publish-test: ok manifest-missing (GNU Make 3.81)
+capture-m4-publish-test: ok png-missing (GNU Make 3.81)
+capture-m4-publish-test: ok hash-mismatch (GNU Make 3.81)
+capture-m4-publish-test: ok date-missing (GNU Make 3.81)
+capture-m4-publish-test: ok date-malformed (GNU Make 3.81)
+capture-m4-publish-test: ok date-env (GNU Make 3.81)
+capture-m4-publish-test: ok dest-nonempty (GNU Make 3.81)
+capture-m4-publish-test: ok ls-error (GNU Make 3.81)
+capture-m4-publish-test: ok exists-at-cp (GNU Make 3.81)
+capture-m4-publish-test: ok hang-ls (GNU Make 3.81)
+capture-m4-publish-test: ok hang-cp (GNU Make 3.81)
+capture-m4-publish-test: ok complete (GNU Make 4.4.1)
+capture-m4-publish-test: ok worlds-missing (GNU Make 4.4.1)
+capture-m4-publish-test: ok worlds-empty (GNU Make 4.4.1)
+capture-m4-publish-test: ok worlds-short (GNU Make 4.4.1)
+capture-m4-publish-test: ok manifest-missing (GNU Make 4.4.1)
+capture-m4-publish-test: ok png-missing (GNU Make 4.4.1)
+capture-m4-publish-test: ok hash-mismatch (GNU Make 4.4.1)
+capture-m4-publish-test: ok date-missing (GNU Make 4.4.1)
+capture-m4-publish-test: ok date-malformed (GNU Make 4.4.1)
+capture-m4-publish-test: ok date-env (GNU Make 4.4.1)
+capture-m4-publish-test: ok dest-nonempty (GNU Make 4.4.1)
+capture-m4-publish-test: ok ls-error (GNU Make 4.4.1)
+capture-m4-publish-test: ok exists-at-cp (GNU Make 4.4.1)
+capture-m4-publish-test: ok hang-ls (GNU Make 4.4.1)
+capture-m4-publish-test: ok hang-cp (GNU Make 4.4.1)
+capture-m4-publish-test: OK (15 cases on 2 makes: GNU Make 3.81, GNU Make 4.4.1)
+similar-test guard: ok, main.gd _run_map asks SESSION_MINOR (18) >= SIMILAR_MINOR (14)
+similar-guard-controls: pristine accepted
+similar-guard-controls: below rejected (similar-test guard: main.gd _run_map asks SURFACE_MINOR (13) below SIMILAR_MINOR (14))
+similar-guard-controls: exact rejected (similar-test guard: main.gd asks SIMILAR_MINOR)
+similar-guard-controls: removed rejected (similar-test guard: main.gd _run_map mentions want_minor 0 times, want 1)
+similar-guard-controls: literal rejected (similar-test guard: main.gd _run_map want_minor is not one bare SimBridge minor)
+similar-guard-controls: twice rejected (similar-test guard: main.gd _run_map mentions want_minor 2 times, want 1)
+similar-guard-controls: unknown rejected (similar-test guard: NO_SUCH_MINOR unresolved in bridge/sim_bridge.gd)
+similar-guard-controls: nofloor rejected (similar-test guard: SIMILAR_MINOR unresolved in bridge/sim_bridge.gd)
+similar-guard-controls: ternary rejected (similar-test guard: main.gd _run_map want_minor is not one bare SimBridge minor)
+similar-guard-controls: arith rejected (similar-test guard: main.gd _run_map want_minor is not one bare SimBridge minor)
+similar-guard-controls: exprconst rejected (similar-test guard: FOO_MINOR unresolved in bridge/sim_bridge.gd)
+similar-guard-controls: exprfloor rejected (similar-test guard: SIMILAR_MINOR unresolved in bridge/sim_bridge.gd)
+similar-guard-controls: comparison rejected (similar-test guard: main.gd _run_map mentions want_minor 2 times, want 1)
+similar-guard-controls: compound rejected (similar-test guard: main.gd _run_map mentions want_minor 2 times, want 1)
+similar-guard-controls: future accepted
+similar-guard-controls: comment accepted
+similar-guard-controls: 13 rejected, 3 accepted
+session-minor guard: ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; main.gd _run_map, demos/ship_geometry_demo.gd _create_navigation and ui/loading_jump.gd _work_sim ask it; 4 test comparisons name it
+session-minor-guard-controls: pristine accepted
+session-minor-guard-controls: map rejected (session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: ship rejected (session-minor guard: demos/ship_geometry_demo.gd _create_navigation does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: prefetch rejected (session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: literal rejected (session-minor guard: ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: arith rejected (session-minor guard: demos/ship_geometry_demo.gd _create_navigation does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: ternary rejected (session-minor guard: main.gd _run_map does not ask SimBridge.SESSION_MINOR)
+session-minor-guard-controls: twice rejected (session-minor guard: demos/ship_geometry_demo.gd _create_navigation mentions want_minor 2 times, want 1)
+session-minor-guard-controls: removed rejected (session-minor guard: main.gd _run_map mentions want_minor 0 times, want 1)
+session-minor-guard-controls: renamed rejected (session-minor guard: ui/loading_jump.gd has no func _work_sim()
+session-minor-guard-controls: unbounded rejected (session-minor guard: ui/loading_jump.gd _work_sim has no following top-level line; range unbounded)
+session-minor-guard-controls: stray rejected (session-minor guard: ui/loading_jump.gd _work_sim mentions warm( 0 times, want 1)
+session-minor-guard-controls: nosession rejected (session-minor guard: SESSION_MINOR unresolved in bridge/sim_bridge.gd)
+session-minor-guard-controls: exprsession rejected (session-minor guard: SESSION_MINOR unresolved in bridge/sim_bridge.gd)
+session-minor-guard-controls: orphan rejected (session-minor guard: SESSION_MINOR (99) is no protocol minor in bridge/sim_bridge.gd)
+session-minor-guard-controls: testname rejected (session-minor guard: tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR)
+session-minor-guard-controls: notests rejected (session-minor guard: no test compares journey_sim's minor with a SimBridge constant)
+session-minor-guard-controls: missbridge rejected (session-minor guard: missing bridge/sim_bridge.gd)
+session-minor-guard-controls: misssite rejected (session-minor guard: missing main.gd)
+session-minor-guard-controls: brokentest rejected (session-minor guard: test scan error (grep rc 2))
+session-minor-guard-controls: bump accepted
+session-minor-guard-controls: comment accepted
+session-minor-guard-controls: 19 rejected, 3 accepted
+python3 tools/test_replay.py MapIndex
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/ai_sim_session.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/ai_stub_session.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/alpha_cen.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/diag_thrust600.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/earth_log_voyage.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/godot_map_voyage.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_adversarial.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_min_path.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_transit_harness.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/medic_rehearsal.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/offaxis_v11_equiv.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...../private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/ai_sim_session.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/ai_stub_session.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/alpha_cen.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/diag_thrust600.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/earth_log_voyage.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/godot_map_voyage.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_adversarial.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_min_path.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/m4_transit_harness.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/medic_rehearsal.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/private/tmp/stapledons-playable-integration-20261117/tools/test_replay.py:418: ResourceWarning: unclosed file <_io.TextIOWrapper name='/private/tmp/stapledons-playable-integration-20261117/tests/replays/offaxis_v11_equiv.ndjson' mode='r' encoding='UTF-8'>
+  return [(f, open(os.path.join(d, f)).read()) for f in sorted(os.listdir(d))
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+....
+----------------------------------------------------------------------
+Ran 9 tests in 0.228s
+
+OK
+script-gate: ai-live-guard-static ok: ai-live-guard: ok (101 make/shell/CI files, 573 test/tool scripts, launch builder, settings) (rc 0, no SCRIPT ERROR, 8 s of 120 s)
+script-gate-lint: ok (295 --script invocations: 177 through $(SCRIPT_GATE), 118 on the baseline; 40 includes, all in mk/*.mk; 41 makefiles scanned)
+script-gate-prereqs: ok (5 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline ci-fast:replay-map-index)
+test-script-gate: ok   stub-pass (exit 0 in 0 s: script-gate: stub-pass ok: drill: 1 passed)
+test-script-gate: ok   stub-parse (exit 1 in 0 s: SCRIPT ERROR line(s))
+test-script-gate: ok   stub-hang (exit 1 in 2 s: timeout after 2 s (rc 142))
+test-script-gate: ok   stub-nosummary (exit 1 in 0 s: no summary line matching)
+test-script-gate: ok   stub-zero (exit 1 in 0 s: no summary line matching)
+test-script-gate: ok   stub-rc3 (exit 1 in 0 s: rc 3, want 0)
+test-script-gate: ok   stub-want1 (exit 0 in 0 s: script-gate: stub-want1 ok: v: FAIL (rc 1)
+test-script-gate: ok   stub-env (exit 0 in 0 s: stub-env ok: AB=7x)
+test-script-gate: ok   stub-unanchored (exit 2 in 0 s: SUMMARY_ERE must start with ^)
+test-script-gate: ok   stub-notimeout (exit 2 in 0 s: TIMEOUT_S must be at least 1)
+test-script-gate: ok   stub-loose (exit 1 in 1 s: SUMMARY_ERE also matches)
+test-script-gate: ok   stub-weakcount (exit 1 in 0 s: SUMMARY_ERE also matches)
+test-script-gate: ok   stub-uncounted (exit 1 in 0 s: carries no nonzero count)
+test-script-gate: ok   stub-namedigit (exit 1 in 0 s: carries no nonzero count)
+test-script-gate: ok   stub-twocount (exit 1 in 0 s: count 2 zeroed)
+test-script-gate: ok   stub-twobound (exit 0 in 0 s: stub-twobound ok: t: 3 files, 4 pairs)
+test-script-gate: ok   stub-ignore-alrm (exit 1 in 4 s: timeout after 2 s)
+test-script-gate: ok   stub-orphan-child (exit 1 in 2 s: timeout after 2 s)
+test-script-gate: FAIL stub-orphan-child: control (sleep 797276) not visible to pgrep
+tools/test_script_gate.sh: line 59: 97980 Terminated: 15          sleep "$c"
+test-script-gate: FAIL 1 of 18 cases
+make: *** [script-gate-selftest] Error 1

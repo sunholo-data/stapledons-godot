@@ -1,0 +1,27 @@
+{
+  "scope": "narrow painted playable candidate preflight; not full sprint or merge verdict",
+  "authority": "D-158",
+  "generator": "parent Codex",
+  "judge": "independent Codex subagent",
+  "score": 86,
+  "verdict": "PASS",
+  "blocking": [],
+  "verified": [
+    "1141 compiled mesh hashes and nine native resource hashes match",
+    "native geometry, cameras/WALK/collision/live UI preserved",
+    "deck transitions retain compiled replacements",
+    "Exported macOS app outside source checkout loads 141 bridge meshes, 1000 Commons meshes and 42 painted residents",
+    "Strict headless export oracle: 3046 checked, 0 skips, 0 failures; pinned AI core staged, raw observation and paint authoring excluded",
+    "Painted NPC raw-image export closure preserves the 27 catalog hashes; source NPC checks: 23 passed"
+  ],
+  "resolved_after_review": [
+    "Explicit authoring export exclusion",
+    "Static painted residents documented; civic smoke handles intended presentation",
+    "Late NPC rollback and painted lift round-trip tests added"
+  ],
+  "remaining": [
+    "Native appearance/FPS acceptance on laptop",
+    "Full sprint and cross-family merge evaluation"
+  ],
+  "external_review": "Automatic approval review rejected sending private code to external Claude; internal independent review used"
+}

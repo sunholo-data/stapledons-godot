@@ -1,0 +1,238 @@
+{
+  "sprint_id": "PLAYABLE-VOYAGE-ACCEPTANCE",
+  "status": "approved_batch_complete_pending_landing",
+  "approved": true,
+  "created": "2026-11-17",
+  "design_doc": "design_docs/planned/r1/playable-voyage-acceptance.md",
+  "sprint_plan": "design_docs/planned/r1/playable-voyage-acceptance-sprint.md",
+  "execution_authorized": true,
+  "handoff_sent": false,
+  "github_issues": [
+
+  ],
+  "evidence_baseline": {
+    "authoring_commit": "f3aa83bf4120fb6f57d858129dd9bada59ed91b4",
+    "authoring_dirty": true,
+    "painted_candidate_commit": "19e4a76338cb72e88e73a22790239691a72ab439",
+    "painted_candidate_clean_at_audit": true,
+    "painted_candidate_local_main_base": "36f4ab4c4044f2d57f1b532cf298ca21c29346c5",
+    "canon_commit": "c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa",
+    "execution_commit": "c34d8869a261eb7fcc10ae233147cbe987fb5cbb",
+    "runtime_pin": "v0.56.1",
+    "runtime_checks_run_during_planning": false,
+    "open_pr_status": "unverified_network_unavailable"
+  },
+  "velocity": {
+    "target_loc_per_day": null,
+    "estimated_total_loc": 310,
+    "estimated_days": null,
+    "estimated_engineering_hours": "4-6",
+    "basis": "Bounded task estimates, not observed team throughput. Recent history mixes guard fixes, merges and ledger work without comparable elapsed-effort evidence. Test runtime and integration/human-review waits are additional."
+  },
+  "constraints": [
+    "No implementation before explicit sprint approval and combined-baseline reconciliation.",
+    "No new gameplay, canon, physics, protocol, package pin, save, reload or undo.",
+    "No local GPU work; no build or publication authorization from this plan.",
+    "D-14 historical R1 scripted proxy stays; three-new-player study remains R2.",
+    "Preserve historical min fixture, scene replay bytes and golden hashes.",
+    "Use shared ship readiness helper; do not duplicate main startup ordering.",
+    "Stop on product blocker and propose a separate bounded fix rather than expanding qualification."
+  ],
+  "registry_reuse": [
+    {
+      "milestone": "PV1",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "Game-specific test startup/provenance only; no package-like capability. Consume ship strand's proposed ShipReviewReadiness.wait helper. No registry search required."
+    },
+    {
+      "milestone": "PV2",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "Reuse existing repository playthrough/console/session harness; add game-specific completion assertions and fixtures, no maths or generic package capability."
+    },
+    {
+      "milestone": "PV3",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "Existing make/replay/display commands and evidence report only; no new package capability."
+    },
+    {
+      "milestone": "PV4",
+      "package": null,
+      "action": "none",
+      "searches": [
+
+      ],
+      "reason": "Attended checklist and disposition record only; no executable package capability."
+    }
+  ],
+  "human_decision_gates": [
+    {
+      "id": "OQ1",
+      "source": "design_docs/planned/r1/playable-voyage-acceptance.md#open-questions-for-mark",
+      "status": "resolved",
+      "decision": "Approve bounded acceptance sprint and identify reconciled combined baseline.",
+      "default": "No implementation or handoff.",
+      "stop": "STOP: report BLOCKED: OQ1 sprint approval and end the run.",
+      "answer": "Mark approved PV1-PV3, attended 2026-11-17; integration baseline ec415f33 with shared readiness SF0"
+    },
+    {
+      "id": "OQ2",
+      "source": "design_docs/planned/r1/playable-voyage-acceptance.md#open-questions-for-mark",
+      "status": "open",
+      "decision": "Adopt newly recommended attended combined-build voyage product review.",
+      "default": "Human acceptance pending; no added historical R1 gate.",
+      "stop": "STOP: commit only owned completed work, report BLOCKED: OQ2 human product review decision, and end the run."
+    }
+  ],
+  "external_dependencies": [
+    {
+      "id": "combined_ship_readiness",
+      "owner": "ship_finish_plan",
+      "needed_by": [
+        "PV1",
+        "PV3",
+        "PV4"
+      ],
+      "description": "Reconciled current-main-based combined painted ship and proposed demos/ship_review_readiness.gd: ShipReviewReadiness.wait(demo, timeout_ms) -> {ok, errors, identity}; native appearance/packaging remain ship strand responsibilities.",
+      "stop": "Automated readiness is satisfied for PV1/PV3; PV4 still awaits attended native review.",
+      "status": "automated_dependency_satisfied",
+      "resolved_at_code": "d10d0d20"
+    }
+  ],
+  "order": [
+    "PV1",
+    "PV2",
+    "PV3",
+    "PV4"
+  ],
+  "features": [
+    {
+      "id": "PV1",
+      "description": "Pin reconciled combined candidate and wait for shared normal-entry readiness before controlled journey sampling.",
+      "estimated_loc": 60,
+      "estimated_minutes": "60-90",
+      "dependencies": [
+        "combined_ship_readiness",
+        "OQ1"
+      ],
+      "files": [
+        "tests/m4_playthrough_ship.gd",
+        "art/playable-voyage-review/evidence.json"
+      ],
+      "acceptance_criteria": [
+        "Design AC1 and AC8 targeted checks pass at named source SHA.",
+        "Harness consumes shared bounded readiness result and confirms combined painted identity before disabling processes or accepting frames.",
+        "Record source/base/runtime/script/lock/asset identity; missing dependency fails closed."
+      ],
+      "passes": true,
+      "started": "2026-11-17T07:30:00Z",
+      "completed": "2026-11-17T08:57:39Z",
+      "notes": "Shared readiness and complete route verified;20/21 compatibility targets pass across PV3. Legacy ship-console cache-only retry remains parent-owned before passes can be true. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    },
+    {
+      "id": "PV2",
+      "description": "Add explicit complete round-trip fixture with home news/log and three failing incomplete-route controls.",
+      "estimated_loc": 150,
+      "estimated_minutes": "60-90 coding plus bounded test runtime",
+      "dependencies": [
+        "PV1"
+      ],
+      "files": [
+        "tests/playthrough_complete_voyage.json",
+        "tests/m4_playthrough_ship.gd",
+        "tests/playthrough_completion.gd if needed",
+        "tests/test_playthrough.sh",
+        "tests/fixtures/playthrough/"
+      ],
+      "acceptance_criteria": [
+        "Design AC3 positive fixture passes with one new_game, exactly two commits, both-leg phases and arrival at Sol/rest.",
+        "Read witnesses prove destination news, home news and final home log in order, with location/tick context.",
+        "AC4 missing-return, missing-home-news and missing-log controls fail for named completion reasons, not parse/resource/timeout failures.",
+        "AC5 display audit passes and frozen minimal/scene replay files remain unchanged."
+      ],
+      "passes": true,
+      "started": "2026-11-17T07:30:00Z",
+      "completed": "2026-11-17T07:44:00Z",
+      "notes": "TDD: missing helper then unit14/0; old harness accepted missing-home-news143079/0 before endpoint integration. New complete route143640/0, display audit259146 checks/0 failures, all six named negative controls pass including missing return/home news/log. Frozen fixture/replay unchanged. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    },
+    {
+      "id": "PV3",
+      "description": "Run same-pin targeted voyage/compatibility/replay checks and record honest evidence levels for independent evaluation.",
+      "estimated_loc": 60,
+      "estimated_minutes": "60-90 preparation plus actual command durations",
+      "dependencies": [
+        "PV2",
+        "combined_ship_readiness"
+      ],
+      "files": [
+        "art/playable-voyage-review/evidence.json",
+        "design_docs/implemented/r1/playable-voyage-acceptance-report.md at eventual landing"
+      ],
+      "acceptance_criteria": [
+        "Design AC1-AC9 each has explicit passed/failed/not-run status with command/source/log hashes.",
+        "New complete recording compares VM/interpreter without new golden recording; historical replay-scene remains pinned.",
+        "Existing crew/comms/guided-review/stub/digits compatibility checks run on the same candidate.",
+        "Cross-family evaluator reviews endpoint/control evidence; product blocker stops scope with reproduction and separate proposed fix."
+      ],
+      "passes": true,
+      "started": "2026-11-17T07:44:00Z",
+      "completed": "2026-11-17T08:57:39Z",
+      "notes": "20 planned compatibility targets passed; strict258s, parity-m4 194s, frozen replay-scene52s. Preserved hashed positive/6negative/source witnesses in art/playable-voyage-review/evidence.json. ship-console cache retry, SF1b live, combined ci-fast and final independent conditions remain parent-owned; new complete-log direct VM/interpreter comparison not run after slot release. No human/native acceptance claim. Final combined qualification passed; see integration report at code d10d0d20. Native acceptance and remote landing are not implied."
+    },
+    {
+      "id": "PV4",
+      "description": "Record attended complete-voyage product review if adopted, with native ship evidence linked and separate judgements.",
+      "estimated_loc": 40,
+      "estimated_minutes": "30-45 session plus scheduling",
+      "dependencies": [
+        "PV3",
+        "OQ2",
+        "combined_ship_readiness"
+      ],
+      "files": [
+        "art/playable-voyage-review/evidence.json",
+        "design_docs/implemented/r1/playable-voyage-acceptance-report.md at eventual landing"
+      ],
+      "acceptance_criteria": [
+        "Design AC10 records reviewer/date/exact build, completed voyage beats, observed timing, interventions and limitations.",
+        "Voyage usability, native painted appearance, sound and performance dispositions are separate; no inference from headless checks or earlier art approval.",
+        "Explicit OQ2 decline records not_requested without human acceptance claim; silence remains pending.",
+        "No save/reload, new ending, three-new-player claim or historical R1 gate amendment."
+      ],
+      "passes": null,
+      "started": null,
+      "completed": null,
+      "notes": "New recommendation only. Existing S3/S5 and visual/audible dev-build approvals are preserved under their owning plans."
+    }
+  ],
+  "approved_by": "Mark, attended 2026-11-17: approved lets go",
+  "approval": "Mark, attended 2026-11-17: approved lets go",
+  "approved_scope": [
+    "PV1",
+    "PV2",
+    "PV3"
+  ],
+  "approved_batch_completed_at": "2026-11-17T08:57:39Z",
+  "integration_code_commit": "d10d0d20f03dc7efa6a99e6d886a8e051ee05ece",
+  "integration_report": "design_docs/reports/playable-batch-integration.md",
+  "independent_review": {
+    "model": "claude-sonnet-5-5",
+    "round": 2,
+    "score": 88,
+    "original_verdict": "CONDITIONAL_PASS",
+    "remaining_condition": "fresh session parity",
+    "condition_resolved": true,
+    "effective_local_acceptance": "PASS"
+  }
+}

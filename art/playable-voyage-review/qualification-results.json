@@ -1,0 +1,216 @@
+{
+  "checks": [
+    {
+      "target": "title-screen-test",
+      "status": "passed",
+      "seconds": 25,
+      "command": "env -u AI_LIVE make -o import title-screen-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/title-screen-test.log",
+      "log_sha256": "bbc32a015a289b07da3ffe6374a3ef2fc88abc52efbb350e547d1e142bb0423c"
+    },
+    {
+      "target": "ship-console-test",
+      "status": "blocked_environment",
+      "seconds": 3,
+      "command": "env -u AI_LIVE make -o import ship-console-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 2,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/ship-console-test.log",
+      "log_sha256": "842c4c55c2e33bd1a079409c563683e8e99796140411efa865d355216e647210"
+    },
+    {
+      "target": "ship-demo-live-test",
+      "status": "passed",
+      "seconds": 48,
+      "command": "env -u AI_LIVE make -o import ship-demo-live-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/ship-demo-live-test.log",
+      "log_sha256": "55df23fb24b8d02a3d2186e3d0820bcb24ce8ad2405fd3a04fb7832c15f70d8c"
+    },
+    {
+      "target": "no-twitch-test",
+      "status": "passed",
+      "seconds": 179,
+      "command": "env -u AI_LIVE make -o import no-twitch-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/no-twitch-test.log",
+      "log_sha256": "4379f99a8a0f58f87808c5adbfda43b7150573fee836c445b18e04f026d6ac04"
+    },
+    {
+      "target": "playthrough-adversarial",
+      "status": "passed",
+      "seconds": 98,
+      "command": "env -u AI_LIVE make -o import playthrough-adversarial AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/playthrough-adversarial.log",
+      "log_sha256": "fa327c3f418c347f9a42ce1115473d113ba4684c012a782557254203aa76cb8e"
+    },
+    {
+      "target": "scene-session-audits",
+      "status": "passed",
+      "seconds": 138,
+      "command": "env -u AI_LIVE make -o import scene-session-audits AILANG=runtime/bin/ailang AI=none SCRIPT=tests/playthrough_min.json PLAYTHROUGH_OUT=.godot/tmp/playthrough/voyage-min DISPLAY_SAMPLES=.godot/tmp/playthrough/voyage-min/display_samples.ndjson",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/scene-session-audits.log",
+      "log_sha256": "de2fe08cf9081e9b89018fbca8a3ba5f801e829522c17834d7d6345409e19a4b"
+    },
+    {
+      "target": "levels-regress",
+      "status": "passed",
+      "seconds": 9,
+      "command": "env -u AI_LIVE make -o import levels-regress AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/levels-regress.log",
+      "log_sha256": "7f4ce5685017fa2427731d78f305ad6242821cc1586d82780b775a5b46008500"
+    },
+    {
+      "target": "camera-test",
+      "status": "passed",
+      "seconds": 73,
+      "command": "env -u AI_LIVE make -o import camera-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/camera-test.log",
+      "log_sha256": "0c0837d30974920ae67086ab8c1960eac168353f34410e623a6b20b06c9788d5"
+    },
+    {
+      "target": "camera-forward-test",
+      "status": "passed",
+      "seconds": 22,
+      "command": "env -u AI_LIVE make -o import camera-forward-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/camera-forward-test.log",
+      "log_sha256": "964c6461d78f1683d319b83b96c2faa2be1c087a42eefa9c0ff9caeac833c4e9"
+    },
+    {
+      "target": "comms-walk-test",
+      "status": "passed",
+      "seconds": 11,
+      "command": "env -u AI_LIVE make -o import comms-walk-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/comms-walk-test.log",
+      "log_sha256": "664e0dea9b70bc576b8929aaed322ff6a8844027e5de94ee34c41a196cf9e91c"
+    },
+    {
+      "target": "captain-chair-test",
+      "status": "passed",
+      "seconds": 2,
+      "command": "env -u AI_LIVE make -o import captain-chair-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/captain-chair-test.log",
+      "log_sha256": "e0cca3eeffbbab19fb1ad413232eb972eca8f4f48e67825497ee57f97bfd4a42"
+    },
+    {
+      "target": "captain-command-test",
+      "status": "passed",
+      "seconds": 5,
+      "command": "env -u AI_LIVE make -o import captain-command-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/captain-command-test.log",
+      "log_sha256": "80a01ceed038dcb91b3c4f06c547954fc7a010c4e3c46e6941ad70e4a1e971c7"
+    },
+    {
+      "target": "crew-console-test",
+      "status": "passed",
+      "seconds": 8,
+      "command": "env -u AI_LIVE make -o import crew-console-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 0,
+      "log": "art/playable-voyage-review/qualification/crew-console-test.log",
+      "log_sha256": "99e174be534c3deb983b77756969418adc26c2090d488794e4ec7c54afa5c854"
+    },
+    {
+      "target": "comms-station-test",
+      "status": "passed",
+      "seconds": 5,
+      "command": "env -u AI_LIVE make -o import comms-station-test AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 0,
+      "log": "art/playable-voyage-review/qualification/comms-station-test.log",
+      "log_sha256": "bab565aac38cef02a997aaf61e4f8756cbcd344d50b4a36c3dd83c2cf41b1f10"
+    },
+    {
+      "target": "display-audit-crew",
+      "status": "passed",
+      "seconds": 27,
+      "command": "env -u AI_LIVE make -o import display-audit-crew AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/display-audit-crew.log",
+      "log_sha256": "f7bb0f6a77b5783920fcc25bd7b2779113a08ee0fa77fef983142cb169016bde"
+    },
+    {
+      "target": "display-audit-comms",
+      "status": "passed",
+      "seconds": 131,
+      "command": "env -u AI_LIVE make -o import display-audit-comms AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/display-audit-comms.log",
+      "log_sha256": "ef7437d11206cf5debc96c0a0ea34e530264dd438a2fe4f77dd8082ac7cd6df6"
+    },
+    {
+      "target": "display-audit-interlude",
+      "status": "passed",
+      "seconds": 39,
+      "command": "env -u AI_LIVE make -o import display-audit-interlude AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/display-audit-interlude.log",
+      "log_sha256": "a5ca0d432f347b293e7f2b7e7c21536f1317c9e1937c9bdd79c51ec17c4dc990"
+    },
+    {
+      "target": "playthrough-ai-modes",
+      "status": "passed",
+      "seconds": 281,
+      "command": "env -u AI_LIVE make -o import playthrough-ai-modes AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 1,
+      "log": "art/playable-voyage-review/qualification/playthrough-ai-modes.log",
+      "log_sha256": "ae03bd8920381c8341dc3767a3e214edbf786f1ebcf19b2ab126ffdf19024c4a"
+    },
+    {
+      "target": "strict",
+      "status": "passed",
+      "seconds": 258,
+      "command": "env -u AI_LIVE make -o import strict AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 0,
+      "log": "art/playable-voyage-review/qualification/strict.log",
+      "log_sha256": "1c28fcd321ad9057da29f4839233e36b4a36da05aa531699e62e5d80b971c73c"
+    },
+    {
+      "target": "parity-m4",
+      "status": "passed",
+      "seconds": 194,
+      "command": "env -u AI_LIVE make -o import parity-m4 AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 0,
+      "log": "art/playable-voyage-review/qualification/parity-m4.log",
+      "log_sha256": "2e6aee3256b810040106e96eb8d5f806673fc9d36d80cae5075e3dab4a00118f"
+    },
+    {
+      "target": "replay-scene",
+      "status": "passed",
+      "seconds": 52,
+      "command": "env -u AI_LIVE make -o import replay-scene AILANG=runtime/bin/ailang",
+      "make_exit_status": 0,
+      "driver_wrapper_exit_status": 0,
+      "log": "art/playable-voyage-review/qualification/replay-scene.log",
+      "log_sha256": "000269be8cf48e69d85407cae96134852a52dc56e50ed90dfa13b601f8eef395"
+    }
+  ],
+  "batch_note": "Outer Godot-only script guard falsely counted nested success text no SCRIPT ERROR. Actual make success is independently witnessed by its && qualification sentinel, and real SCRIPT ERROR text is absent after removing that literal success phrase. Raw logs and wrapper statuses are retained; no target verdict was weakened.",
+  "blocked_note": "ship-console-test did not reach its assertions because its ignored historical baseline cache was absent; local pinned cache restored and verified, parent retry pending."
+}

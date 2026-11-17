@@ -1,0 +1,4 @@
+script-gate: ship-runtime-fingerprint ok: runtime-fingerprint: 6 passed, 0 failures (rc 0, no SCRIPT ERROR, 0 s of 600 s)
+script-gate: ship-live-sim ok: live-journey: 17 passed, 0 failures (rc 0, no SCRIPT ERROR, 11 s of 600 s)
+script-gate: ship-live-demo ok: ship-demo-live: 9 passed, 0 failures (rc 0, no SCRIPT ERROR, 37 s of 600 s)
+qualification: 1 passed, 0 failures

@@ -1,0 +1,2 @@
+script-gate-lint: ok (284 --script invocations: 166 through $(SCRIPT_GATE), 118 on the baseline; 39 includes, all in mk/*.mk; 40 makefiles scanned)
+script-gate-prereqs: ok (5 pairs hold in Makefile: constellation-test:starmap-assets planets-test:planet-assets planet-textures-check:planet-assets ship-console-test:ship-baseline ci-fast:replay-map-index)

@@ -1,0 +1,40 @@
+finder-parity: finderVm finder-ok; finderProbe 3206 bytes identical (strict VM = interpreter)
+lab-probe-parity: draws, quadrature, intervals, filter identical (strict VM = interpreter)
+lab-parity: scenarioVm scenario-ok (strict VM = interpreter)
+lab-parity: scenarioProbe 18744 bytes (strict VM = interpreter)
+lab-parity: statsVm stats-ok (strict VM = interpreter)
+lab-parity: statsProbe 10722 bytes (strict VM = interpreter)
+lab-parity: 4 checks NOT on the strict VM (they run under ailang test only; add them back at the fix): lab_scenario_test.checkShape (ailang#2310), lab_scenario_test.checkValues (ailang#2310); lab_stats_test.checkQuantiles (ailang#2311), lab_stats_test.checkVerdict (ailang#2310)
+rng-keyed: keyed-rng-ok (10000 uniforms, strict VM = interpreter)
+worlds-parity: worldsVm worlds-ok (strict VM = interpreter)
+worlds-parity: protocolWorldsVm protocol-worlds-ok (strict VM = interpreter)
+worlds-parity: censusVm census-ok (strict VM = interpreter)
+worlds-parity: calibVm 2 development seeds byte-identical
+strict VM 21.392852753780428 | interpreter 21.392852753780428 | closed form 21.392852753780602
+strict off-axis VM 27.637939595105987 | interpreter 27.637939595105987 | closed form 27.637939595106303
+strict protocolVm: protocol-ok, 18 lines, digest f736163faa6de646 (strict VM = interpreter)
+strict worldVm: VM world-ok | interpreter world-ok
+strict planVm: VM plan-ok | interpreter plan-ok
+strict journeyVm VM 4.491447784623953 | interpreter 4.491447784623953 | closed form 4.491447784623963
+strict voyageVm: VM voyage-ok | interpreter voyage-ok
+strict scriptedRoundTrip(0): VM 8.79634285135256 | interpreter 8.79634285135256 | closed form 8.796342851352557
+strict scriptedRoundTrip(1): VM 1.2408854209687783 | interpreter 1.2408854209687783 | closed form 1.2408854209687783
+strict scriptedRoundTrip(2): VM 0.043983933086099825 | interpreter 0.043983933086099825 | closed form 0.043983933086098936
+strict scriptedRoundTrip(3): VM 7.555457430383781 | interpreter 7.555457430383781 | closed form 7.555457430383779
+strict scriptedRoundTrip(4): VM 0.0 | interpreter 0.0 | closed form 0.0
+strict scriptedRoundTrip(5): VM 2.0 | interpreter 2.0 | closed form 2.0
+strict scriptedApproach VM 1.0000016182849817e+07 | interpreter 1.0000016182849817e+07 | closed form 10000016.182849806
+strict grVm (M3.4): VM gr-ok | interpreter gr-ok
+strict stopsVm (D-54): VM stops-ok 24643.227462158196 107061.51570942107 154673.2 14830.067950667371 8836461.99690889 62034037.14693895 4479288.726595116 | interpreter stops-ok 24643.227462158196 107061.51570942107 154673.2 14830.067950667371 8836461.99690889 62034037.14693895 4479288.726595116
+strict consequenceVm: VM consequence-ok | interpreter consequence-ok
+strict earthLinkVm (R3-EARTH-LINK): VM earth-link-ok | interpreter earth-link-ok
+strict earthLogVm (R3-COMMS-V2): VM earth-log-ok | interpreter earth-log-ok
+strict earthFeedVm (R3-EARTH-LINK): VM earth-feed-ok | interpreter earth-feed-ok
+strict transitVm (M4.3a): VM transit-ok | interpreter transit-ok
+strict rngVm seed 7: VM rng-ok -9169153163131597079 | interpreter rng-ok -9169153163131597079 | reference rng-ok -9169153163131597079
+strict rngVm seed 9007199254740991: VM rng-ok -1099755262192378830 | interpreter rng-ok -1099755262192378830 | reference rng-ok -1099755262192378830
+strict crew: consent turn 6 lines 12 draws 2 sha 47f105e69a9fb69c68df256c76e581048dcfb269fe3fca782a11a5c295eab100 | orders turn 7 lines 11 draws 1 sha 08cd5542e2bcbfe07a5936f865a20d65e3170f514b35bdb6a1d7b58c96f941e7 | shipevent turn 4 lines 10 draws 1 sha c13be03cdcd75574278d147dbff7efa74203bdcf4653007d22031b26326342d5 | argument turn 5 lines 9 draws 0 sha 4bd36a17e357c94405f1bd9afeb6af551eb2786c21ea720ad93ea9082bf624cd | console_v2 turn 6 lines 35 draws 6 sha d39fbfc05e61091a1890f5c72a759668894fe5699251b60a487091aaf4f0b076
+strict console: console_v2 turn 6 lines 35 draws 6 sha d39fbfc05e61091a1890f5c72a759668894fe5699251b60a487091aaf4f0b076
+strict namesVm: names regions 14 given 224 family 224 crew Lena Ferreira, Abena Appiah, Nomvula Sithole, Joko Saputra, Dakota Begay
+strict digestScripted: crossing chunks 15 holds 1 turn 391 digest a9a7c96e3b78a6c05cdfd7ef6e23c3d7b76fe9d664ef0a660b26911b6d766b03
+qualification: 1 passed, 0 failures

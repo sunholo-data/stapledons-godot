@@ -1,0 +1,13 @@
+m4_scene_session.ndjson: OK
+scene input pin control: one-byte change detected
+scene effects: main ! {IO}, --caps IO
+replay: AILANG v0.56.1, arm64 (/private/tmp/stapledons-playable-voyage-20261117/runtime/bin/ailang)
+  ok    m4_scene_session         2427 lines  83297783 bytes  VM  49.33 s  interpreter   0.00 s  sha256 77f7ec49d1589644  sha256 tests/replays/scene/m4_scene_session.state.arm64.sha256  vm-only (VM = interpreter proven at record time)
+replay positive control: one-bit golden-copy divergence detected
+replay: 1 cases, all identical (49.5 s wall)
+replay sim-only: only sim/ship.ail is launched (by construction: the replay path builds no AI-service command; no process count is measured)
+codex_ids=archive.bubble,archive.one-g,archive.nothing-crosses,archive.two-clocks,archive.photon-drive,archive.ism-glow,archive.starbow,archive.weather-between-the-stars
+codex_hints=always,always,always,first_commit,first_boost,cruise_above_0.9c,cruise_above_0.9c,cruise_above_0.9c
+codex-unlocks=PASS
+replay-scene: PASS (VM only; interpreter proven at record time, see m4_scene_session.record.txt)
+qualification: 1 passed, 0 failures

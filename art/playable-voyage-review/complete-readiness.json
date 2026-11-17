@@ -1,0 +1,17 @@
+{
+	"build": "v0.4.0-dev.37-living-bridge-474-g46c5e9e3",
+	"captain_stage": 0,
+	"counts": {
+		"bridge": 141,
+		"commons": 1000,
+		"residents": 42
+	},
+	"manifest_hashes": {
+		"res://assets/characters/captain/manifest.json": "241321ad3837cd690bfa145384438dd429fbd08d0cc94cf54087438ebe088fce",
+		"res://assets/characters/npcs/manifest.json": "7d0d23a1f53339aa18a63df80e9a304691c00781724d7543975d864c0cc23284",
+		"res://assets/levels/painted/bridge/manifest.json": "bac1e9d99a53da8c69f1550660a9c5b0d3621dbfb3ffe00b2c5a88834120a7d1",
+		"res://assets/levels/painted/commons/manifest.json": "c4472c8c4fa851e171da696346150676cf02eb777dcbd58e228980ebd5ef447e"
+	},
+	"packed": false,
+	"residents": "static painted poses; no crowd simulation"
+}
