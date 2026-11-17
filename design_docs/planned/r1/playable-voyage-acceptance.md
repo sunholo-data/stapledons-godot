@@ -1,6 +1,6 @@
 # Playable voyage acceptance: one complete journey in the combined ship
 
-**Status:** Proposed, unapproved. Created 2026-11-17 for Mark's attended request for concrete planning before implementation. This is an acceptance overlay for existing M4, not a replacement journey design or a claim that R1 is finished.
+**Status:** PV1–PV3 approved by Mark, attended 2026-11-17: “approved lets go”; executing with headless checks only. PV4 human review remains pending. Created for concrete planning before implementation; this is an acceptance overlay for existing M4, not a replacement journey design or a claim that R1 is finished.
 **Release:** r1 acceptance · **Milestone:** new; the roadmap has no separate row.
 **Priority:** P1. Establishes what “playable” means for the combined painted review candidate.
 **Implements:**
@@ -9,7 +9,7 @@
 - Existing [relativity specification §2/§4](https://github.com/sunholo-data/stapledons-design/blob/main/physics/relativity-spec.md) and [Higgs bubble §3/§11](https://github.com/sunholo-data/stapledons-design/blob/main/physics/higgs-bubble.md); no new maths, physics visuals or package API.
 **Depends on:** the reconciled combined painted ship, including cockpit/AI-panel work and current main; the ship-finish plan owns normal-entry readiness, native appearance, art and packaging. AILANG v0.56.1; current sim pins include relativity 0.12.0, observe 0.1.0 and crew_core 0.6.0. No dependency bump proposed (V1–V4).
 **Estimated:** ~310 changed lines of test/fixture/report work, four bounded work packages; no gameplay code budget. See [sprint](playable-voyage-acceptance-sprint.md).
-**Evidence:** read-only audit on 2026-11-17. Game authoring checkout `f3aa83bf4120fb6f57d858129dd9bada59ed91b4` is dirty; clean painted candidate `19e4a76338cb72e88e73a22790239691a72ab439`; local canon `c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa`. No runtime tests, GPU work, builds or publication were performed for this plan. Code presence is not a green test result.
+**Planning evidence:** read-only audit on 2026-11-17. Game authoring checkout `f3aa83bf4120fb6f57d858129dd9bada59ed91b4` is dirty; clean painted candidate `19e4a76338cb72e88e73a22790239691a72ab439`; local canon `c0ff15282dbdf4e82ceae47aafa6b1efcddf96aa`. No runtime tests, GPU work, builds or publication were performed during that planning audit. Subsequent approved execution is tracked in the sprint and its separate report; code presence alone is not a green test result.
 
 ## Game vision alignment
 
@@ -157,14 +157,14 @@ Stop this acceptance sprint on a runtime blocker, capture reproduction/source/co
 
 ## Open questions for Mark
 
-1. **OQ1 — Approve this bounded acceptance sprint after the combined ship plan is reconciled?** Recommendation: yes, PV1–PV3 reuse the existing journey and stop on product blockers; PV4 follows OQ2. Otherwise the cost is that “playable” remains supported only by separate historical feature evidence. **Default if unanswered:** proposed/unapproved; no implementation or handoff.
+1. **OQ1 — RESOLVED: PV1–PV3 approved**, Mark, attended 2026-11-17: “approved lets go”. The combined baseline is reconciled through integration `ec415f33` (upstream main `ae5394dd`) plus shared ship readiness SF0. This ruling authorizes the bounded headless execution; it is not a fresh permission gate and does not accept PV4/native appearance or authorize publication.
 2. **OQ2 — Adopt one attended complete-voyage product review of the combined laptop build?** Recommendation: yes, as a new owner review with observed timing and named limitations; keep D-14's R1 proxy and defer the three-new-player study to its existing R2 scope. Requiring three fresh players now adds recruitment and a distinct study; declining leaves human voyage acceptance unclaimed. **Default if unanswered:** recommendation pending; no claim of acceptance and no added historical R1 gate.
 
 No design-repo change is required for this acceptance overlay. An amendment to R1's bar, a new timing threshold or campaign completion would require an explicit canon/roadmap decision and is outside this proposal.
 
 ## Deliverables
 
-- This design, matching proposed sprint and `sprint_PLAYABLE-VOYAGE-ACCEPTANCE.json`, all unapproved.
+- This design, matching sprint and `sprint_PLAYABLE-VOYAGE-ACCEPTANCE.json`: PV1–PV3 approved; PV4 pending.
 - After approval: new complete-voyage test fixture and completion checks, targeted evidence manifest/report, linked shared ship/build evidence, independent evaluation and explicit human disposition.
 - Landing updates belong to execution after review; no README index, ledger, changelog, existing sprint or canon file is changed in this planning task.
 

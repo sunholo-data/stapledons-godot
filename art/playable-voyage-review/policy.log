@@ -1,0 +1,5 @@
+script-gate: playable-voyage-unit ok: playthrough-completion: 14 passed, 0 failures (rc 0, no SCRIPT ERROR, 0 s of 60 s)
+python-guard: ok (25 allowlisted, 0 awaiting AILANG port)
+uid-guard: ok (481 .uid files)
+audio-silent-guard: ok (89 windowed godot invocations; 5 allowlisted to keep sound)
+lint-precision: ok (positive control matched 6 lines; 3 allowlisted non-computations; no live hand-computed gamma or 1 - beta)

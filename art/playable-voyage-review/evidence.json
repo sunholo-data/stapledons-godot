@@ -1,0 +1,209 @@
+{
+  "schema": "stapledons.playable-voyage-evidence/1",
+  "status": "qualifying",
+  "source_commit": "c34d8869a261eb7fcc10ae233147cbe987fb5cbb",
+  "base_commit": "ec415f339575a7127f7c9d8643c6067db3011199",
+  "wiring_commit": "a03c147e3adcebd82bd491e8a60fb4c7a1502868",
+  "runtime_version": "AILANG v0.56.1",
+  "godot_version": "4.7.2.stable.official.ed1daf0bf",
+  "script": "tests/playthrough_complete_voyage.json",
+  "script_sha256": "a96a51cb3418309334e66564ab248c509cf150ad4556e0d98dea24c9364528e8",
+  "sim_lock_sha256": "19c1faa69370da2877c0841e7f6be951d2c06e93682154ac3c6ce85f16a94097",
+  "automated_checks": [
+    {
+      "id": "complete_voyage",
+      "status": "passed",
+      "command": "env -u AI_LIVE make -f Makefile -f mk/playable-voyage.mk playable-voyage-test AILANG=runtime/bin/ailang",
+      "summary": "143640 passed, 0 failures; exactly two commits, both arrivals, three ordered location-bound reads; display259146 checks, zero mismatches/new/failures"
+    },
+    {
+      "id": "endpoint_controls",
+      "status": "passed",
+      "command": "env -u AI_LIVE make -o import playthrough-negative AILANG=runtime/bin/ailang",
+      "summary": "6 passed, 0 failures; missing return, home news and final log each rejected for named reason under deadline"
+    },
+    {
+      "id": "contract_unit",
+      "status": "passed",
+      "command": "make -f Makefile -f mk/playable-voyage.mk playable-voyage-unit AILANG=runtime/bin/ailang",
+      "summary": "14 passed, 0 failures"
+    },
+    {
+      "id": "compatibility_and_replay",
+      "status": "running",
+      "command": "planned targeted qualification batch",
+      "summary": "see final report when qualification finishes"
+    }
+  ],
+  "human_review": {
+    "status": "pending",
+    "reviewer": null,
+    "date": null,
+    "note": "PV4 is not completed or claimed; no human voyage/native appearance/sound/performance acceptance from headless evidence"
+  },
+  "headless": true,
+  "gpu_used": false,
+  "build_or_publication_performed": false,
+  "endpoint": {
+    "commits": 2,
+    "errors": [],
+    "final_journey": "arrived",
+    "final_phase": "at_rest",
+    "final_target": "Sol",
+    "final_tick": 2423,
+    "new_game": 1,
+    "status": "pass",
+    "witness": {
+      "arrivals": [
+        "CNS5:3627",
+        "Sol"
+      ],
+      "phases": {
+        "CNS5:3627": [
+          "boosting",
+          "cruising",
+          "braking"
+        ],
+        "Sol": [
+          "boosting",
+          "cruising",
+          "braking"
+        ]
+      },
+      "reads": [
+        {
+          "journey_state": "arrived",
+          "location": "CNS5:3627",
+          "phase": "at_rest",
+          "tick": 1206,
+          "what": "news"
+        },
+        {
+          "journey_state": "arrived",
+          "location": "Sol",
+          "phase": "at_rest",
+          "tick": 2423,
+          "what": "news"
+        },
+        {
+          "journey_state": "arrived",
+          "location": "Sol",
+          "phase": "at_rest",
+          "tick": 2423,
+          "what": "log"
+        }
+      ]
+    }
+  },
+  "readiness": {
+    "build": "v0.4.0-dev.37-living-bridge-474-g46c5e9e3",
+    "captain_stage": 0,
+    "counts": {
+      "bridge": 141,
+      "commons": 1000,
+      "residents": 42
+    },
+    "manifest_hashes": {
+      "res://assets/characters/captain/manifest.json": "241321ad3837cd690bfa145384438dd429fbd08d0cc94cf54087438ebe088fce",
+      "res://assets/characters/npcs/manifest.json": "7d0d23a1f53339aa18a63df80e9a304691c00781724d7543975d864c0cc23284",
+      "res://assets/levels/painted/bridge/manifest.json": "bac1e9d99a53da8c69f1550660a9c5b0d3621dbfb3ffe00b2c5a88834120a7d1",
+      "res://assets/levels/painted/commons/manifest.json": "c4472c8c4fa851e171da696346150676cf02eb777dcbd58e228980ebd5ef447e"
+    },
+    "packed": false,
+    "residents": "static painted poses; no crowd simulation"
+  },
+  "limitations": [
+    "Recorded before checkpoint commit; tested gameplay/test source blobs match source_commit exactly. Later wiring commit only adds make includes.",
+    "Readiness packed=false. Copied runtime build_version label is historical and is not the source commit or an installed reviewed build.",
+    "Historical proxy uses3.5m/s; current shared movement2.2m/s. Synthetic250.29645164012905s is not human elapsed time.",
+    "Static painted residents are presentation. No GPU/native appearance, audible mix, frame-rate or human usability verdict is inferred.",
+    "Full suite and ci-fast are parent/CI responsibilities; targeted qualification only."
+  ],
+  "artifacts": [
+    {
+      "path": "art/playable-voyage-review/complete-run.log",
+      "sha256": "7fe1f45f5fbbee2d4a7c692501bcd192d73f114a6ee9561acf0bdb8af30b22f8",
+      "bytes": 40311
+    },
+    {
+      "path": "art/playable-voyage-review/complete-audit.log",
+      "sha256": "2d262f864e1cfe9b433cad740e521980c428fece6a71f60079743ced6e6b79ea",
+      "bytes": 752
+    },
+    {
+      "path": "art/playable-voyage-review/complete-endpoint.json",
+      "sha256": "fff23c4cefbce6378bf2f3ae3fc99adb4010b46d9b72c13cc21ef8c7a8a6a6a3",
+      "bytes": 786
+    },
+    {
+      "path": "art/playable-voyage-review/complete-readiness.json",
+      "sha256": "49a2e32cff0ae3de2b1456dd645d248ec25d87f15bc702f13f64ad8f6ab277d8",
+      "bytes": 731
+    },
+    {
+      "path": "art/playable-voyage-review/complete-session.ndjson",
+      "sha256": "461f705102a7d160b22f4f211616adca737fbfd99fbd9ac232f5dfad3f9a1375",
+      "bytes": 187005
+    },
+    {
+      "path": "art/playable-voyage-review/negative-controls.log",
+      "sha256": "88242d6fa4fb145c9874269468192700079da10c37197177140a6b0cf17ed30d",
+      "bytes": 1404
+    },
+    {
+      "path": "art/playable-voyage-review/contract-unit.log",
+      "sha256": "504e913850f5007f90214dea633b221bde6bf2f8ed43dbd6922efa8ae5f9ce4f",
+      "bytes": 242
+    },
+    {
+      "path": "art/playable-voyage-review/old-driver-missing-home-news.log",
+      "sha256": "5d1e9eab6965a5e5ea16c3f24769ad17b5c331229f4138c84702cdb73d1041e0",
+      "bytes": 40250
+    },
+    {
+      "path": "art/playable-voyage-review/historical-proxy.txt",
+      "sha256": "b084c5dcbd810255df3fc158e93c053a79ca0414c285bef76f8e3f9c633eb31c",
+      "bytes": 295
+    },
+    {
+      "path": "art/playable-voyage-review/policy.log",
+      "sha256": "373073a3cb930090e118d03315e722ad0c8b86052dccfc614306cd01785e9ccb",
+      "bytes": 421
+    },
+    {
+      "path": "art/playable-voyage-review/script-gate-lint.log",
+      "sha256": "35d0d512ec0ead701d3e972e11053612c4449a8bafad43a5f59739281084790d",
+      "bytes": 354
+    },
+    {
+      "path": "art/playable-voyage-review/negative-unknown_station.log",
+      "sha256": "d2c66dd84325bcd6f17134c586d6f2f9115565b58badad2271cf844e07e7ed6d",
+      "bytes": 17998
+    },
+    {
+      "path": "art/playable-voyage-review/negative-unfocused.log",
+      "sha256": "c7f59eaef8afd8370b859f00c5d944918ddb74b3127fc20cc8117f223171659c",
+      "bytes": 18017
+    },
+    {
+      "path": "art/playable-voyage-review/negative-unscripted.log",
+      "sha256": "01ced2b701965113c657ecc97858f138513d223015c6be88bc8ea7de3c17bab5",
+      "bytes": 22115
+    },
+    {
+      "path": "art/playable-voyage-review/negative-missing_return.log",
+      "sha256": "597af76ad829baa223f6f23d9900920dfa68f09883cf3de4b8de489d6031f063",
+      "bytes": 32293
+    },
+    {
+      "path": "art/playable-voyage-review/negative-missing_home_news.log",
+      "sha256": "08598d56338dce4cff5c21e4d6b0cbdeeb9695766dd499ab03b9849770b11950",
+      "bytes": 40229
+    },
+    {
+      "path": "art/playable-voyage-review/negative-missing_final_log.log",
+      "sha256": "7b723f44309de1a3bf077e46bfaf3098d36a6c646f15fd8e0f847a2e890f44f5",
+      "bytes": 40195
+    }
+  ]
+}

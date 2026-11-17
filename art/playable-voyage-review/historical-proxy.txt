@@ -1,0 +1,12 @@
+transit_seconds=120.9
+click_key_seconds=0
+console_seconds=5.999999999999999
+commit_hold_seconds=3
+reading_seconds=102.3
+walking_seconds=18.096451640129068
+leg_1_seconds=60.150000000000006
+leg_2_seconds=60.75
+total_seconds=250.29645164012905
+limit_360=PASS
+legs_45_120=PASS
+playthrough-time=PASS
