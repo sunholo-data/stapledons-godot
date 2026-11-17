@@ -36,6 +36,7 @@ func _run() -> void:
 		check("wrong expected hash refused", not ready.matches(result.identity, {"manifest_hashes":{"res://assets/characters/captain/manifest.json":"wrong"}}))
 		check("same receipt matches", ready.matches(result.identity, result.identity))
 		check("source is not a packed archive", not result.identity.packed)
+		check("copied runtime stamp cannot identify source build", result.identity.build == "unexported (source checkout)")
 		demo.set_meta("painted_levels_pending", true)
 		check("pending marker overrides old result", not (await ready.wait(demo, 5)).ok)
 		demo.set_meta("painted_levels_pending", false)
