@@ -52,7 +52,7 @@ No registry searches are needed for these non-package tasks. A newly discovered 
 
 **Time box:** one 60–90 minute session; if route integration exceeds it, stop and reslice rather than adding repair work. **Depends on:** SF1a.
 
-- Add proposed `--ship-finish-review=<absolute-output-directory>` routing in `main.gd` through the real normal-entry installer and shared readiness helper. Put route/report detail in companion `tools/ship_finish_review.gd`, avoiding growth of `main.gd` with a second benchmark implementation; commit `.uid` companions with scripts.
+- Add proposed `--ship-finish-review=<absolute-output-directory>` routing in `main.gd` through the real normal-entry installer and shared readiness helper. Put runtime route/report detail in companion `demos/ship_finish_review.gd`, avoiding growth of `main.gd` with a second benchmark implementation; developer-only validation remains under `tools/`. Commit `.uid` companions with scripts.
 - Reuse the existing profiler for disposable seeded bridge, Commons, lift, chair and real-transit phases. Assert phase/finish state; record input/camera metadata. Original-versus-painted runs use exact resource restoration and unchanged geometry. Reject headless timing as native performance evidence.
 - Add proposed `make ship-finish-review-report REPORT=<path>` validation for recorded identities, windows, required phases and repeat data for misses. It reports missing laptop/Mark evidence explicitly, and cannot produce an acceptance verdict from an empty template.
 - **Acceptance:** AC2 plus headless route/report controls. A valid fixture passes; incomplete closure, missing phase and fake hardware confirmation fail. Native laptop commands are prepared, not executed on the training host.

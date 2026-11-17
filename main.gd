@@ -197,7 +197,7 @@ func _route_now(route: String) -> void:
 
 
 func _run_ship_finish_review(output: String) -> void:
-	var result: Dictionary = await load("res://tools/ship_finish_review.gd").new().run(self, output)
+	var result: Dictionary = await load("res://demos/ship_finish_review.gd").new().run(self, output)
 	print("ship-finish-review: ", "OK" if result.ok else "REFUSED "+str(result.errors))
 	get_tree().quit(0 if result.ok else 2)
 

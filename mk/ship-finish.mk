@@ -1,5 +1,5 @@
 # Approved PLAYABLE-SHIP-FINISH evidence slice; include after the project Makefile.
-.PHONY: ship-finish-test ship-finish-profile-test ship-finish-review-report ship-finish-route-test ship-finish-route-live-test
+.PHONY: ship-finish-test ship-finish-profile-test ship-finish-review-report ship-finish-route-test ship-finish-route-live-test ship-finish-pack-test
 ship-finish-test:
 	@mkdir -p $(SCRATCH)
 	@$(SCRIPT_GATE) ship-finish-ready $(SCRATCH)/ship-finish-ready.log 180 '^ship-review-readiness: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --log-file $(SCRATCH)/ship-finish-ready-engine.log --script tests/test_ship_review_readiness.gd
@@ -18,3 +18,6 @@ ship-finish-route-live-test:
 ship-finish-review-report:
 	@mkdir -p $(SCRATCH)
 	@$(SCRIPT_GATE) ship-finish-report-check $(SCRATCH)/ship-finish-report-check.log 60 '^ship-finish-report-check: VALID ' -- $(GODOT) --headless --path . --log-file $(SCRATCH)/ship-finish-report-check-engine.log --script tools/ship_finish_report_check.gd -- --report='$(REPORT)'
+ship-finish-pack-test:
+	@mkdir -p $(SCRATCH)
+	@$(SCRIPT_GATE) ship-finish-pack $(SCRATCH)/ship-finish-pack.log 60 '^ship-finish-pack: [1-9][0-9]* passed, 0 failures$$' -- $(GODOT) --headless --path . --log-file $(SCRATCH)/ship-finish-pack-engine.log --script tests/test_ship_finish_pack.gd -- '$(or $(PACK),$(SCRATCH)/export-pack/game.zip)'

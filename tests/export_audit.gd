@@ -10,6 +10,15 @@ const PRESET := "res://export_presets.cfg"
 ## extension for a script or scene (<base>.gdc, <base>.scn, each with a <path>.remap), or "" for raw.
 const AUTO_EXT := {"gd": "gdc", "tscn": "scn", "gdshader": "", "gdshaderinc": "", "json": ""}
 
+## Release-supported runtime entry points must never hide under the broad dev-tools exemption.
+const PACKED_RUNTIME_SCRIPTS := ["demos/ship_finish_review.gd"]
+static func packed_runtime_errors(entries: PackedStringArray) -> Array[String]:
+	var errors: Array[String] = []
+	for path: String in PACKED_RUNTIME_SCRIPTS:
+		for form: String in [path.get_basename()+".gdc", path+".remap"]:
+			if not entries.has(form): errors.append("required runtime script absent from pack: " + form)
+	return errors
+
 ## D: concatenated or directory reads. Each row names the include entry that ships the bytes,
 ## the witnesses the game needs (project-relative, never all AUTO_EXT), and why.
 const DYNAMIC := [
@@ -235,6 +244,9 @@ static func tally(c: Dictionary) -> Dictionary:
 static func audit(include: PackedStringArray, exclude: PackedStringArray, mutations: Dictionary = {}) -> Array[String]:
 	var c := classify(include, exclude, mutations)
 	var fails: Array[String] = []
+	for path: String in PACKED_RUNTIME_SCRIPTS:
+		if _excluded(path, exclude): fails.append("FAIL required runtime script excluded: " + path)
+		if not FileAccess.file_exists("res://"+path): fails.append("FAIL required runtime script missing: " + path)
 	var floors := [
 		["include_filter entries", include.size(), FLOOR_INCLUDE],
 		["exclude_filter entries", exclude.size(), FLOOR_EXCLUDE],

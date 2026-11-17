@@ -46,3 +46,19 @@ The requested measurement window remains 1920×1080. Each material condition, ph
 Validation requires positive finite observed sizes and scale, checks the recorded window against the report resolution, and rejects dimension/scale changes between material conditions or phases. The focused report fixture explicitly accepts a 1920×1080 window with a 3840×2160 root texture, and rejects missing/zero dimensions, missing/zero display scale and inconsistent phase targets. RED: 14 passed, 6 failures before validation; GREEN: **20 passed, 0 failures**, using only `tests/test_ship_finish_report.gd` through `SCRIPT_GATE`. No GPU or native report was generated.
 
 The validator must run against the matching reviewed source/manifest revision for the installed archive: it compares recorded manifests with local file hashes, rather than fetching or reconstructing a historical source tree. Its schema, consistency and fixture checks support attended native review. They are **not cryptographic attestation** of the machine, execution or report author; a deliberately edited JSON file can invent consistent observations. Actual hardware identity, provenance and visual acceptance require the attended session and Mark's verdict.
+
+## Packed runtime entry correction
+
+Parent inspection of the actual combined ZIP found a blocking packaging defect: the release-supported entry dynamically loaded `tools/ship_finish_review.gd`, while `tools/*` is intentionally excluded. The source/headless checks had not proved the runtime module shipped. The implementation and its UID now live at `demos/ship_finish_review.gd`; main, report/route tests and the developer report CLI reference that path. `tools/ship_finish_report_check.gd` remains developer-only, and the tools exclusion is unchanged.
+
+`ExportAudit.PACKED_RUNTIME_SCRIPTS` now requires both the compiled runtime script and its `.gd.remap` entry, independent of the broad dev-tools exemption. The static audit refuses excluding or deleting this runtime module; the normal pack oracle always checks its forms. A focused pack test rejects a missing script or remap, then checks an actual ZIP.
+
+| Check | Result |
+|---|---|
+| New witness against parent's previous `...integration-20261117/.godot/tmp/export-pack/game.zip` | RED: 4 passed, 1 failure; both `demos/ship_finish_review.gdc` and its remap absent. |
+| Headless corrected export | `godot --headless --path . --export-pack macOS .godot/tmp/ship-finish-runtime.zip`, exit 0; **132,384,777 bytes**, SHA-256 `2b181f302e9ae913d7e41a5d94cf9dd1a2758f70a176d589db0375a7e20deb69`. |
+| Corrected actual ZIP witness | `make ship-finish-pack-test PACK=.godot/tmp/ship-finish-runtime.zip`: **5 passed, 0 failures**. ZIP lists runtime `.gdc` and `.gd.remap`; excluded tools implementation is absent. |
+| Actual packed main/route load | Launching that ZIP with `godot --headless --main-pack ... -- --ship-finish-review=/private/tmp/...` reaches explicit headless refusal, expected exit **2**, no `SCRIPT ERROR`. This proves dynamic packed loading without GPU work. |
+| Focused regressions | Profile **15/0**, report **20/0**, source headless refusal expected **2**, static export audit including new exclusion control **18/0**. |
+
+This scoped export proves the runtime entry closure and actual packed loading; it is not a replacement for parent's fully staged strict export pack, application archive or laptop review. This clone did not copy all ignored production bundles. No native appearance/timing or publication is claimed.

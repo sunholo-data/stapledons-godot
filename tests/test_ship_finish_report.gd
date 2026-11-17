@@ -6,7 +6,7 @@ func check(label: String, ok: bool) -> void:
 	if ok: passed += 1
 	else: failures += 1; printerr("FAIL ", label)
 func _initialize() -> void:
-	var path := "res://tools/ship_finish_review.gd"
+	var path := "res://demos/ship_finish_review.gd"
 	check("native route and validator exist", FileAccess.file_exists(path))
 	if not FileAccess.file_exists(path): finish(); return
 	var review = load(path)

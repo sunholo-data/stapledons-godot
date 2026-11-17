@@ -21,7 +21,7 @@ func _run() -> void:
 	var demo: Node = current_scene
 	check("actual normal-entry production ready", (await Ready.wait(demo)).ok)
 	demo.auto = false; demo.journey_auto_tick = false
-	var route = load("res://tools/ship_finish_review.gd").new()
+	var route = load("res://demos/ship_finish_review.gd").new()
 	var sampler := FixtureSampler.new()
 	for phase in ["docked_bridge","commons_court","commons_terrace","commons_gantry","lift","seated"]:
 		var result: Dictionary = await route._phase(demo, sampler, phase, 3)
