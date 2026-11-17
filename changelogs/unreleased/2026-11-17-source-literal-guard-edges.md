@@ -1,0 +1,4 @@
+### Changed
+
+- **Source-literal guard, lexical edges (row 7ap).** The map-index guard now reads all four spellings of an index/id pair (single-quoted and double-quoted keys, with an `&` or `^` prefix on the id value), handles a negative index and an unclosed brace, and checks a two-pair dictionary as a cross product. A new meta test, `test_the_7ap_guard_test_can_fail`, makes the guard's own assertions fail on purpose, and `test_the_7ap_spellings_fail` pins each new edge with a control text. The `SG_PREREQS` lint pins four more `ci-fast` edges (9 pairs, up from 5), and the prerequisite checker no longer prints I/O errors under a SIGPIPE-ignoring harness, with the same verdicts.
+- Nothing a player sees or hears changes: every edit is in the replay guard test, a Makefile lint and its fixture, or the prerequisite checker script.
