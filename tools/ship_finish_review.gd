@@ -23,13 +23,14 @@ func run(launcher: Node, output: String) -> Dictionary:
 		if report.identity.is_empty(): report.identity = ready.identity
 		elif not Ready.matches(ready.identity, report.identity): errors.append("condition build/closure changed")
 		demo.get_window().size = Vector2i(1920,1080); demo._resize()
+		await launcher.get_tree().process_frame # Observe the applied window/viewport size, not just the request.
 		report.resolution = [demo.get_window().size.x, demo.get_window().size.y]
 		demo.auto = false; demo.journey_auto_tick = false
 		demo.set_camera_motion("full") # Disposable review session; reduced-motion appearance is a separate manual row.
 		var installed: Dictionary = demo.get_meta("painted_levels_result")
 		Bridge.set_enabled(installed.bridge, condition == "painted")
 		Commons.set_enabled(installed.commons, condition == "painted")
-		var row := {"material":condition,"identity":ready.identity,"normal_entry_ready_ms":Time.get_ticks_msec()-started,"phases":[],"restored":false}
+		var row := {"material":condition,"identity":ready.identity,"presentation":presentation(demo),"normal_entry_ready_ms":Time.get_ticks_msec()-started,"phases":[],"restored":false}
 		for phase: String in PHASES:
 			var phase_result := await _phase(demo, bench, phase, 300)
 			if not phase_result.ok: errors.append_array(phase_result.errors); break
@@ -94,6 +95,7 @@ func _phase(demo: Node, bench: RefCounted, phase: String, count: int) -> Diction
 	var sample: Dictionary = await bench.measure_view(demo, phase, count, warmup)
 	sample.before = before; sample.after = snapshot(demo, phase)
 	sample.camera = {"eye":sample.eye_gltf_m,"direction":sample.view_direction}
+	sample.presentation = presentation(demo)
 	sample.inputs = inputs; sample.warmup_frames = warmup
 	if phase == "live_transit" and (not demo.live_journey or sample.after.tick <= before.tick): return _failed("transit did not advance while committed")
 	if phase == "lift" and sample.after.lift_y == before.lift_y: return _failed("lift did not move")
@@ -101,6 +103,14 @@ func _phase(demo: Node, bench: RefCounted, phase: String, count: int) -> Diction
 
 static func snapshot(demo: Node, phase: String) -> Dictionary:
 	return {"phase":phase,"stage":demo.active_stage_id(),"tick":demo.journey_sim.world.tick if demo.journey_sim != null else demo.sky_world.tick,"ship_phase":str(demo.sky_world.ship.phase),"clock":demo.sky_world.get("clock",{}).duplicate(true),"lift_state":demo.lift.state,"lift_y":demo.lift.platform.position.y,"seated":demo.seated()}
+
+static func presentation(demo: Node) -> Dictionary:
+	var window: Window = demo.get_window()
+	var screen := DisplayServer.window_get_current_screen(window.get_window_id())
+	return {"window_size_api_px":_xy(window.size),"viewport_visible_rect_units":_xy(demo.get_viewport().get_visible_rect().size),"root_render_target_px":_xy(demo.get_viewport().get_texture().get_size()),"ship_render_target_px":_xy(demo.geometry_view.get_texture().get_size()),"sky_render_target_px":_xy(demo.sky.get_texture().get_size()),"screen_scale_api":DisplayServer.screen_get_scale(screen),"window_content_scale_factor":window.content_scale_factor,"screen_dpi_api":DisplayServer.screen_get_dpi(screen),"screen_index":screen}
+
+static func _xy(value: Vector2) -> Array:
+	return [value.x,value.y]
 
 static func _until(demo: Node, predicate: Callable, milliseconds: int) -> bool:
 	var deadline := Time.get_ticks_msec() + milliseconds
@@ -139,12 +149,22 @@ static func report_errors(report: Dictionary, require_packed := true, allow_fixt
 	var conditions: Variant = report.get("conditions")
 	if not conditions is Array or conditions.size() != 2: return errors + ["both material conditions required"]
 	var seen := []
+	var baseline_presentation := {}
 	for condition_value: Variant in conditions:
 		if not condition_value is Dictionary: errors.append("condition must be an object"); continue
 		var condition: Dictionary = condition_value
 		seen.append(condition.get("material"))
 		if not condition.get("identity", {}) is Dictionary or not Ready.matches(condition.get("identity", {}), identity): errors.append("mixed condition identity")
 		if condition.get("restored") != true: errors.append("materials not restored")
+		var display: Variant = condition.get("presentation")
+		var display_errors := _presentation_errors(display)
+		errors.append_array(display_errors)
+		if display_errors.is_empty():
+			if resolution is Array and resolution.size() == 2:
+				for axis in 2:
+					if float(display.window_size_api_px[axis]) != float(resolution[axis]): errors.append("window metadata differs from report resolution")
+			if baseline_presentation.is_empty(): baseline_presentation = display
+			elif not Ready.matches(display, baseline_presentation): errors.append("conditions used different presentation dimensions or display scale")
 		var phases: Variant = condition.get("phases")
 		if not phases is Array: errors.append("missing phases"); continue
 		var names := []
@@ -153,19 +173,23 @@ static func report_errors(report: Dictionary, require_packed := true, allow_fixt
 			var sample: Dictionary = sample_value
 			var name: String = sample.get("view", "")
 			names.append(name); errors.append_array(_phase_errors(sample, name, 300))
+			if display_errors.is_empty() and (not sample.get("presentation") is Dictionary or not Ready.matches(sample.presentation, display)): errors.append("phase presentation differs from condition")
 			if float(sample.get("frame_times", {}).get("p99_ms", 0.)) > 16.7:
 				if not sample.get("repeats", []) is Array: errors.append("repeats must be an array"); continue
 				var repeats: Array = sample.get("repeats", [])
 				if repeats.size() != 2: errors.append("miss requires two longer repeats")
 				for repeated: Variant in repeats:
 					if not repeated is Dictionary: errors.append("repeat must be an object")
-					else: errors.append_array(_phase_errors(repeated, name, 1500))
+					else:
+						errors.append_array(_phase_errors(repeated, name, 1500))
+						if display_errors.is_empty() and (not repeated.get("presentation") is Dictionary or not Ready.matches(repeated.presentation, display)): errors.append("repeat presentation differs from condition")
 		if names != PHASES: errors.append("required phase sequence differs")
 	if seen != ["original", "painted"]: errors.append("material condition sequence differs")
 	return errors
 
 static func _phase_errors(sample: Dictionary, name: String, minimum: int) -> Array[String]:
 	var errors := Benchmark.sample_errors(sample, minimum)
+	errors.append_array(_presentation_errors(sample.get("presentation")))
 	if sample.get("view") != name or not sample.get("camera") is Dictionary or not sample.get("inputs") is Array:
 		errors.append("phase/camera/input metadata missing")
 	if not sample.get("before", {}) is Dictionary or not sample.get("after", {}) is Dictionary: return errors + ["phase snapshots must be objects"]
@@ -175,4 +199,17 @@ static func _phase_errors(sample: Dictionary, name: String, minimum: int) -> Arr
 	if name == "lift" and after.get("lift_y") == before.get("lift_y"): errors.append("no lift movement evidence")
 	if name == "seated" and before.get("seated") != true: errors.append("chair was not seated")
 	if name != "lift" and int(sample.get("warmup_frames", 0)) < 120: errors.append("static warmup missing")
+	return errors
+
+static func _presentation_errors(display: Variant) -> Array[String]:
+	if not display is Dictionary: return ["presentation dimensions missing"]
+	var errors: Array[String] = []
+	for key in ["window_size_api_px","viewport_visible_rect_units","root_render_target_px","ship_render_target_px","sky_render_target_px"]:
+		var size: Variant = display.get(key)
+		if not size is Array or size.size() != 2: errors.append("presentation size missing: " + key); continue
+		for value: Variant in size:
+			if not (value is float or value is int) or not is_finite(float(value)) or float(value) <= 0.: errors.append("invalid presentation size: " + key)
+	for key in ["screen_scale_api","window_content_scale_factor"]:
+		var value: Variant = display.get(key)
+		if not (value is float or value is int) or not is_finite(float(value)) or float(value) <= 0.: errors.append("invalid display scale: " + key)
 	return errors
