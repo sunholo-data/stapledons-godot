@@ -39,7 +39,8 @@ jobs:
           ailang --version
 
       - name: Install Godot
-        if: ${{ inputs.full }}
+        # The fast tier now includes bounded headless content budget/pack fixtures.
+        # They need the pinned engine too; no renderer, import pass or GPU job runs here.
         run: |
           curl -fsSL -o /tmp/godot.zip "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip"
           unzip -q /tmp/godot.zip -d /tmp/godot
