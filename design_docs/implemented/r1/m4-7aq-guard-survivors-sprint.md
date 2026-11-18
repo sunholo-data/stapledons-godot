@@ -75,7 +75,7 @@ comment verbatim: source the preamble from the planned path now, from the implem
 doc moves.
 
 ```sh
-D=design_docs/planned/r1/m4-7aq-guard-survivors.md   # design_docs/implemented/r1/… after landing
+D=design_docs/implemented/r1/m4-7aq-guard-survivors.md   # design_docs/implemented/r1/… after landing
 W=$(mktemp -d "${TMPDIR:-/tmp}/7aq.XXXXXXXX") || exit 1
 # fence NAME: the body of the fence opened by a line "```<lang> NAME" in this doc
 fence() { awk -v n="$1" '$0 ~ "^```[a-z]+ " n "$" { f = 1; next } f && /^```$/ { exit } f' "$D"; }
@@ -514,7 +514,7 @@ and the base looks as the doc says; **they are not evidence — the executor's f
 
 - **PV1 — base/HEAD.** `git rev-parse HEAD` → `3184131539cbb07587a9015652aab0ae7e2c3b44`;
   `git merge-base HEAD 9081260f…` → `9081260f2577733826c588f57d13118bfa9b1827`; `git diff
-  --name-only 9081260f...HEAD` → one line, `design_docs/planned/r1/m4-7aq-guard-survivors.md`;
+  --name-only 9081260f...HEAD` → one line, `design_docs/implemented/r1/m4-7aq-guard-survivors.md`;
   status empty. **planner-checked (sandbox).**
 - **PV2 — Appendix A applies (not applied).** The fence cut with the doc's own `fence` function →
   **149 lines**, sha256 **`cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0`** (the

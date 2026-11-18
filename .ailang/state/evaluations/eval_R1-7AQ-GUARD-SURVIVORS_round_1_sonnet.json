@@ -1,0 +1,188 @@
+{
+ "sprint_id": "R1-7AQ-GUARD-SURVIVORS",
+ "round": 1,
+ "evaluator": "claude-sonnet (Agent tool)",
+ "reviewed_commit": "d74ba13e",
+ "score": 90,
+ "verdict": "PASS",
+ "rubric": {
+  "acceptance_criteria": 28,
+  "test_strength_mutations": 25,
+  "scope_discipline": 20,
+  "evidence_integrity": 10,
+  "hygiene_docs": 7
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "AC10's literal 'git diff --check HEAD~1 HEAD' passes for the code commit, but over base..HEAD (incl. design doc) fails (space-before-tab in Appendix A patch text) - docs only: git diff --check 9081260f HEAD",
+  "Sprint JSON status is 'executed', not 'completed' (evaluator checklist)",
+  "The new blocker check relies on ident.occlusion.meshes/_collect (private-ish API of product code); a rename breaks the test, not product",
+  "free-nav AC6 passed rc=0 here, AC7/mutant runs were stopped by my alarm after the named lines (rc 142), as the doc allows",
+  "Deferrals (b)-(f), V27, S3/S4/S6/S7/S17 are each backed by a measurement or cited prior drill; none is a cheap fix (d needs product refactor, b needs 2-7 min fault-injected run). No hidden cheap-fix found",
+  "Eye-block teardown (meshes.resize, free) is not exception-safe, harmless in a one-shot test script"
+ ],
+ "mutations": [
+  {
+   "id": "design-m5",
+   "description": "Appendix B mutation m5",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m7",
+   "description": "Appendix B mutation m7",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m8",
+   "description": "Appendix B mutation m8",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m12",
+   "description": "Appendix B mutation m12",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m13",
+   "description": "Appendix B mutation m13",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m22",
+   "description": "Appendix B mutation m22",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "design-m23",
+   "description": "Appendix B mutation m23",
+   "gate": "python3 tools/test_replay.py MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL/ERROR test_the_7ap_spellings_fail or guard_test_can_fail"
+  },
+  {
+   "id": "S12",
+   "description": "condwrap control (guard mutation)",
+   "gate": "make session-minor-guard-controls",
+   "result": "KILLED",
+   "evidence": "make Error 1 (control not rejected)"
+  },
+  {
+   "id": "S1",
+   "description": "revparen control",
+   "gate": "make session-minor-guard-controls",
+   "result": "KILLED",
+   "evidence": "make Error 1"
+  },
+  {
+   "id": "m33",
+   "description": "awk first-match-wins dropped",
+   "gate": "make script-gate-lint",
+   "result": "KILLED",
+   "evidence": "1 line 'FAIL the duplicate-rule control passed'"
+  },
+  {
+   "id": "own-caret-dq",
+   "description": "remove ^ from double-quoted id prefix in SOURCE_TOKEN",
+   "gate": "MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL test_the_7ap_spellings_fail; SAME mutant SURVIVES on base 576e3bb1 (OK) -> non-vacuous for M2"
+  },
+  {
+   "id": "own-caret-sq",
+   "description": "remove ^ from single-quoted id prefix",
+   "gate": "MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL spellings; survives on base"
+  },
+  {
+   "id": "own-neg-sq",
+   "description": "single-quoted index loses -?",
+   "gate": "MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL spellings; survives on base"
+  },
+  {
+   "id": "own-topbrace",
+   "description": "drop len(frames)>1 pop guard",
+   "gate": "MapIndex",
+   "result": "KILLED",
+   "evidence": "ERROR spellings; survives on base"
+  },
+  {
+   "id": "own-unclosed-last",
+   "description": "fallback walks only last frame",
+   "gate": "MapIndex",
+   "result": "KILLED",
+   "evidence": "FAIL spellings; survives on base"
+  },
+  {
+   "id": "jm1",
+   "description": "eye_clear refresh dropped (+JM2/3)",
+   "gate": "make free-nav-stop-test",
+   "result": "KILLED",
+   "evidence": "ok blocker line; FAIL the fixed eye looks ahead...; (rc 142 = my 400s alarm after the named lines)"
+  },
+  {
+   "id": "own-nobvh",
+   "description": "blocker never joins BVH (_collect removed)",
+   "gate": "make free-nav-stop-test",
+   "result": "KILLED",
+   "evidence": "FAIL the test's blocker eclipses the fixed eye's centre ray after update_candidates()"
+  },
+  {
+   "id": "t3",
+   "description": "override probe minor changed to PROTO_MINOR",
+   "gate": "make loading-jump-test",
+   "result": "KILLED",
+   "evidence": "rc=2 FAIL the override probe asks...; 83 passed, 1 failures"
+  },
+  {
+   "id": "nopin",
+   "description": "SSI silent no-pin (deferral c premise)",
+   "gate": "make ship-star-identification-test",
+   "result": "KILLED",
+   "evidence": "ERROR a pinned destination is offered once (1 candidates); 59 passed, 1 failures"
+  },
+  {
+   "id": "own-novisfalse",
+   "description": "drop eye_block.visible=false",
+   "gate": "free-nav-stop",
+   "result": "UNMEASURED",
+   "evidence": "my sed-style edit left a parse error; not re-run (would only fail the eye check trivially)"
+  }
+ ],
+ "acs": {
+  "AC1": "matched: sha cf27f2ce... ; reverse-apply of fence onto commit clean; 7 files +57 -4",
+  "AC2": "matched: Ran 11 OK; Ran 40 OK",
+  "AC3": "matched: seven kill lines reproduced",
+  "AC4": "matched: ok (9 pairs; dupe lost its prerequisite wanted-prereq (dupe:: nothing-here); rc=1; m33 count 1",
+  "AC5": "matched: 29 rejected, 3 accepted; S12/S1 killed (observed as make Error 1)",
+  "AC6": "matched: rc=0; three ok lines; 0 FAIL in log",
+  "AC7": "matched: ok / FAIL eye / ok dark row / ok eye, in order",
+  "AC8": "matched: 84 passed 0 failures; T3 rc=2 83 passed 1 failures",
+  "AC9": "matched: rc=2 ERROR ...(1 candidates); 59 passed, 1 failures",
+  "AC10": "matched with caveat: python-guard/uid-guard/replay-map-index rc 0; git diff --check clean for code paths; fails only on design doc Appendix A (patch text embedded, tabs/trailing blanks) -> check=2 over whole diff; name-only list = 7 files + design doc, plan, sprint JSON",
+  "AC11": "matched: 16 [] 67f76aef...",
+  "AC12": "matched: clean tree after drills"
+ },
+ "commands_run": [
+  "design-doc fence extraction",
+  "python3 tools/test_replay.py [MapIndex]",
+  "make script-gate-lint / session-minor-guard-controls / python-guard uid-guard replay-map-index",
+  "make loading-jump-test, ship-star-identification-test, free-nav-stop-test (AC6, jm1, nobvh)",
+  "perl mutations of SOURCE_TOKEN/source_pairs on HEAD and base 576e3bb1"
+ ],
+ "scope": "no product .gd/.ail/shader/asset changed; only tests, tools, mk, changelog, fixture, design docs, sprint JSON"
+}

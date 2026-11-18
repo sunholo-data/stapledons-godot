@@ -1,11 +1,11 @@
 {
   "sprint_id": "R1-7AQ-GUARD-SURVIVORS",
-  "status": "executed",
+  "status": "evaluated_pass",
   "approved": true,
   "approved_by": "mission controller iteration 98 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; designer Kimi K3 draft (died provider_quota) + Opus 5.5 takeover; quorum r1 PROCEED at N-2: gemini-4-argon pass, oc-glm-5-3 absent (unreachable, Ollama session limit), OpenAI seat absent (gpt-6.2-sol not-allowlisted, gpt-6.1-sol quota); plan by Kimi K3 (OpenRouter) after the Ollama lane hit its session limit)",
   "created": "2026-11-18",
-  "design_doc": "design_docs/planned/r1/m4-7aq-guard-survivors.md",
-  "sprint_plan": "design_docs/planned/r1/m4-7aq-guard-survivors-sprint.md",
+  "design_doc": "design_docs/implemented/r1/m4-7aq-guard-survivors.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7aq-guard-survivors-sprint.md",
   "branch": "mission/stapledon-iter98-7aq",
   "base_commit": "9081260f2577733826c588f57d13118bfa9b1827",
   "implements": [
@@ -257,6 +257,17 @@
   ],
   "velocity": "Executed 2026-11-18 04:55:01Z to 05:08:41Z (about 14 minutes wall-clock, against the 60-minute cap): AC1 apply and commit 04:55:36Z; AC2-AC5 headless in the batch to 04:56:01Z; AC6 5.4 min; AC7 5.1 min; AC8 1.5 min; AC9 about 10 s; AC10-AC12 under 30 s. One iteration planned (as 7ak ~4 LOC, 7ai ~16, 7aj ~55, 7an ~42, 7ap ~82, 7ao ~103; 7am ~135). 61 changed lines in seven files, byte-exact from Appendix A; the fragment rides inside the patch; the drills come from Appendix B. Executor wall-clock estimate ~30-40 min: clone checks ~5 min; headless ACs (AC1-AC5, AC10-AC12) under 1 minute together (design; the sandbox base ran the five gates in 12 s, PV4 — not evidence); AC8 ~50 s twice (V10 49 s, V11 37 s); AC9 under 1 min (V12 7 s); AC6 2-7 min (V8 385 s) and AC7 2-7 min (V9 stopped at 122 s) dominate; evidence ~5-10 min. The design's estimate: about 20 minutes wall, mostly AC6 and AC7. Controller cap: each Godot gate call is bounded by the preamble's 2400 s perl-alarm (the make targets' own SCRIPT_GATE bounds are tighter: 1800 s free-nav-stop, 600 s the others — planner-read, PV6); worst honest path ≈ 20 min of commands; 2 x for host load and evidence + floor -> CAP 60 MINUTES wall-clock from executor start (the 7ao/7ap 30-minute floor doubled for the two free-nav legs; no gh bound needed — AC12's re-check is controller-side if the executor lacks gh).",
   "controller_checks": "Controller re-run after the executor, before landing: python3 tools/test_replay.py MapIndex (Ran 11 / OK), python3 tools/test_replay.py (Ran 40 / OK), make script-gate-lint (ok, 9 pairs + the dupe control), make session-minor-guard (ok) and session-minor-guard-controls (29 rejected, 3 accepted), make python-guard uid-guard on the PR clone; the fence sha256 cf27f2ce… and the numstat vs the committed diff (57 4 over the seven files; the round-trip path-limited git diff 9081260f…HEAD re-hashes to the fence sha); the Godot evidence from the sprint JSON's per-run log lines (free-nav-stop, loading-jump, ship-star-identification — named lines, not rcs; re-run any suspect gate with the preamble's gate() and PATH=$PWD/runtime/bin:$PATH); the changelog fragment present (inside AC1's commit); every commit carrying the Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com> trailer; then the GitHub fast tier (make ci-fast), the cross-family evaluation (generator != judge), the charter row 7aq marked done, and the doc move to design_docs/implemented/r1/ with the README index row. The nightly rig/full covers the whole suite post-merge.",
-  "evaluations": {},
-  "pr": null
+  "evaluations": {
+    "round_1_sonnet": {
+      "file": ".ailang/state/evaluations/eval_R1-7AQ-GUARD-SURVIVORS_round_1_sonnet.json",
+      "judge": "Sonnet 5.5 (Agent tool, own clone stapledons-godot-iter98-eval), iteration 98",
+      "score": 90,
+      "pass": true,
+      "blocking": 0,
+      "mutations": "19 killed, 0 survived, 1 unmeasured (dropping eye_block.visible=false: the judge edit left a parse error; without the hide the eye check fails, so not a hole); 9 design-named (m5 m7 m8 m12 m13 m22 m23 S12 S1) + m33 + JM1, T3, nopin + 6 judge-derived (both ^ prefixes, negative-index sign, stray-brace pop guard, last-frame-only fallback, blocker never joins the BVH)",
+      "non_blocking": "git diff --check rc 2 only on the design doc embedded Appendix A (controller reproduced; code paths rc 0; the 7ao and 7ap landings read rc 2 the same way); the blocker check reaches into ident.occlusion.meshes and _collect() (product internals, also gemini r1); sprint status naming; eye-block teardown not exception-safe (one-shot script)",
+      "cross_vendor": "none (D-166 default C: test-only row)"
+    }
+  },
+  "pr": 460
 }
