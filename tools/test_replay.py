@@ -525,7 +525,15 @@ class MapIndex(unittest.TestCase):
                  ("str.py", "S = '{\"index\": %d, \"id\": \"CNS5:3627\"}'\n" % (a + 1)),
                  ("flank.gd", "# node's old pair: {\"index\": %d, \"id\": \"CNS5:3627\"}, per Barnard's audit\n" % (a + 1)),
                  ("flank.py", "# it's {\"index\": %d, \"id\": \"CNS5:3627\"} that's wrong\n" % (a + 1)),
-                 ("ampsq.gd", "const S := {'index': %d, 'id': &'CNS5:3627'}\n" % (a + 1))]
+                 ("ampsq.gd", "const S := {'index': %d, 'id': &'CNS5:3627'}\n" % (a + 1)),
+                 # 7aq (iteration-97 fold-in m5/m7/m8/m12/m13): a caret id in either quoting, a negative
+                 # single-quoted index, a stray top-level brace (the pop stays guarded) and a pair under
+                 # two unclosed frames (the fallback walks every open frame, not only the last).
+                 ("caret.gd", 'const C := {"index": %d, "id": ^"CNS5:3627"}\n' % (a + 1)),
+                 ("caretsq.gd", "const C := {'index': %d, 'id': ^'CNS5:3627'}\n" % (a + 1)),
+                 ("negsq.py", "t = {'index': -1, 'id': 'CNS5:3627'}\n"),
+                 ("topbrace.gd", '}\n# drifted: "index": %d, "id": "CNS5:3627"\n' % (a + 1)),
+                 ("unc2.gd", 'const U := {"index": %d, "id": "CNS5:3627", "sub": {"x": 1\n' % (a + 1))]
         checked, bad = source_index_pairs(texts, stars)
         self.assertEqual(bad, ["sq.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
                                "amp.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
@@ -536,8 +544,14 @@ class MapIndex(unittest.TestCase):
                                "str.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
                                "flank.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
                                "flank.py:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
-                               "ampsq.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a)])
-        self.assertEqual(checked, ["sq.py:1", "amp.gd:1", "neg.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "unc.gd:1", "str.py:1", "flank.gd:1", "flank.py:1", "ampsq.gd:1"])
+                               "ampsq.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "caret.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "caretsq.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "negsq.py:1 CNS5:3627 index -1, stars.json %d" % a,
+                               "topbrace.gd:2 CNS5:3627 index %d, stars.json %d" % (a + 1, a),
+                               "unc2.gd:1 CNS5:3627 index %d, stars.json %d" % (a + 1, a)])
+        self.assertEqual(checked, ["sq.py:1", "amp.gd:1", "neg.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "two.gd:1", "unc.gd:1", "str.py:1", "flank.gd:1", "flank.py:1", "ampsq.gd:1",
+                                   "caret.gd:1", "caretsq.gd:1", "negsq.py:1", "topbrace.gd:2", "unc2.gd:1"])
 
     def test_the_7ap_guard_test_can_fail(self):  # meta (iteration-91 fold-in): each assertion in the source-literal test is live
         m = MapIndex("test_source_literals_match_the_map")
@@ -559,6 +573,8 @@ class MapIndex(unittest.TestCase):
         m.sources = lambda: named[1:]  # the scan sees only the earth_link positive
         with self.assertRaises(AssertionError):
             m.test_source_literals_match_the_map()  # the transit_harness assertIn fails on a scan that misses its pair
+        m.sources = lambda: named  # 7aq (m22/m23): the healthy run must not raise, so a drifted line pin in
+        m.test_source_literals_match_the_map()  # the fixture fails here instead of passing sub-cases 3 and 4
 
 
 class AiSession(unittest.TestCase):

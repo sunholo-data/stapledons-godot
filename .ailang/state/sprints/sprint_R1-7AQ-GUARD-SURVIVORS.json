@@ -1,0 +1,273 @@
+{
+  "sprint_id": "R1-7AQ-GUARD-SURVIVORS",
+  "status": "evaluated_pass",
+  "approved": true,
+  "approved_by": "mission controller iteration 98 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; designer Kimi K3 draft (died provider_quota) + Opus 5.5 takeover; quorum r1 PROCEED at N-2: gemini-4-argon pass, oc-glm-5-3 absent (unreachable, Ollama session limit), OpenAI seat absent (gpt-6.2-sol not-allowlisted, gpt-6.1-sol quota); plan by Kimi K3 (OpenRouter) after the Ollama lane hit its session limit)",
+  "created": "2026-11-18",
+  "design_doc": "design_docs/implemented/r1/m4-7aq-guard-survivors.md",
+  "sprint_plan": "design_docs/implemented/r1/m4-7aq-guard-survivors-sprint.md",
+  "branch": "mission/stapledon-iter98-7aq",
+  "base_commit": "9081260f2577733826c588f57d13118bfa9b1827",
+  "implements": [
+    "7aq"
+  ],
+  "scope": "61 changed lines in seven files, applied byte-exactly from Appendix A of the design doc (git apply --numstat, planner-checked: 4 0 changelogs/unreleased/2026-11-18-guard-survivors.md / 5 0 mk/script-gates.mk / 5 0 tests/fixtures/script_gate/prereq_dupe.mk.txt (new) / 10 0 tests/test_free_nav_stop.gd / 1 0 tests/test_loading_jump.gd / 13 1 tools/session_minor_guard_controls.sh / 19 3 tools/test_replay.py; 7 files changed, 57 insertions(+), 4 deletions(-); fence 149 lines, sha256 cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0). The changelog fragment rides inside Appendix A (AC1 stages it first, by name). No Makefile line is edited (the S12/S1 drills mutate it through mut and the trap restores); no product file (ui/, bridge/, demos/, main.gd), no *.ail; no new script or scene -> no new .uid (the fixture is .txt, which Godot does not import, V4); no new *.py -> no allowlist row (tools/test_replay.py already registered, tools/python-allowlist.txt:24).",
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "(a) blocker, precondition check: the eye check's refresh is load-bearing at the first stop (design Milestones table M1, +10, order any)",
+      "files": [
+        "tests/test_free_nav_stop.gd"
+      ],
+      "loc": "part of the single byte-exact apply: 10 0 tests/test_free_nav_stop.gd (planner-checked numstat; fence 149 lines, sha256 cf27f2ce...)",
+      "depends_on": [],
+      "acceptance": [
+        "AC6",
+        "AC7"
+      ],
+      "commands": [
+        "byte-for-byte (with the other milestones, one apply): source the doc's preamble (fence/gate/mut/7aq_mut.py); fence 7aq.patch > $W/7aq.patch; wc -l = 149; shasum -a 256 = cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0; git apply --check clean; git apply --numstat = 4 0 changelog / 5 0 mk/script-gates.mk / 5 0 fixture / 10 0 free-nav / 1 0 loading-jump / 13 1 controls / 19 3 tools/test_replay.py; git apply",
+        "AC6 (verbatim): gate free-nav-stop ac6; grep -E \"^(ok|FAIL) the (test's blocker|fixed eye)\" \"$W/ac6.log\" | cut -c1-60",
+        "AC7 (verbatim; JM1 with JM2+JM3; the run may be stopped once the four lines are present): mut jm1 gate free-nav-stop ac7; grep -E \"^(ok|FAIL) the (test's blocker|fixed eye)|^(ok|FAIL) its catalogue row is dark\" \"$W/ac7.log\" | cut -c1-60"
+      ],
+      "expectations": "ac6 rc=… (0 on a quiet host, as in V8; 2 is the known load cascade and does not count), then exactly three lines: ok the test's blocker eclipses the fixed eye's centre ray af, ok the fixed eye looks ahead past the ship (no surface on it, ok the fixed eye looks ahead past the ship (no surface on it || ac7 rc=… (nonzero), then exactly four lines in this order: ok the test's blocker eclipses the fixed eye's centre ray af, FAIL the fixed eye looks ahead past the ship (no surface on  (the cut keeps the trailing space), ok its catalogue row is dark, replaced by the body, not pinn, ok the fixed eye looks ahead past the ship (no surface on it. The run may be stopped once all four lines are present.",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:06:34Z",
+      "measured": "AC6 ac6 rc=0 with the three named ok lines; AC7 ac7 rc=2 with the four named lines in order (ok, FAIL, ok, ok)",
+      "notes": "AC6 (batch 04:56:01Z-05:01:24Z): run `gate free-nav-stop ac6` -> `ac6 rc=0`; grep of the per-run copy: `ok the test's blocker eclipses the fixed eye's centre ray af`, `ok the fixed eye looks ahead past the ship (no surface on it`, `ok the fixed eye looks ahead past the ship (no surface on it` (the alpha Cen eye line). AC7 (05:01:27Z-05:06:34Z): `mut jm1 gate free-nav-stop ac7` -> `ac7 rc=2`; lines in order: `ok the test's blocker eclipses the fixed eye's centre ray af`, `FAIL the fixed eye looks ahead past the ship (no surface on ` (trailing space kept), `ok its catalogue row is dark, replaced by the body, not pinn`, `ok the fixed eye looks ahead past the ship (no surface on it`. The AC7 run was not stopped early: it ran to its own end, and the make ended `script-gate: free-nav-stop-test FAIL; rc 1, want 0; no summary line` after the four named lines had printed (the late-leg failure is not read; the named lines are the verdict). The cause of that late failure was not inspected (the per-run copies were removed by AC12). git status empty after the drill (trap restored jm1)."
+    },
+    {
+      "id": "M2",
+      "title": "m5, m7, m8, m12, m13, m22/m23: five lexical-edge control texts (runtime a + 1 index) and the meta test's healthy run (design Milestones table M2, +19 -3, order any)",
+      "files": [
+        "tools/test_replay.py"
+      ],
+      "loc": "part of the single byte-exact apply: 19 3 tools/test_replay.py (planner-checked numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC2",
+        "AC3"
+      ],
+      "commands": [
+        "AC2 (verbatim): python3 tools/test_replay.py MapIndex 2>&1 | grep -E '^Ran|^OK$|^FAILED'; python3 tools/test_replay.py 2>&1 | grep -E '^Ran|^OK$|^FAILED'",
+        "AC3 (verbatim): for m in m5 m7 m8 m12 m13 m22 m23; do mut \"$m\" python3 tools/test_replay.py MapIndex 2>&1 | grep -m1 -E '^(FAIL|ERROR): ' | sed \"s/^/$m /\"; done"
+      ],
+      "expectations": "Ran 11 tests …, OK, Ran 40 tests …, OK (test counts unchanged: the texts join existing tests; sandbox base reads the same 11/40 — not evidence) || seven lines: m5 FAIL: test_the_7ap_spellings_fail …, m7 FAIL: …spellings…, m8 FAIL: …spellings…, m12 ERROR: test_the_7ap_spellings_fail …, m13 FAIL: …spellings…, m22 FAIL: test_the_7ap_guard_test_can_fail …, m23 FAIL: …guard_test_can_fail… (base survival V2, doc-quoted; topbrace.gd also kills m14 — wanted, fail closed)",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T04:56:01Z",
+      "measured": "AC2 Ran 11 tests OK and Ran 40 tests OK; AC3 seven kill lines (m5, m7, m8 FAIL; m12 ERROR; m13 FAIL; m22, m23 FAIL)",
+      "notes": "AC2: `python3 tools/test_replay.py MapIndex` -> `Ran 11 tests in 0.267s`, `OK`; `python3 tools/test_replay.py` -> `Ran 40 tests in 3.170s`, `OK`. AC3 (`mut` per name, trap restored, git status empty after each): `m5 FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)`, `m7 FAIL: test_the_7ap_spellings_fail`, `m8 FAIL: test_the_7ap_spellings_fail`, `m12 ERROR: test_the_7ap_spellings_fail`, `m13 FAIL: test_the_7ap_spellings_fail`, `m22 FAIL: test_the_7ap_guard_test_can_fail`, `m23 FAIL: test_the_7ap_guard_test_can_fail` (the M2 texts were applied by AC1's commit; the M2 drills ran in the 04:55:36Z-04:56:01Z batch, with M3 and M4 headless gates)."
+    },
+    {
+      "id": "M3",
+      "title": "S12, S1 controls (R28 condwrap, R29 revparen; 27 -> 29 rejected) and the T3 override-probe pin (design Milestones table M3, +14 -1, order any)",
+      "files": [
+        "tools/session_minor_guard_controls.sh",
+        "tests/test_loading_jump.gd"
+      ],
+      "loc": "part of the single byte-exact apply: 13 1 tools/session_minor_guard_controls.sh / 1 0 tests/test_loading_jump.gd (planner-checked numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC5",
+        "AC8"
+      ],
+      "commands": [
+        "AC5 (verbatim): make -s --no-print-directory session-minor-guard-controls 2>&1 | tail -1\nfor m in S12 S1; do mut \"$m\" make -s --no-print-directory session-minor-guard-controls 2>&1 | grep -E '^session-minor-guard-controls: (condwrap|revparen): make rc 0, want 2$' | sed \"s/^/$m /\"; done",
+        "AC8 (verbatim; about 50 s each; named lines from the per-run log copy, never the rc): gate loading-jump ac8a; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8a.log\" | cut -c1-60\nmut t3 gate loading-jump ac8b; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8b.log\" | cut -c1-60"
+      ],
+      "expectations": "session-minor-guard-controls: 29 rejected, 3 accepted; S12 session-minor-guard-controls: condwrap: make rc 0, want 2; S1 session-minor-guard-controls: revparen: make rc 0, want 2 || ac8a rc=0, ok the override probe asks the warm sim's own minor, so only, loading-jump: 84 passed, 0 failures; then ac8b rc=2, FAIL the override probe asks the warm sim's own minor, so on, loading-jump: 83 passed, 1 failures (base survival V3 and the 7ao judge's T3, doc-quoted; patched runs V10/V11)",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:08:07Z",
+      "measured": "AC5 29 rejected, 3 accepted with S12 condwrap and S1 revparen named; AC8 ac8a rc=0 84 passed, 0 failures; ac8b rc=2 83 passed, 1 failures",
+      "notes": "AC5: `make -s --no-print-directory session-minor-guard-controls | tail -1` -> `session-minor-guard-controls: 29 rejected, 3 accepted`; drills: `S12 session-minor-guard-controls: condwrap: make rc 0, want 2`, `S1 session-minor-guard-controls: revparen: make rc 0, want 2`. AC8 (05:06:36Z-05:08:07Z): `gate loading-jump ac8a` -> `ac8a rc=0`, `ok the override probe asks the warm sim's own minor, so only`, `loading-jump: 84 passed, 0 failures`; `mut t3 gate loading-jump ac8b` -> `ac8b rc=2`, `FAIL the override probe asks the warm sim's own minor, so on`, `loading-jump: 83 passed, 1 failures`. git status empty after the t3 drill."
+    },
+    {
+      "id": "M4",
+      "title": "m33: first-match-wins is pinned — the lint's duplicate-rule control on the double-colon fixture (design Milestones table M4, +10, order any)",
+      "files": [
+        "mk/script-gates.mk",
+        "tests/fixtures/script_gate/prereq_dupe.mk.txt"
+      ],
+      "loc": "part of the single byte-exact apply: 5 0 mk/script-gates.mk / 5 0 tests/fixtures/script_gate/prereq_dupe.mk.txt (new; planner-checked numstat)",
+      "depends_on": [],
+      "acceptance": [
+        "AC4"
+      ],
+      "commands": [
+        "AC4 (verbatim): make -s --no-print-directory script-gate-lint 2>&1 | tail -1 | cut -c1-32\nsh tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_dupe.mk.txt dupe:wanted-prereq; echo rc=$?\nmut m33 make -s --no-print-directory script-gate-lint 2>&1 | grep -c '^script-gate-lint: FAIL the duplicate-rule control passed'"
+      ],
+      "expectations": "script-gate-prereqs: ok (9 pairs; script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here), rc=1; 1 (base survival V3, mechanism V6/V7 — GNU Make 3.81 merges single-colon rule lines, keeps double-colon stanzas apart; doc-quoted)",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T04:56:01Z",
+      "measured": "AC4: `script-gate-prereqs: ok (9 pairs` prefix; `script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here)` with rc=1; m33 count 1",
+      "notes": "AC4: `make -s --no-print-directory script-gate-lint 2>&1 | tail -1 | cut -c1-32` -> `script-gate-prereqs: ok (9 pairs`; `sh tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_dupe.mk.txt dupe:wanted-prereq; echo rc=$?` -> `script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here)`, `rc=1`; `mut m33 make ... script-gate-lint | grep -c '^script-gate-lint: FAIL the duplicate-rule control passed'` -> `1`. git status empty after the drill."
+    },
+    {
+      "id": "M5",
+      "title": "Evidence and changelog: AC1-AC12 assembled, the fragment, the JSON (design Milestones table M5: last; cross-cutting verification — patch identity, the (c) deferral's premise, hygiene, scope, the real-tree pin, cleanliness)",
+      "files": [
+        "changelogs/unreleased/2026-11-18-guard-survivors.md",
+        ".ailang/state/sprints/sprint_R1-7AQ-GUARD-SURVIVORS.json"
+      ],
+      "loc": "4 0 fragment (inside Appendix A, committed in AC1 by name) + the JSON evidence",
+      "depends_on": [
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "acceptance": [
+        "AC1",
+        "AC9",
+        "AC10",
+        "AC11",
+        "AC12"
+      ],
+      "commands": [
+        "AC1 (first in execution order; verbatim; append the Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com> trailer as a second -m): shasum -a 256 \"$W/7aq.patch\" | cut -d' ' -f1\ngit apply --check \"$W/7aq.patch\" && git apply \"$W/7aq.patch\" \\\n  && git add changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt \\\n       tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py \\\n  && git commit -q -m \"7aq: guard survivors (free-nav eye refresh, 7ap/7ao fold-ins)\" && echo committed\ngit diff --numstat HEAD~1 HEAD | awk '{ i += $1; d += $2 } END { print i, d }'",
+        "round-trip proof (the doc computed the sha over git diff 9081260f HEAD, V18 — reproduce path-limited): git diff 9081260f2577733826c588f57d13118bfa9b1827 HEAD -- changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py > $W/roundtrip.patch; shasum -a 256 $W/roundtrip.patch (expect cf27f2ce...)",
+        "AC9 (verbatim; the (c) deferral's premise on the UNCHANGED SSI check): mut nopin gate ship-star-identification ac9; grep -E '^ship-star-identification: [0-9]+ passed|a pinned destination is offered once' \"$W/ac9.log\" | cut -c1-70",
+        "AC10 (verbatim): make -s --no-print-directory python-guard uid-guard replay-map-index >/dev/null 2>&1; echo guards=$?\ngit diff --check HEAD~1 HEAD; echo check=$?\ngit diff --name-only HEAD~1 HEAD",
+        "AC11 (verbatim): python3 -I -c \"\nimport hashlib, sys\nsys.path.insert(0, 'tools')\nimport test_replay as t\nm = t.MapIndex()\nc, b = t.source_index_pairs(m.sources(), m.stars())\nprint(len(c), b, hashlib.sha256('\\n'.join(sorted(c)).encode()).hexdigest())\n\"",
+        "AC12 (verbatim, last; before landing the executor with gh lists open PRs' files and halts on any hit among the seven paths — no gh/network in the planner sandbox): rm -rf \"$W\"; git status --porcelain --untracked-files=all",
+        "evidence commit: stage .ailang/state/sprints/sprint_R1-7AQ-GUARD-SURVIVORS.json BY NAME (never git add -A) and commit alone with the Co-Authored-By trailer; confirm porcelain empty once more after"
+      ],
+      "expectations": "cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0, committed, 57 4 (fence 149 lines — planner-checked) || ac9 rc=2, ERROR: a pinned destination is offered once, as its pin row (1 candida, ship-star-identification: 59 passed, 1 failures || guards=0, check=0, then changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py (one per line) || 16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 || empty. Before landing, the executor (with gh) lists open PRs' files and halts on any hit among the seven paths",
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:08:41Z",
+      "measured": "AC1 cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0, committed, 57 4; round-trip sha cf27f2ce; AC9 ac9 rc=2 with the ERROR line and 59 passed, 1 failures; AC10 guards=0 check=0 seven paths; AC11 16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566; AC12 empty status",
+      "notes": "AC1 (04:55:36Z): `shasum -a 256 $W/7aq.patch` -> cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0; `git apply --check` and `git apply` clean; the seven paths staged by name and committed as 56004538 (`7aq: guard survivors (free-nav eye refresh, 7ap/7ao fold-ins)`, with `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>` as a second -m); `committed`; `git diff --numstat HEAD~1 HEAD | awk` -> `57 4`. Round-trip: path-limited `git diff 9081260f2577733826c588f57d13118bfa9b1827 HEAD -- <seven paths>` sha256 -> cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0 (match). The changelog fragment changelogs/unreleased/2026-11-18-guard-survivors.md is in that commit. AC9 (05:08:10Z, `mut nopin gate ship-star-identification ac9`): `ac9 rc=2`; `ERROR: a pinned destination is offered once, as its pin row (1 candida`; `ship-star-identification: 59 passed, 1 failures`; git status empty after. AC10 (05:08:20Z): `guards=0`; `check=0`; `git diff --name-only HEAD~1 HEAD` -> the seven paths, one per line. AC11: `16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566` (matches the pin). AC12 (05:08:41Z): `rm -rf $W; git status --porcelain --untracked-files=all` -> empty (rc 0). Pre-landing overlap check (gh, read-only): `gh pr list --state open` returned 3 open PRs (#435, #380, #373); their changed files contain no hit among the seven paths. Deviations, all recorded: (1) AC1's commit message carries the Co-Authored-By trailer as a second -m, as the plan directs (tree and numstat unchanged); (2) the ACs ran in order but in separate bash invocations sharing $W through a file (/tmp/claude/7aq-run/W), with the doc's preamble and AC blocks extracted verbatim, not one literal shell; the first preamble line that calls mktemp ran once; (3) AC7 ran to its own end instead of being stopped after its four lines."
+    }
+  ],
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "criterion": "The patch is Appendix A byte for byte, applies, and is committed",
+      "command": "shasum -a 256 \"$W/7aq.patch\" | cut -d' ' -f1\ngit apply --check \"$W/7aq.patch\" && git apply \"$W/7aq.patch\" \\\n  && git add changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt \\\n       tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py \\\n  && git commit -q -m \"7aq: guard survivors (free-nav eye refresh, 7ap/7ao fold-ins)\" && echo committed\ngit diff --numstat HEAD~1 HEAD | awk '{ i += $1; d += $2 } END { print i, d }'",
+      "expected": "cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0, committed, 57 4 (fence 149 lines — planner-checked)"
+    },
+    {
+      "id": "AC2",
+      "criterion": "The guard and the whole harness pass (test counts unchanged: the texts join existing tests)",
+      "command": "python3 tools/test_replay.py MapIndex 2>&1 | grep -E '^Ran|^OK$|^FAILED'; python3 tools/test_replay.py 2>&1 | grep -E '^Ran|^OK$|^FAILED'",
+      "expected": "Ran 11 tests …, OK, Ran 40 tests …, OK (test counts unchanged: the texts join existing tests; sandbox base reads the same 11/40 — not evidence)"
+    },
+    {
+      "id": "AC3",
+      "criterion": "Seven 7ap survivors are killed (m5, m7, m8, m12, m13, m22, m23)",
+      "command": "for m in m5 m7 m8 m12 m13 m22 m23; do mut \"$m\" python3 tools/test_replay.py MapIndex 2>&1 | grep -m1 -E '^(FAIL|ERROR): ' | sed \"s/^/$m /\"; done",
+      "expected": "seven lines: m5 FAIL: test_the_7ap_spellings_fail …, m7 FAIL: …spellings…, m8 FAIL: …spellings…, m12 ERROR: test_the_7ap_spellings_fail …, m13 FAIL: …spellings…, m22 FAIL: test_the_7ap_guard_test_can_fail …, m23 FAIL: …guard_test_can_fail…"
+    },
+    {
+      "id": "AC4",
+      "criterion": "The lint holds and m33 is killed (first-match-wins pinned on the double-colon fixture)",
+      "command": "make -s --no-print-directory script-gate-lint 2>&1 | tail -1 | cut -c1-32\nsh tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_dupe.mk.txt dupe:wanted-prereq; echo rc=$?\nmut m33 make -s --no-print-directory script-gate-lint 2>&1 | grep -c '^script-gate-lint: FAIL the duplicate-rule control passed'",
+      "expected": "script-gate-prereqs: ok (9 pairs; script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here), rc=1; 1"
+    },
+    {
+      "id": "AC5",
+      "criterion": "The controls reject 29, and S12/S1 are killed",
+      "command": "make -s --no-print-directory session-minor-guard-controls 2>&1 | tail -1\nfor m in S12 S1; do mut \"$m\" make -s --no-print-directory session-minor-guard-controls 2>&1 | grep -E '^session-minor-guard-controls: (condwrap|revparen): make rc 0, want 2$' | sed \"s/^/$m /\"; done",
+      "expected": "session-minor-guard-controls: 29 rejected, 3 accepted; S12 session-minor-guard-controls: condwrap: make rc 0, want 2; S1 session-minor-guard-controls: revparen: make rc 0, want 2"
+    },
+    {
+      "id": "AC6",
+      "criterion": "The patched free-nav flow passes the new blocker check and both eye checks (named lines, never the rc)",
+      "command": "gate free-nav-stop ac6; grep -E \"^(ok|FAIL) the (test's blocker|fixed eye)\" \"$W/ac6.log\" | cut -c1-60",
+      "expected": "ac6 rc=… (0 on a quiet host, as in V8; 2 is the known load cascade and does not count), then exactly three lines: ok the test's blocker eclipses the fixed eye's centre ray af, ok the fixed eye looks ahead past the ship (no surface on it, ok the fixed eye looks ahead past the ship (no surface on it"
+    },
+    {
+      "id": "AC7",
+      "criterion": "JM1 is killed at the first stop; the second eye line and the deferred dark-row survivors stay ok",
+      "command": "mut jm1 gate free-nav-stop ac7; grep -E \"^(ok|FAIL) the (test's blocker|fixed eye)|^(ok|FAIL) its catalogue row is dark\" \"$W/ac7.log\" | cut -c1-60",
+      "expected": "ac7 rc=… (nonzero), then exactly four lines in this order: ok the test's blocker eclipses the fixed eye's centre ray af, FAIL the fixed eye looks ahead past the ship (no surface on  (the cut keeps the trailing space), ok its catalogue row is dark, replaced by the body, not pinn, ok the fixed eye looks ahead past the ship (no surface on it. The run may be stopped once all four lines are present."
+    },
+    {
+      "id": "AC8",
+      "criterion": "The T3 pin holds, and T3 is killed",
+      "command": "gate loading-jump ac8a; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8a.log\" | cut -c1-60\nmut t3 gate loading-jump ac8b; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8b.log\" | cut -c1-60",
+      "expected": "ac8a rc=0, ok the override probe asks the warm sim's own minor, so only, loading-jump: 84 passed, 0 failures; then ac8b rc=2, FAIL the override probe asks the warm sim's own minor, so on, loading-jump: 83 passed, 1 failures"
+    },
+    {
+      "id": "AC9",
+      "criterion": "The shipped SSI pin check kills a silent no-pin (deferral (c)'s premise, on the unchanged SSI check)",
+      "command": "mut nopin gate ship-star-identification ac9; grep -E '^ship-star-identification: [0-9]+ passed|a pinned destination is offered once' \"$W/ac9.log\" | cut -c1-70",
+      "expected": "ac9 rc=2, ERROR: a pinned destination is offered once, as its pin row (1 candida, ship-star-identification: 59 passed, 1 failures"
+    },
+    {
+      "id": "AC10",
+      "criterion": "Hygiene: guards green, no whitespace error, scope is seven files",
+      "command": "make -s --no-print-directory python-guard uid-guard replay-map-index >/dev/null 2>&1; echo guards=$?\ngit diff --check HEAD~1 HEAD; echo check=$?\ngit diff --name-only HEAD~1 HEAD",
+      "expected": "guards=0, check=0, then changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py (one per line)"
+    },
+    {
+      "id": "AC11",
+      "criterion": "The real-tree checked set is unchanged (7ap AC12's pin)",
+      "command": "python3 -I -c \"\nimport hashlib, sys\nsys.path.insert(0, 'tools')\nimport test_replay as t\nm = t.MapIndex()\nc, b = t.source_index_pairs(m.sources(), m.stars())\nprint(len(c), b, hashlib.sha256('\\n'.join(sorted(c)).encode()).hexdigest())\n\"",
+      "expected": "16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566"
+    },
+    {
+      "id": "AC12",
+      "criterion": "No evidence file is left, and every drill restored",
+      "command": "rm -rf \"$W\"; git status --porcelain --untracked-files=all",
+      "expected": "empty. Before landing, the executor (with gh) lists open PRs' files and halts on any hit among the seven paths"
+    }
+  ],
+  "local_pr_gates": [
+    "M1 on record: AC6's ac6 rc=… note + the three ok lines; AC7's ac7 rc=… + the four lines in order (the FAIL line's cut keeps the trailing space). Named lines from the per-run log copies, never the target's rc.",
+    "M2 on record: AC2's Ran 11 tests … OK and Ran 40 tests … OK; AC3's seven kill lines (m12's an ERROR:, the rest FAIL:).",
+    "M3 on record: AC5's 29 rejected, 3 accepted and the two named kill lines; AC8's ac8a rc=0 / ok line / 84 passed, 0 failures and ac8b rc=2 / FAIL line / 83 passed, 1 failures.",
+    "M4 on record: AC4's script-gate-prereqs: ok (9 pairs prefix; the dupe refusal + rc=1; the count 1.",
+    "M5 on record: AC1's sha256 + committed + 57 4 and the round-trip sha256; AC9's ac9 rc=2 / ERROR line / 59 passed, 1 failures; AC10's guards=0 / check=0 / the seven paths; AC11's 16 [] + sha256; AC12's empty status; the fragment in place (inside AC1's commit); the JSON's measured/notes filled, passes true.",
+    "The GitHub gate: make ci-fast green on the PR (.github/workflows/ci.yml:60-62) — it runs replay-map-index (Makefile:513), script-gate-lint (mk/script-gates.mk:28), session-minor-guard and session-minor-guard-controls (Makefile:172), python-guard and uid-guard (Makefile:73). The three Godot gates (free-nav-stop-test Makefile:1285, loading-jump-test :1313, ship-star-identification-test :1277) are not ci-fast prerequisites — executor/controller-side.",
+    "Not run: no GPU gate, no make golden, no capture, no bench, no full local make test (merge rule); the nightly rig/full runs the whole suite — including the full tools/test_replay.py via tools-test and the Godot gates — on main post-merge."
+  ],
+  "pause_points": [
+    "Fence extraction != 149 lines, sha256 != cf27f2ce…, or git apply --check fails -> re-extract, never retype; applied numstat != 57 4 over exactly the seven files, or the round-trip path-limited diff's sha256 != the fence's -> stop.",
+    "Any AC line differing from the design doc's expected table -> stop (AC2 != Ran 11 / Ran 40 with OK; AC3 != 7 kill lines or a wrong test name (m12 is ERROR:); AC4's ok-prefix / refusal+rc=1 / count 1; AC5 != 29 rejected, 3 accepted or the named condwrap/revparen lines; AC6 != exactly the three ok lines (rc 2 under load does not count, but the lines are required); AC7 != the four lines in order, FAIL cut keeping the trailing space; AC8 != ac8a rc=0 84/0 then ac8b rc=2 83/1; AC9 != the three lines; AC10 != guards=0 / check=0 / seven paths; AC11 != 16 [] with the pinned sha and no new pair to name; AC12 non-empty).",
+    "Godot reads: never the target's rc as the verdict (the 2 s step_timeout cascade fails the late legs after every needed line has printed); a named line missing from $W/<tag>.log -> stop; never retry-loop a flaked late leg into a pass; never grep the reused .godot/tmp/<target>.log instead of the per-run copy (gate() deletes it before and copies it after each run).",
+    "A Godot run SCRIPT ERRORs on user:// (identify-test.bin) -> the executor is inside a sandbox (the (f) environment limit): stop, mark AC6-AC9 CONTROLLER-RUN, report; never skip silently, never patch a test to dodge it.",
+    "mut refusing a dirty target (exit 4, 'mut: a target file differs from HEAD') -> stop, git checkout -- tools/test_replay.py tools/script_gate_prereqs.sh Makefile tests/test_free_nav_stop.gd tests/test_loading_jump.gd tests/test_ship_star_identification.gd, report; git status --porcelain non-empty after any drill -> the trap failed: stop and report; do not start the next AC.",
+    "AC12's pre-landing PR re-check: any hit among the seven paths halts the landing; gh or network unavailable to the executor -> record that and hand the re-check to the controller. Never land past it; never widen the patch to pre-empt a conflict.",
+    "Any temptation to touch the do-not-touch list -> stop: no product file (ui/, bridge/, demos/, main.gd), no *.ail, no Makefile line, no tools/script_gate_prereqs.sh line, no tests/test_ship_star_identification.gd line, the shipped SSI pin check's clauses stay (the draft's drop is JM-A3 itself — rejected), nothing under design_docs/stapledon-mission*.",
+    "No merge before the cross-family evaluation (generator != judge); landing files wait on it."
+  ],
+  "plan_verification": "Planner, 2026-11-18, HEAD 3184131539cbb07587a9015652aab0ae7e2c3b44 on branch mission/stapledon-iter98-7aq; the planner runs INSIDE A SANDBOX: no Godot (user:// writes fail and the run hangs — the (f) environment limit), no network, no gh, no git write operations; every command read-only; scratch /tmp/claude/7aq-plan deleted after; git status --porcelain empty after every run. THE SANDBOX RESULTS BELOW ARE WELL-FORMEDNESS CHECKS, NOT EVIDENCE — the executor's full-clone run is the only evidence. PV1 base/HEAD: merge-base with 9081260f = 9081260f2577733826c588f57d13118bfa9b1827; branch diff = the design doc alone; status empty (planner-checked, sandbox). PV2 the fence (not applied): 149 lines, sha256 cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0 (the doc's AC1 expectation), git apply --check clean, numstat the seven rows (4 0 / 5 0 / 5 0 / 10 0 / 1 0 / 13 1 / 19 3), stat '7 files changed, 57 insertions(+), 4 deletions(-)'; 7aq_mut.py fence 26 lines; porcelain empty (planner-checked, sandbox). PV3 the copied AC block: the plan's 'AC preamble and command block' section is byte-identical to the design doc's lines 140-200 (the two ```sh fences): 61 lines, 4166 bytes, sha256 2acfff4a876a46df81ff672de97eb58bb8b5aa04d39069fed90a855dd40a0d82; assembled by extraction (sed -n '140,200p') and inserted by script, verified to occur exactly once in the plan (planner-checked). PV4 base green (V1's shape; sandbox, NOT evidence): MapIndex Ran 11 tests in 0.293s / OK; whole file Ran 40 tests in 3.268s / OK (counts match AC2 — unchanged, the texts join existing tests); script-gate-lint 'script-gate-prereqs: ok (9 pairs hold in Makefile: … ci-fast:session-minor-guard-controls)'; session-minor-guard-controls '27 rejected, 3 accepted'; session-minor-guard 'ok, SESSION_MINOR (18) = EARTH_LOG_MINOR; …'; python-guard uid-guard rc 0; wall 12 s (planner-checked, sandbox). PV5 AC11's pin at the base (sandbox, NOT evidence): 16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 — matches the doc's AC11 expectation, 7ap AC12's pin (planner-checked, sandbox). PV6 gate anchors and tools (grep/sed reads): Makefile:73 (python-guard uid-guard; targets :1163/:1175), :134 (similar guards), :172 (session-minor-guard session-minor-guard-controls; targets :173/:207), :511/:513 (replay-map-index; recipe python3 tools/test_replay.py MapIndex), :1277 ship-star-identification-test (600 s), :1285 free-nav-stop-test (1800 s), :1313 loading-jump-test; mk/script-gates.mk:18 SG_PREREQS 9 pairs, :21 SG_PREREQS_PAIRS := 9, :28 ci-fast edge, :33 the lint target; .github/workflows/ci.yml:60-62 runs make ci-fast on PRs; tools/python-allowlist.txt:24 tools/test_replay.py harness; runtime/bin/ailang present, .godot imported, assets present, godot at /opt/homebrew/bin/godot (NOT run — sandbox) (planner-checked, sandbox reads). Doc-quoted (not re-measured by the planner): V1-V20 (reviewer re-measured at 9081260f or controller-attributed), the base survival of the 11 fold-in mutations and T3 (V2, V3, controller M3, 7ao judge T3 cited), AC6-AC9's expected lines and wall times (V8-V12: 385 s / 122 s / 49 s / 37 s / 7 s), GNU Make 3.81 double-colon semantics (V7), the conflict surface (V18; PR re-check is AC12's note, executor/controller-side), the design's ~20-minute wall estimate.",
+  "risks": [
+    "The free-nav run fails late under load and an executor reads the rc -> every AC reads named lines that print before the trip home; rc 2 under load does not count (controller M2) (design).",
+    "_collect is an underscore method of ui/star_occlusion.gd -> called from a test, which GDScript allows; a rename makes the line a SCRIPT ERROR, which the gate fails loudly; the precondition check (meshes.size() == n + 1) catches a _collect that silently stops adding (design).",
+    "resize(n) removes a real mesh if _collect added nothing -> _collect adds exactly one entry for a MeshInstance3D with a triangle BoxMesh and no children; the precondition check fails first, and the AC6 lines after it would show the damage (design).",
+    "The blocker leaks into later checks -> hidden before the eye check, removed from the BVH and freed on the next line, update_candidates() recomputes; the later offer, card and alpha Cen checks pass (V8) (design).",
+    "topbrace.gd also pins top-level pairing (m14) -> wanted: a bare top-level pair is checked today (fail closed); stated in M2 (design).",
+    "The dupe fixture relies on double-colon semantics of GNU Make 3.81 -> measured on this host (V7); the lint fails loudly, not silently, if a make prints the stanzas merged (design).",
+    "(Planner-added) The Godot log path is reused between runs -> gate() deletes .godot/tmp/<target>.log before each run and copies it to $W/<tag>.log after; the greps read the copy, so a stale log can never masquerade as a fresh one (mission constraint, encoded in the preamble).",
+    "(Planner-added) The planner sandbox's green base runs are not evidence -> plan_verification says so; the executor's full-clone run is the only evidence (mission rule). AC6-AC9 were not even smoke-run by the planner (no Godot in the sandbox).",
+    "(Planner-added) Open PRs unknown to the planner (no gh, no network; the designer had none either) -> AC12's note is blocking at landing; the controller's landing checklist re-runs it.",
+    "(Planner-added) AC1's commit gains the Co-Authored-By trailer -> message-only adaptation as a second -m; the tree and the 57 4 numstat unchanged (7ap precedent: trailer amended in, tree identical)."
+  ],
+  "velocity": "Executed 2026-11-18 04:55:01Z to 05:08:41Z (about 14 minutes wall-clock, against the 60-minute cap): AC1 apply and commit 04:55:36Z; AC2-AC5 headless in the batch to 04:56:01Z; AC6 5.4 min; AC7 5.1 min; AC8 1.5 min; AC9 about 10 s; AC10-AC12 under 30 s. One iteration planned (as 7ak ~4 LOC, 7ai ~16, 7aj ~55, 7an ~42, 7ap ~82, 7ao ~103; 7am ~135). 61 changed lines in seven files, byte-exact from Appendix A; the fragment rides inside the patch; the drills come from Appendix B. Executor wall-clock estimate ~30-40 min: clone checks ~5 min; headless ACs (AC1-AC5, AC10-AC12) under 1 minute together (design; the sandbox base ran the five gates in 12 s, PV4 — not evidence); AC8 ~50 s twice (V10 49 s, V11 37 s); AC9 under 1 min (V12 7 s); AC6 2-7 min (V8 385 s) and AC7 2-7 min (V9 stopped at 122 s) dominate; evidence ~5-10 min. The design's estimate: about 20 minutes wall, mostly AC6 and AC7. Controller cap: each Godot gate call is bounded by the preamble's 2400 s perl-alarm (the make targets' own SCRIPT_GATE bounds are tighter: 1800 s free-nav-stop, 600 s the others — planner-read, PV6); worst honest path ≈ 20 min of commands; 2 x for host load and evidence + floor -> CAP 60 MINUTES wall-clock from executor start (the 7ao/7ap 30-minute floor doubled for the two free-nav legs; no gh bound needed — AC12's re-check is controller-side if the executor lacks gh).",
+  "controller_checks": "Controller re-run after the executor, before landing: python3 tools/test_replay.py MapIndex (Ran 11 / OK), python3 tools/test_replay.py (Ran 40 / OK), make script-gate-lint (ok, 9 pairs + the dupe control), make session-minor-guard (ok) and session-minor-guard-controls (29 rejected, 3 accepted), make python-guard uid-guard on the PR clone; the fence sha256 cf27f2ce… and the numstat vs the committed diff (57 4 over the seven files; the round-trip path-limited git diff 9081260f…HEAD re-hashes to the fence sha); the Godot evidence from the sprint JSON's per-run log lines (free-nav-stop, loading-jump, ship-star-identification — named lines, not rcs; re-run any suspect gate with the preamble's gate() and PATH=$PWD/runtime/bin:$PATH); the changelog fragment present (inside AC1's commit); every commit carrying the Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com> trailer; then the GitHub fast tier (make ci-fast), the cross-family evaluation (generator != judge), the charter row 7aq marked done, and the doc move to design_docs/implemented/r1/ with the README index row. The nightly rig/full covers the whole suite post-merge.",
+  "evaluations": {
+    "round_1_sonnet": {
+      "file": ".ailang/state/evaluations/eval_R1-7AQ-GUARD-SURVIVORS_round_1_sonnet.json",
+      "judge": "Sonnet 5.5 (Agent tool, own clone stapledons-godot-iter98-eval), iteration 98",
+      "score": 90,
+      "pass": true,
+      "blocking": 0,
+      "mutations": "19 killed, 0 survived, 1 unmeasured (dropping eye_block.visible=false: the judge edit left a parse error; without the hide the eye check fails, so not a hole); 9 design-named (m5 m7 m8 m12 m13 m22 m23 S12 S1) + m33 + JM1, T3, nopin + 6 judge-derived (both ^ prefixes, negative-index sign, stray-brace pop guard, last-frame-only fallback, blocker never joins the BVH)",
+      "non_blocking": "git diff --check rc 2 only on the design doc embedded Appendix A (controller reproduced; code paths rc 0; the 7ao and 7ap landings read rc 2 the same way); the blocker check reaches into ident.occlusion.meshes and _collect() (product internals, also gemini r1); sprint status naming; eye-block teardown not exception-safe (one-shot script)",
+      "cross_vendor": "none (D-166 default C: test-only row)"
+    }
+  },
+  "pr": 460
+}

@@ -223,6 +223,18 @@ copy commentfloor
 mutate commentfloor tests/test_comms_station.gd 's/ and SimBridge\.SESSION_MINOR >= SimBridge\.EARTH_LOG_MINOR/ # and SimBridge.SESSION_MINOR >= SimBridge.EARTH_LOG_MINOR/'
 reject commentfloor "$P no test asserts a floor for SESSION_MINOR"
 
+# R28 (7aq, iteration-96 fold-in S12): the prefetch's ask behind a one-line condition is refused. Only the
+# holder regex's ^[[:space:]]* anchor (Makefile's session-minor-guard) sees it; ternary wrapping is R26.
+copy condwrap
+mutate condwrap ui/loading_jump.gd "${JUMP}s/holder\\[\"value\"\\] = SimBridge\\.warm\\(SimBridge\\.SESSION_MINOR\\)/if OS.has_feature(\"x\"): holder[\"value\"] = SimBridge.warm(SimBridge.SESSION_MINOR)/"
+reject condwrap "$P ui/loading_jump.gd _work_sim does not ask SimBridge.SESSION_MINOR"
+
+# R29 (7aq, iteration-96 fold-in S1): the reversed comparison in parentheses is refused. Only the scan's
+# \)? after a constant (Makefile's session-minor-guard) sees it; R22 is the bare reversed form, R24 the parenthesised forward one.
+copy revparen
+mutate revparen tests/test_comms_station.gd 's/demo\.journey_sim\.want_minor == SimBridge\.SESSION_MINOR/(SimBridge.EARTH_LOG_MINOR) == demo.journey_sim.want_minor/'
+reject revparen "$P tests/test_comms_station.gd compares journey_sim's minor with SimBridge.EARTH_LOG_MINOR, not SESSION_MINOR"
+
 # B: a protocol bump the game adopts: a new constant one above the highest minor, and SESSION_MINOR moved to
 # it. No session file and no test is edited.
 copy bump
@@ -239,6 +251,6 @@ accept comment "^$P ok, SESSION_MINOR \\([1-9][0-9]*\\) = [A-Z0-9_ ]+$OK_TAIL"
 # G: the comparisons' count is the real one (4 today: test_bh_hud x2, test_comms_station, test_ship_ui).
 test "$(grep -oE 'journey_sim\.(want_minor|hello_reply\.proto\.minor) *[=!<>]=? *SimBridge\.SESSION_MINOR' "$tmp/pristine/tests/"*.gd | wc -l | tr -d ' ')" -ge 4 || { echo "session-minor-guard-controls: fewer than 4 comparisons in the pristine copy" >&2; exit 1; }
 
-test "$rejected" -eq 27 || { echo "session-minor-guard-controls: $rejected rejected, want 27" >&2; exit 1; }
+test "$rejected" -eq 29 || { echo "session-minor-guard-controls: $rejected rejected, want 29" >&2; exit 1; }
 test "$accepted" -eq 3 || { echo "session-minor-guard-controls: $accepted accepted, want 3" >&2; exit 1; }
 echo "session-minor-guard-controls: $rejected rejected, $accepted accepted"

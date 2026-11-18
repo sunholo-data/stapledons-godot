@@ -1,0 +1,4 @@
+### Changed
+
+- **Guard survivors (row 7aq).** The free-nav stop's clear-eye check now proves its own occlusion refresh is load-bearing: a test blocker on the eye's centre ray is seen by the refresh inside `update_candidates()` and hidden before the check, so only the check's refresh clears it. The map-index guard's spellings control pins five more lexical edges (a `^` id in either quoting, a negative single-quoted index, a stray top-level brace, a pair under two unclosed frames) and its meta test now runs a healthy case. `session-minor-guard-controls` refuses the prefetch behind a one-line condition and a reversed comparison in parentheses (29 refusals, up from 27); `script-gate-lint` pins first-match-wins for a target with two rule stanzas; the loading-jump test pins the warm-override probe's minor.
+- Nothing a player sees or hears changes: every edit is in a test script, a lint recipe and its fixture, or a guard controls script.

@@ -52,6 +52,11 @@ script-gate-lint: ## row 7x ratchet: every --script gate runs through $(SCRIPT_G
 	    || ! grep -q '^script-gate-prereqs: constellation-test lost its prerequisite starmap-assets ' $(SCRATCH)/script-gate/prereqs-negative.log \
 	    || ! grep -q '^script-gate-prereqs: missing-target has no rule' $(SCRATCH)/script-gate/prereqs-negative.log; then \
 	    cat $(SCRATCH)/script-gate/prereqs-negative.log; echo "script-gate-lint: FAIL the prerequisite control (constellation-test without starmap-assets) was not refused by name"; exit 1; fi
+	@# 7aq (iteration-97 fold-in m33): two rule stanzas for one target read first-match-wins; awk's !seen pins it.
+	@if sh $(SG_TOOLS)/script_gate_prereqs.sh $(SG_FIX)/prereq_dupe.mk.txt dupe:wanted-prereq > $(SCRATCH)/script-gate/prereqs-dupe.log 2>&1; then \
+	    cat $(SCRATCH)/script-gate/prereqs-dupe.log; echo "script-gate-lint: FAIL the duplicate-rule control passed (first-match-wins is unpinned)"; exit 1; \
+	  elif ! grep -q '^script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here)$$' $(SCRATCH)/script-gate/prereqs-dupe.log; then \
+	    cat $(SCRATCH)/script-gate/prereqs-dupe.log; echo "script-gate-lint: FAIL the duplicate-rule control named the wrong stanza"; exit 1; fi
 	@test "$(words $(SG_PREREQS))" = "$(SG_PREREQS_PAIRS)" && test "$(words $(sort $(SG_PREREQS)))" = "$(SG_PREREQS_PAIRS)" \
 	  || { echo "script-gate-lint: SG_PREREQS holds $(words $(SG_PREREQS)) pairs ($(words $(sort $(SG_PREREQS))) distinct) but SG_PREREQS_PAIRS is $(SG_PREREQS_PAIRS): the pin moves with the pairs, and only up"; exit 1; }
 	@sh $(SG_TOOLS)/script_gate_prereqs.sh Makefile $(SG_PREREQS)
