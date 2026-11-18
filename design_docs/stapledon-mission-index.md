@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 100 | 2026-11-18 | Record-only fire, the second running (D-168 B): no pick. #435 still waits on `sunholo/observe` 0.2.0, and 7m AC1 is parked on a GPU held by a local... |
 | 99 | 2026-11-18 | Record-only fire (D-168 B): no pick. #435 is still blocked on `sunholo/observe` 0.2.0, 7m AC1 is parked on a busy GPU (100 %), and harness ticket `... |
 | 98 | 2026-11-18 | Row 7aq LANDED (PR #460, merge `12e54a67`): free-nav-stop proves its eye check's own refresh is load-bearing, the 7ap/7ao guard survivors are kille... |
 | 97 | 2026-11-17 | Row 7ap LANDED (PR #458, merge `e528c72c`): the source-literal guard reads single-quoted and `&`/`^`-prefixed ids, pins its grammar edges, proves i... |
