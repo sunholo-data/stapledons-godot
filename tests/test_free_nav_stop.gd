@@ -87,7 +87,17 @@ func _run() -> void:
 	demo.look_direction("forward"); await process_frame
 	var ident = demo.star_identification
 	ident.set_held(true); ident.update_candidates()
+	# 7aq (a): eye_clear's own refresh is load-bearing. A test blocker joins the BVH on the eye's
+	# centre ray and update_candidates() refreshes with it in view; it is hidden before eye_clear,
+	# so only eye_clear's refresh clears the ray (7an JM1, that refresh dropped, fails the eye check).
+	var eye_box := BoxMesh.new(); eye_box.size = Vector3(2, 2, .2)
+	var eye_block := MeshInstance3D.new(); eye_block.mesh = eye_box; demo.geometry.add_child(eye_block)
+	eye_block.global_transform = Transform3D(demo.camera.global_basis, demo.camera.global_position - demo.camera.global_basis.z)
+	var bvh_n: int = ident.occlusion.meshes.size(); ident.occlusion._collect(eye_block); ident.update_candidates()
+	check(ident.occlusion.meshes.size() == bvh_n + 1 and ident.occlusion.blocked(demo.camera.global_position, -demo.camera.global_basis.z), "the test's blocker eclipses the fixed eye's centre ray after update_candidates()")
+	eye_block.visible = false
 	check(eye_clear(demo, ident), "the fixed eye looks ahead past the ship (no surface on its centre ray)")
+	ident.occlusion.meshes.resize(bvh_n); eye_block.free(); ident.update_candidates()
 	check(not sky_hides(demo, "cat:" + barnard), "the sky draws the destination with no nearer body over it")
 	var hit: Array = ident.candidates.filter(func(c): return c.id == "body:cat:" + barnard)
 	check(hit.size() == 1 and ident.candidates.filter(func(c): return c.id == barnard).is_empty(), "I offers the destination as its finite body, not the hidden catalogue point (%d candidates)" % ident.candidates.size())

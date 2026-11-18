@@ -162,6 +162,7 @@ func test_sim_warm() -> void:
 	other.stop() # a no-op unless it took the child
 	var ovr := SimBridge.new() # the same minor with a launch override never takes it
 	ovr.want_minor = SimBridge.DEPARTURE_MINOR
+	check(ovr.want_minor == w.want_minor, "the override probe asks the warm sim's own minor, so only the launch override can refuse it") # 7aq (T3): the isolation is pinned
 	ovr.launch_override = {"bin": "/bin/false", "args": []}
 	ovr.start()
 	check(SimBridge.has_warm(), "a start() with a launch override leaves the warm sim")

@@ -1,0 +1,5 @@
+# 7aq (iteration-97 fold-in m33): one target, two rule stanzas, first-match-wins.
+# Single-colon prerequisites merge in make's database (measured); double-colon rules stay
+# separate stanzas, so dupe's first stanza lacks the prerequisite and awk's !seen reads it alone.
+dupe:: nothing-here
+dupe:: wanted-prereq
