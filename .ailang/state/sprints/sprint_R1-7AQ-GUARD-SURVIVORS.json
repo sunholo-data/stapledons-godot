@@ -1,6 +1,6 @@
 {
   "sprint_id": "R1-7AQ-GUARD-SURVIVORS",
-  "status": "approved",
+  "status": "executed",
   "approved": true,
   "approved_by": "mission controller iteration 98 (loop, D-1 armed; design net 0, no pillar below 0, no open questions; designer Kimi K3 draft (died provider_quota) + Opus 5.5 takeover; quorum r1 PROCEED at N-2: gemini-4-argon pass, oc-glm-5-3 absent (unreachable, Ollama session limit), OpenAI seat absent (gpt-6.2-sol not-allowlisted, gpt-6.1-sol quota); plan by Kimi K3 (OpenRouter) after the Ollama lane hit its session limit)",
   "created": "2026-11-18",
@@ -31,12 +31,12 @@
         "AC7 (verbatim; JM1 with JM2+JM3; the run may be stopped once the four lines are present): mut jm1 gate free-nav-stop ac7; grep -E \"^(ok|FAIL) the (test's blocker|fixed eye)|^(ok|FAIL) its catalogue row is dark\" \"$W/ac7.log\" | cut -c1-60"
       ],
       "expectations": "ac6 rc=… (0 on a quiet host, as in V8; 2 is the known load cascade and does not count), then exactly three lines: ok the test's blocker eclipses the fixed eye's centre ray af, ok the fixed eye looks ahead past the ship (no surface on it, ok the fixed eye looks ahead past the ship (no surface on it || ac7 rc=… (nonzero), then exactly four lines in this order: ok the test's blocker eclipses the fixed eye's centre ray af, FAIL the fixed eye looks ahead past the ship (no surface on  (the cut keeps the trailing space), ok its catalogue row is dark, replaced by the body, not pinn, ok the fixed eye looks ahead past the ship (no surface on it. The run may be stopped once all four lines are present.",
-      "status": "pending",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "measured": null,
-      "notes": null
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:06:34Z",
+      "measured": "AC6 ac6 rc=0 with the three named ok lines; AC7 ac7 rc=2 with the four named lines in order (ok, FAIL, ok, ok)",
+      "notes": "AC6 (batch 04:56:01Z-05:01:24Z): run `gate free-nav-stop ac6` -> `ac6 rc=0`; grep of the per-run copy: `ok the test's blocker eclipses the fixed eye's centre ray af`, `ok the fixed eye looks ahead past the ship (no surface on it`, `ok the fixed eye looks ahead past the ship (no surface on it` (the alpha Cen eye line). AC7 (05:01:27Z-05:06:34Z): `mut jm1 gate free-nav-stop ac7` -> `ac7 rc=2`; lines in order: `ok the test's blocker eclipses the fixed eye's centre ray af`, `FAIL the fixed eye looks ahead past the ship (no surface on ` (trailing space kept), `ok its catalogue row is dark, replaced by the body, not pinn`, `ok the fixed eye looks ahead past the ship (no surface on it`. The AC7 run was not stopped early: it ran to its own end, and the make ended `script-gate: free-nav-stop-test FAIL; rc 1, want 0; no summary line` after the four named lines had printed (the late-leg failure is not read; the named lines are the verdict). The cause of that late failure was not inspected (the per-run copies were removed by AC12). git status empty after the drill (trap restored jm1)."
     },
     {
       "id": "M2",
@@ -55,12 +55,12 @@
         "AC3 (verbatim): for m in m5 m7 m8 m12 m13 m22 m23; do mut \"$m\" python3 tools/test_replay.py MapIndex 2>&1 | grep -m1 -E '^(FAIL|ERROR): ' | sed \"s/^/$m /\"; done"
       ],
       "expectations": "Ran 11 tests …, OK, Ran 40 tests …, OK (test counts unchanged: the texts join existing tests; sandbox base reads the same 11/40 — not evidence) || seven lines: m5 FAIL: test_the_7ap_spellings_fail …, m7 FAIL: …spellings…, m8 FAIL: …spellings…, m12 ERROR: test_the_7ap_spellings_fail …, m13 FAIL: …spellings…, m22 FAIL: test_the_7ap_guard_test_can_fail …, m23 FAIL: …guard_test_can_fail… (base survival V2, doc-quoted; topbrace.gd also kills m14 — wanted, fail closed)",
-      "status": "pending",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "measured": null,
-      "notes": null
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T04:56:01Z",
+      "measured": "AC2 Ran 11 tests OK and Ran 40 tests OK; AC3 seven kill lines (m5, m7, m8 FAIL; m12 ERROR; m13 FAIL; m22, m23 FAIL)",
+      "notes": "AC2: `python3 tools/test_replay.py MapIndex` -> `Ran 11 tests in 0.267s`, `OK`; `python3 tools/test_replay.py` -> `Ran 40 tests in 3.170s`, `OK`. AC3 (`mut` per name, trap restored, git status empty after each): `m5 FAIL: test_the_7ap_spellings_fail (__main__.MapIndex.test_the_7ap_spellings_fail)`, `m7 FAIL: test_the_7ap_spellings_fail`, `m8 FAIL: test_the_7ap_spellings_fail`, `m12 ERROR: test_the_7ap_spellings_fail`, `m13 FAIL: test_the_7ap_spellings_fail`, `m22 FAIL: test_the_7ap_guard_test_can_fail`, `m23 FAIL: test_the_7ap_guard_test_can_fail` (the M2 texts were applied by AC1's commit; the M2 drills ran in the 04:55:36Z-04:56:01Z batch, with M3 and M4 headless gates)."
     },
     {
       "id": "M3",
@@ -80,12 +80,12 @@
         "AC8 (verbatim; about 50 s each; named lines from the per-run log copy, never the rc): gate loading-jump ac8a; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8a.log\" | cut -c1-60\nmut t3 gate loading-jump ac8b; grep -E '^loading-jump: [0-9]+ passed|^(ok|FAIL) the override probe' \"$W/ac8b.log\" | cut -c1-60"
       ],
       "expectations": "session-minor-guard-controls: 29 rejected, 3 accepted; S12 session-minor-guard-controls: condwrap: make rc 0, want 2; S1 session-minor-guard-controls: revparen: make rc 0, want 2 || ac8a rc=0, ok the override probe asks the warm sim's own minor, so only, loading-jump: 84 passed, 0 failures; then ac8b rc=2, FAIL the override probe asks the warm sim's own minor, so on, loading-jump: 83 passed, 1 failures (base survival V3 and the 7ao judge's T3, doc-quoted; patched runs V10/V11)",
-      "status": "pending",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "measured": null,
-      "notes": null
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:08:07Z",
+      "measured": "AC5 29 rejected, 3 accepted with S12 condwrap and S1 revparen named; AC8 ac8a rc=0 84 passed, 0 failures; ac8b rc=2 83 passed, 1 failures",
+      "notes": "AC5: `make -s --no-print-directory session-minor-guard-controls | tail -1` -> `session-minor-guard-controls: 29 rejected, 3 accepted`; drills: `S12 session-minor-guard-controls: condwrap: make rc 0, want 2`, `S1 session-minor-guard-controls: revparen: make rc 0, want 2`. AC8 (05:06:36Z-05:08:07Z): `gate loading-jump ac8a` -> `ac8a rc=0`, `ok the override probe asks the warm sim's own minor, so only`, `loading-jump: 84 passed, 0 failures`; `mut t3 gate loading-jump ac8b` -> `ac8b rc=2`, `FAIL the override probe asks the warm sim's own minor, so on`, `loading-jump: 83 passed, 1 failures`. git status empty after the t3 drill."
     },
     {
       "id": "M4",
@@ -103,12 +103,12 @@
         "AC4 (verbatim): make -s --no-print-directory script-gate-lint 2>&1 | tail -1 | cut -c1-32\nsh tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_dupe.mk.txt dupe:wanted-prereq; echo rc=$?\nmut m33 make -s --no-print-directory script-gate-lint 2>&1 | grep -c '^script-gate-lint: FAIL the duplicate-rule control passed'"
       ],
       "expectations": "script-gate-prereqs: ok (9 pairs; script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here), rc=1; 1 (base survival V3, mechanism V6/V7 — GNU Make 3.81 merges single-colon rule lines, keeps double-colon stanzas apart; doc-quoted)",
-      "status": "pending",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "measured": null,
-      "notes": null
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T04:56:01Z",
+      "measured": "AC4: `script-gate-prereqs: ok (9 pairs` prefix; `script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here)` with rc=1; m33 count 1",
+      "notes": "AC4: `make -s --no-print-directory script-gate-lint 2>&1 | tail -1 | cut -c1-32` -> `script-gate-prereqs: ok (9 pairs`; `sh tools/script_gate_prereqs.sh tests/fixtures/script_gate/prereq_dupe.mk.txt dupe:wanted-prereq; echo rc=$?` -> `script-gate-prereqs: dupe lost its prerequisite wanted-prereq (dupe:: nothing-here)`, `rc=1`; `mut m33 make ... script-gate-lint | grep -c '^script-gate-lint: FAIL the duplicate-rule control passed'` -> `1`. git status empty after the drill."
     },
     {
       "id": "M5",
@@ -141,12 +141,12 @@
         "evidence commit: stage .ailang/state/sprints/sprint_R1-7AQ-GUARD-SURVIVORS.json BY NAME (never git add -A) and commit alone with the Co-Authored-By trailer; confirm porcelain empty once more after"
       ],
       "expectations": "cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0, committed, 57 4 (fence 149 lines — planner-checked) || ac9 rc=2, ERROR: a pinned destination is offered once, as its pin row (1 candida, ship-star-identification: 59 passed, 1 failures || guards=0, check=0, then changelogs/unreleased/2026-11-18-guard-survivors.md mk/script-gates.mk tests/fixtures/script_gate/prereq_dupe.mk.txt tests/test_free_nav_stop.gd tests/test_loading_jump.gd tools/session_minor_guard_controls.sh tools/test_replay.py (one per line) || 16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566 || empty. Before landing, the executor (with gh) lists open PRs' files and halts on any hit among the seven paths",
-      "status": "pending",
-      "passes": false,
-      "started": null,
-      "completed": null,
-      "measured": null,
-      "notes": null
+      "status": "done",
+      "passes": true,
+      "started": "2026-11-18T04:55:36Z",
+      "completed": "2026-11-18T05:08:41Z",
+      "measured": "AC1 cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0, committed, 57 4; round-trip sha cf27f2ce; AC9 ac9 rc=2 with the ERROR line and 59 passed, 1 failures; AC10 guards=0 check=0 seven paths; AC11 16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566; AC12 empty status",
+      "notes": "AC1 (04:55:36Z): `shasum -a 256 $W/7aq.patch` -> cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0; `git apply --check` and `git apply` clean; the seven paths staged by name and committed as 56004538 (`7aq: guard survivors (free-nav eye refresh, 7ap/7ao fold-ins)`, with `Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>` as a second -m); `committed`; `git diff --numstat HEAD~1 HEAD | awk` -> `57 4`. Round-trip: path-limited `git diff 9081260f2577733826c588f57d13118bfa9b1827 HEAD -- <seven paths>` sha256 -> cf27f2ce744cb0ee7609d6413db729d69c91bb1a7fbe264566f322288e2a32e0 (match). The changelog fragment changelogs/unreleased/2026-11-18-guard-survivors.md is in that commit. AC9 (05:08:10Z, `mut nopin gate ship-star-identification ac9`): `ac9 rc=2`; `ERROR: a pinned destination is offered once, as its pin row (1 candida`; `ship-star-identification: 59 passed, 1 failures`; git status empty after. AC10 (05:08:20Z): `guards=0`; `check=0`; `git diff --name-only HEAD~1 HEAD` -> the seven paths, one per line. AC11: `16 [] 67f76aef3d3b7ad8219067e91e6a259edfe92dca00c16d53196f1dd6e4927566` (matches the pin). AC12 (05:08:41Z): `rm -rf $W; git status --porcelain --untracked-files=all` -> empty (rc 0). Pre-landing overlap check (gh, read-only): `gh pr list --state open` returned 3 open PRs (#435, #380, #373); their changed files contain no hit among the seven paths. Deviations, all recorded: (1) AC1's commit message carries the Co-Authored-By trailer as a second -m, as the plan directs (tree and numstat unchanged); (2) the ACs ran in order but in separate bash invocations sharing $W through a file (/tmp/claude/7aq-run/W), with the doc's preamble and AC blocks extracted verbatim, not one literal shell; the first preamble line that calls mktemp ran once; (3) AC7 ran to its own end instead of being stopped after its four lines."
     }
   ],
   "acceptance_criteria": [
@@ -255,7 +255,7 @@
     "(Planner-added) Open PRs unknown to the planner (no gh, no network; the designer had none either) -> AC12's note is blocking at landing; the controller's landing checklist re-runs it.",
     "(Planner-added) AC1's commit gains the Co-Authored-By trailer -> message-only adaptation as a second -m; the tree and the 57 4 numstat unchanged (7ap precedent: trailer amended in, tree identical)."
   ],
-  "velocity": "One iteration planned (as 7ak ~4 LOC, 7ai ~16, 7aj ~55, 7an ~42, 7ap ~82, 7ao ~103; 7am ~135). 61 changed lines in seven files, byte-exact from Appendix A; the fragment rides inside the patch; the drills come from Appendix B. Executor wall-clock estimate ~30-40 min: clone checks ~5 min; headless ACs (AC1-AC5, AC10-AC12) under 1 minute together (design; the sandbox base ran the five gates in 12 s, PV4 — not evidence); AC8 ~50 s twice (V10 49 s, V11 37 s); AC9 under 1 min (V12 7 s); AC6 2-7 min (V8 385 s) and AC7 2-7 min (V9 stopped at 122 s) dominate; evidence ~5-10 min. The design's estimate: about 20 minutes wall, mostly AC6 and AC7. Controller cap: each Godot gate call is bounded by the preamble's 2400 s perl-alarm (the make targets' own SCRIPT_GATE bounds are tighter: 1800 s free-nav-stop, 600 s the others — planner-read, PV6); worst honest path ≈ 20 min of commands; 2 x for host load and evidence + floor -> CAP 60 MINUTES wall-clock from executor start (the 7ao/7ap 30-minute floor doubled for the two free-nav legs; no gh bound needed — AC12's re-check is controller-side if the executor lacks gh).",
+  "velocity": "Executed 2026-11-18 04:55:01Z to 05:08:41Z (about 14 minutes wall-clock, against the 60-minute cap): AC1 apply and commit 04:55:36Z; AC2-AC5 headless in the batch to 04:56:01Z; AC6 5.4 min; AC7 5.1 min; AC8 1.5 min; AC9 about 10 s; AC10-AC12 under 30 s. One iteration planned (as 7ak ~4 LOC, 7ai ~16, 7aj ~55, 7an ~42, 7ap ~82, 7ao ~103; 7am ~135). 61 changed lines in seven files, byte-exact from Appendix A; the fragment rides inside the patch; the drills come from Appendix B. Executor wall-clock estimate ~30-40 min: clone checks ~5 min; headless ACs (AC1-AC5, AC10-AC12) under 1 minute together (design; the sandbox base ran the five gates in 12 s, PV4 — not evidence); AC8 ~50 s twice (V10 49 s, V11 37 s); AC9 under 1 min (V12 7 s); AC6 2-7 min (V8 385 s) and AC7 2-7 min (V9 stopped at 122 s) dominate; evidence ~5-10 min. The design's estimate: about 20 minutes wall, mostly AC6 and AC7. Controller cap: each Godot gate call is bounded by the preamble's 2400 s perl-alarm (the make targets' own SCRIPT_GATE bounds are tighter: 1800 s free-nav-stop, 600 s the others — planner-read, PV6); worst honest path ≈ 20 min of commands; 2 x for host load and evidence + floor -> CAP 60 MINUTES wall-clock from executor start (the 7ao/7ap 30-minute floor doubled for the two free-nav legs; no gh bound needed — AC12's re-check is controller-side if the executor lacks gh).",
   "controller_checks": "Controller re-run after the executor, before landing: python3 tools/test_replay.py MapIndex (Ran 11 / OK), python3 tools/test_replay.py (Ran 40 / OK), make script-gate-lint (ok, 9 pairs + the dupe control), make session-minor-guard (ok) and session-minor-guard-controls (29 rejected, 3 accepted), make python-guard uid-guard on the PR clone; the fence sha256 cf27f2ce… and the numstat vs the committed diff (57 4 over the seven files; the round-trip path-limited git diff 9081260f…HEAD re-hashes to the fence sha); the Godot evidence from the sprint JSON's per-run log lines (free-nav-stop, loading-jump, ship-star-identification — named lines, not rcs; re-run any suspect gate with the preamble's gate() and PATH=$PWD/runtime/bin:$PATH); the changelog fragment present (inside AC1's commit); every commit carrying the Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com> trailer; then the GitHub fast tier (make ci-fast), the cross-family evaluation (generator != judge), the charter row 7aq marked done, and the doc move to design_docs/implemented/r1/ with the README index row. The nightly rig/full covers the whole suite post-merge.",
   "evaluations": {},
   "pr": null
