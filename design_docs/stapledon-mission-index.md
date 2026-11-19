@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 103 | 2026-11-19 | Row 7m AC1 re-run under D-147 on a quiet rig: 1 of 6 runs countable and it missed (transit p99 16.813 against 16.7), no evidence of regression agai... |
 | 102 | 2026-11-19 | Record-only fire, the fourth running (D-168 B): no pick. Row 7au is resolved by the fleet's fix, the crash it uncovered is iteration 92 (already cr... |
 | 101 | 2026-11-19 | Record-only fire, the third running (D-168 B): no pick. Main's nightly has two new reds (`ai-key-check`, `display-audit-comms`); both re-measured g... |
 | 100 | 2026-11-18 | Record-only fire, the second running (D-168 B): no pick. #435 still waits on `sunholo/observe` 0.2.0, and 7m AC1 is parked on a GPU held by a local... |
