@@ -78,7 +78,7 @@ Mission iteration 107, designer, unattended. D-169 is unanswered; its default ("
 | b3 (R5 repeat) | 20:41:46 (1st reading) | GPU 0/0/0, load 3.27 | 20:42:38 GPU 0/0/0, load 3.74: YES | 2 (MISS) | 0 | 0 | **counts**; docked control **valid** (16.563) |
 | p4 (R1 repeat) | 20:42:48 (1st reading) | GPU 0/0/0, load 3.63 | 20:43:40 GPU **39**/0/0, load 3.70: **NO** | 0 | 0 | 0 | **evidence only**: post NO on one GPU reading; every in-run sample had both runners at 0.0 % CPU |
 
-**R5, the bench** (`grep -E '^bench-bridge: (docked control|frame ms|live transit)'` and `jq -e '.docked_control.p99_ms <= 16.7 and .timing.p99_ms <= 16.2'` on each run's copied files; boosting/cruising split and sim-wait share from the json's `frame_times_ms`, `phases`, `sim_wait_ms`):
+**R5, the bench** (`grep -E '^bench-bridge: (docked control|frame ms|live transit)'` and `jq -e '.docked_control.p99_ms <= 16.7 and .timing.p99_ms <= 16.2'` on each run's copied files; boosting/cruising split and sim-wait share from the json's `frame_times_ms`, `phases`, `sim_wait_ms`). R5's jq `false` means over 16.2 (row 7av's headroom); AC12 and 7m AC1 themselves are the 16.7 ms bound, which only b1 (evidence only) meets:
 
 | run | counts? | docked control p99 (valid ≤ 16.7) | live transit p99 | over 16.7 / frames | max | R5 `jq -e` | boosting p99 / cruising p99 | slow frames with sim wait > half the frame |
 |---|---|---|---|---|---|---|---|---|
