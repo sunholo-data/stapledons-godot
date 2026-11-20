@@ -1,0 +1,188 @@
+{
+  "sprint": "R1-M4-JOURNEY_7av",
+  "round": 1,
+  "evaluator_model": "claude-sonnet-5-5",
+  "score": 74,
+  "max": 100,
+  "verdict": "PASS",
+  "rubric": {
+    "correctness_of_load_bearing_numbers (30)": {
+      "score": 25,
+      "note": "All p1/p2 C and T p99/over/max, first-1840 stats, class splits, 375/374, 263-of-268, 19-of-844 re-derive exactly. Deductions: p2 sampler narrative (GPU range, runner busy throughout T) is wrong; GC static-memory figure mislabelled."
+    },
+    "honesty_of_claims_vs_evidence (25)": {
+      "score": 18,
+      "note": "Counted/evidence/inferred/UNMEASURED labels are used well, no run presented as counted, inferred-quiet labelled. But finding 1 and the High-confidence p2 bullet misstate what the in-run sampler shows (see non_blocking 1), and the sampler data weakens the runner-CPU framing."
+    },
+    "runnability_of_acceptance_commands (20)": {
+      "score": 17,
+      "note": "R0 extraction + 7 sha256 OK, bundle sha256 OK and every bundled file hash is listed in the doc, p1/p2 json byte-identical to /tmp. R1 wrapper ran correctly to its bounded-wait UNMEASURED exit. gate.sh fails closed on most malformed input but not all (see drills)."
+    },
+    "project_rules_adherence (15)": {
+      "score": 14,
+      "note": "Doc only, no tracked code, .godot ignored (git status clean after R0), D-147 bound/validity untouched, premises P0-P4 verified at file:line, python only as an untracked spike, no physics change."
+    },
+    "does_what_queue_row_asks (10)": {
+      "score": 7,
+      "note": "Attribution done (draw vs game, GC/compile/sim reply/map candidates each addressed), docked-control validity measured (2 of 11 with i103), no fix proposed with measured headroom (honestly stated; options O1-O4 and OQ1-OQ4 stop for Mark). Fix-with-headroom half and the cruise phase remain UNMEASURED."
+    }
+  },
+  "blocking_issues": [],
+  "non_blocking_issues": [
+    {
+      "id": 1,
+      "severity": "should-fix before merge (text edit)",
+      "issue": "p2 in-run sampler is misreported. Doc (V5 row, finding 1, Confidence p2 bullet) says the GPU read 0-54% in the first 8.3 s and that the runner was 'busy throughout T'. p2.gpu, aligned to T start unix 1795150384.338: GPU is 24-98% in 0-8.3 s (85, 96, 97, 98, 96, 91 at -1.6..+1.9 s; 91, 95 at 4.1, 5.4 s) and 0-97% pre-T. From 9.3 s to the end the runner CPU is only 3.6-6.2% (GPU 100%). And seconds 6-8 of T have 0 slow frames of 105 each while the runner is at 96-100% CPU (GPU 24-39%); the slow regime starts at second 8 (16/64) as GPU goes 74 to 100. So the discriminator in the data is GPU saturation at 100%, not runner CPU.",
+      "fix": "Rewrite finding 1 and the p2 confidence bullet to: slow-frame rate steps at about 8 s when the sampler's GPU reads 100%; runner CPU was 96-100% for 6.1-8.6 s with no slow frames and about 4% afterwards; GPU column cannot separate Godot from the runner (already a Risk). Drop 'GPU 0-54%' and 'busy throughout T'. Note the gate's 5% runner-CPU rule would not by itself flag the contended regime; the GPU<100 rule does."
+    },
+    {
+      "id": 2,
+      "issue": "GC ruled-out evidence: 'p1 slow-frame static-memory delta p50 -1.2 KB vs +2.2 KB fast' re-derives only for the 5 slow frames in the first 1,840 (values -4312,-3580,-1180,232,2072). Over all p1 T slow frames the median is +144 B vs +2164 B fast; p2 slow +1112 vs fast +2544 (mean +3634 vs +5028). Conclusion (no signature) holds, the stated population does not.",
+      "fix": "State the population (5 quiet-stretch slow frames) or quote the all-T medians."
+    },
+    {
+      "id": 3,
+      "issue": "gate.sh accepts some malformed input: runner field '.' or '1..2' (matches /^[0-9.]+$/, +0 reads 0) exit 0; extra fields after $4 exit 0; a sampler that died after one clean line exits 0 (no minimum sample count or timestamp coverage of the run). Not listed in D1.",
+      "fix": "Anchor the number regex (^[0-9]+(\\.[0-9]+)?$), require NF==4, and require sample count >= run seconds/0.7 * 0.8 or last timestamp within 2 s of the post reading."
+    },
+    {
+      "id": 4,
+      "issue": "OQ4 / V-row total '77 quiet2.sh readings, 2 YES': the .rec files hold 76 pre readings (4+33+33+2+2+1+1) and 2 post readings; count not reproducible to 77 exactly. Immaterial.",
+      "fix": "State the counting rule or say 'about 77'."
+    },
+    {
+      "id": 5,
+      "issue": "Finding 4/5 and O2 effect sizes: all UNMEASURED and correctly labelled; however 'Medium that iteration 103's tail is the same thing' leans on shape only. Acceptable as labelled."
+    },
+    {
+      "id": 6,
+      "issue": "p99 evidence for the inferred-quiet stretch rests on about 18 frames from one run; the doc says so. Fine, noted."
+    }
+  ],
+  "rederivations": [
+    {
+      "item": "p1 phase C p99",
+      "doc": 16.774,
+      "mine": 16.774,
+      "result": "match (6 over, n=300)"
+    },
+    {
+      "item": "p2 phase C p99",
+      "doc": 15.481,
+      "mine": 15.481,
+      "result": "match (1 over)"
+    },
+    {
+      "item": "p1 T p99 / over / max",
+      "doc": "63.02 / 268 / 91.66",
+      "mine": "63.022 / 268 / 91.663 (n=2213)",
+      "result": "match"
+    },
+    {
+      "item": "p2 T p99 / over / max",
+      "doc": "86.71 / 513 / 94.26",
+      "mine": "86.712 / 513 / 94.257 (n=1514)",
+      "result": "match"
+    },
+    {
+      "item": "p1 first 1,840 T p50 / p99 / over / max",
+      "doc": "10.66 / 15.59 / 5 / 19.16",
+      "mine": "10.664 / 15.59 / 5 / 19.155 (sum dt 18.76 s)",
+      "result": "match"
+    },
+    {
+      "item": "p1 slow classes",
+      "doc": "234 draw / 32 sim wait / 2 tick-frame (268)",
+      "mine": "234 draw-dominant; 34 game-dominant = 32 sim-wait (dsend_ms>0.5*proc) + 2 tick-frame; ev/phys dominant 0; pc 0",
+      "result": "match"
+    },
+    {
+      "item": "p2 slow classes",
+      "doc": "445 / 56 / 12 (513)",
+      "mine": "445 / 56 / 12; pc 0",
+      "result": "match (also matches p2.log classifier line)"
+    },
+    {
+      "item": "tick-frame counts",
+      "doc": "375 (dtick>0, first 1840) and 374 (boosting only)",
+      "mine": "375 and 374; dsend>0 = 375; row 1840 (index 1839) is the only cruising row",
+      "result": "match"
+    },
+    {
+      "item": "tick-frame stats first 1840",
+      "doc": "game p50 8.69, send p50 1.13, draw p50 1.22, 0 over 16.7",
+      "mine": "8.689, 1.132, 1.217, 0 over",
+      "result": "match"
+    },
+    {
+      "item": "p1 slow after 18.76 s",
+      "doc": "263 of 268",
+      "mine": "263 (5 before, all in first 1,840)",
+      "result": "match"
+    },
+    {
+      "item": "p2 first 8.3 s",
+      "doc": "844 frames, 19 over: 12 draw, 7 game",
+      "mine": "843 frames (cumulative dt<=8300), 19 over: 12 draw, 7 game, game range 9.5-22.8",
+      "result": "match (843 vs 844 boundary rounding)"
+    },
+    {
+      "item": "p2 four tick frames game 18.9-21.1 with waits 1.1-1.4",
+      "doc": "yes",
+      "mine": "18.85/1.11, 19.43/1.25, 19.67/1.43, 21.12/1.17 (a fifth, 22.79 with a 14.0 ms wait, is the doc's 'one 14.0 ms sim wait')",
+      "result": "match"
+    },
+    {
+      "item": "p2 GPU/runner timeline",
+      "doc": "GPU 0-54% in first 8.3 s; runner busy throughout T",
+      "mine": "GPU 24-98% in first 8.3 s; runner CPU 96-100% only 6.1-8.6 s, 3.6-6.2% from 9.3 s; GPU 100% from 9.3 s; slow frames 0 in T-seconds 6-7, 16/64 in second 8, about 20-30 per second after",
+      "result": "MISMATCH (see non_blocking 1)"
+    },
+    {
+      "item": "p1 slow-frame static-memory p50 vs fast",
+      "doc": "-1.2 KB vs +2.2 KB",
+      "mine": "-1.18 KB only over the 5 quiet slow frames; all-T slow +144 B; fast +2164 B",
+      "result": "partial mismatch (population)"
+    },
+    {
+      "item": "ev/phys p99 in T",
+      "doc": "0.13 and 0.09",
+      "mine": "p2 log ev p99 0.13, phys 0.08; p1 ev 0.103, phys 0.074",
+      "result": "match within rounding"
+    }
+  ],
+  "drills": [
+    {
+      "item": "R0 extraction in clone, then shasum -c",
+      "result": "7/7 OK; git status clean afterwards (.godot ignored)"
+    },
+    {
+      "item": "Bundle download into fresh /tmp/ev105, sha256",
+      "result": "34ad9ccf...ddca OK; all 22 member sha256s appear in the doc table; p1.json and p2.json byte-identical to /tmp/stap_i105/runs; nothing from it executed"
+    },
+    {
+      "item": "gate.sh, own inputs (zsh, alarm 5, stdin /dev/null)",
+      "result": "exit 0: clean 2-line file, exactly 5.0 %, leading-zero GPU 099, tab- and space-separated extra fields, extra field after $4, no trailing newline, runner field '.', runner field '1..2'. exit 1: second runner at 6.0, GPU 'abc', GPU 20.5, runner 1e9, blank line, empty field '1.0,,2.0', GPU -5, GPU 100, 5.01, GPU 0100, newline-only file, no argument (no hang), nonexistent file, /dev/null, CRLF line, 23-digit CPU, runner -1. Verdict: fails closed on truncation, empty, '?', missing and non-numeric input as claimed; fails OPEN on '.' / '1..2' runner values and on a sampler that wrote only a few lines (no coverage check)."
+    },
+    {
+      "item": "premises P0-P4",
+      "result": "all quoted lines present at the stated file:line (Makefile 13/727/732; m4_ship_bench.gd 3,19-25,32,66,121,127,132,138; ship_demo_benchmark.gd:21; galaxy_map.gd 982,985,1020,1257,1322-1323; sim_bridge.gd 185,345-346,357,558,561,565,785-790 and public func list; ship_geometry_demo.gd:1187; .gitignore:1). drain() blocking up to 2000 ms with 2 ms poll and no readiness API: confirmed."
+    },
+    {
+      "item": "Open questions guardrail",
+      "result": "OQ1-OQ4 are all human decisions (rule change, which option, upstream report, GPU window); no design is built; D-147 untouched. Pass."
+    },
+    {
+      "item": "GPU probe via R1 (counted2.sh p3 240)",
+      "result": "quiet2.sh NO throughout (06:14:26 to 06:18:39: 14 readings, GPU 100 or 16-99 mixed, load up to 8.14); wait expired, no run taken"
+    }
+  ],
+  "unmeasured": [
+    "A counted run of any kind (p3 not taken: rig contended for the 4-minute wait, 14 readings all NO)",
+    "Quiet cruise phase hitch rate",
+    "Size of the hidden-map redraw share of tick-frame game time (R4 ablation)",
+    "Whether the cruise-start crew reply exceeds 50 ms on a quiet rig",
+    "Whether the runner or Godot itself saturates the GPU at 100 % (the sampler cannot separate them)",
+    "Effect of O2/O3 on p99"
+  ]
+}
