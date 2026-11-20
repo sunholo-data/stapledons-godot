@@ -1,0 +1,150 @@
+{
+  "sprint": "R1-M4-JOURNEY_7av",
+  "round": 2,
+  "evaluator_model": "claude-sonnet-5-5",
+  "score": 80,
+  "max": 100,
+  "verdict": "PASS",
+  "rubric": {
+    "correctness_of_load_bearing_numbers (30)": {
+      "score": 27,
+      "note": "Round-1 items 1, 2, 4 fixed and re-derive; two small range figures off (GPU low end 22 vs 36; runner high 60 vs 57)."
+    },
+    "honesty_of_claims_vs_evidence (25)": {
+      "score": 20,
+      "note": "GPU-holder attribution is labelled inferred and the p1 confound is stated. One support sentence ('Godot alone read 21-54 %') is not backed by the sampler."
+    },
+    "runnability_of_acceptance_commands (20)": {
+      "score": 17,
+      "note": "R0 intact, all 7 sha256s still match the edited doc. gate.sh fail-open edges recorded as a Risk, not fixed (R1 usable only after the stated fix)."
+    },
+    "project_rules_adherence (15)": {
+      "score": 14,
+      "note": "Doc only; D-147 untouched."
+    },
+    "does_what_queue_row_asks (10)": {
+      "score": 7,
+      "note": "unchanged from round 1"
+    }
+  },
+  "blocking_issues": [],
+  "non_blocking_issues": [
+    {
+      "id": 1,
+      "issue": "'Godot alone read 21-54 % during p2's setup and docked control, which argues for an external holder' (finding 1; same figure in the Risks sampler bullet) is not supported. In p2.gpu every pre-T sample with the runner under 5 % CPU (7 samples) reads GPU 0-1 %; the 21-54 % samples all have the runner at 20-42 % CPU, and the pre-T samples at 85-97 % have the runner at 32-60 %. So the sampler never observed Godot alone at 21-54 %. The inference (external holder, probably the runner) is still reasonable, and is in fact better supported by 85-97 % with runner 32-60 % than by the sentence given.",
+      "fix": "Replace with: samples with the runner under 5 % CPU read GPU 0-1 % (7 samples, all pre-T); samples at 21-97 % all coincide with the runner at 20-60 % CPU. Labelled inferred."
+    },
+    {
+      "id": 2,
+      "issue": "Range slips: 'GPU 22-98 % over T's first 6 s' re-derives as 36-98 % (24 occurs at 6.095 s); 'runner 16-60 %' as 15.9-57.1 (60.1 is at -0.2 s, pre-T). The 6.1-8.0 s window (runner 96-100, GPU 24-39) and 9.3 s onward (GPU 99-100 on all 33 samples, runner 1.6-11.2) are exact.",
+      "fix": "Use 36-98 and 16-57, or say 'from -2 s'."
+    },
+    {
+      "id": 3,
+      "issue": "'GPU-resident inference needs little CPU' is stated as explanation without a label; it is an inference (no measurement here).",
+      "fix": "Prefix 'plausibly'."
+    },
+    {
+      "id": 4,
+      "issue": "gate.sh fail-open edges remain unfixed; recorded as a Risk with a concrete fix. Acceptable for a design that is evidence-only, but R1 must not count a run until it is applied."
+    }
+  ],
+  "rederivations": [
+    {
+      "item": "p2 slow frames per second, T-seconds 0-7",
+      "doc": "0-7 per second; 0 of 105 in seconds 6 and 7",
+      "mine": "3,1,2,7,4,2,0,0 (n 101,102,101,94,99,105,105,105)",
+      "result": "match"
+    },
+    {
+      "item": "p2 second 8",
+      "doc": "16 of 64",
+      "mine": "16/64",
+      "result": "match"
+    },
+    {
+      "item": "p2 slow per second from 9 s",
+      "doc": "18-30",
+      "mine": "min 18, max 30 (28,19,22,22,20,20,23,18,28,21,22,23,20,21,20,24,25,29,30,22,20)",
+      "result": "match"
+    },
+    {
+      "item": "p2 6.1-8.0 s sampler",
+      "doc": "runner 96-100 %, GPU 24-39 %",
+      "mine": "GPU 24,36,38,39; runner 96.0,100.0,99.9,99.4",
+      "result": "match"
+    },
+    {
+      "item": "p2 GPU 74 at the step",
+      "doc": "74 to 100",
+      "mine": "8.642 s GPU 74 runner 62.0, then 9.3 s 100",
+      "result": "match"
+    },
+    {
+      "item": "p2 from 9.3 s: GPU and runner CPU",
+      "doc": "GPU 99-100 on every sample; runner 1.6-11.2 %",
+      "mine": "33 samples, 0 below 99; runner first column 1.6-11.2",
+      "result": "match"
+    },
+    {
+      "item": "p2 first 6 s: GPU / runner",
+      "doc": "22-98 / 16-60",
+      "mine": "36-98 / 15.9-57.1 in 0-6.0 s",
+      "result": "mismatch (minor)"
+    },
+    {
+      "item": "p2 cruise switch",
+      "doc": "k = 1,168, 18.88 s",
+      "mine": "first cruising row idx0 1168 (row 1,169 1-based), cumulative dt 18.881 s",
+      "result": "match (0-based k)"
+    },
+    {
+      "item": "p1 cruise switch",
+      "doc": "k = 1,839, 18.76 s",
+      "mine": "idx0 1839, 18.759 s; 5 slow frames before, 263 after",
+      "result": "match"
+    },
+    {
+      "item": "'about 11 s after slow regime began' (p2)",
+      "doc": "about 11 s",
+      "mine": "18.88 - 8.0 = 10.9 s",
+      "result": "match"
+    },
+    {
+      "item": "static-memory medians",
+      "doc": "p1 +144 vs +2,164; p2 +1,112 vs +2,544; 5 quiet slow frames -1,180",
+      "mine": "144 / 2164; 1112 / 2544; -1180",
+      "result": "match"
+    },
+    {
+      "item": "'Godot alone read 21-54 %'",
+      "doc": "setup/docked control",
+      "mine": "runner<5 % samples read GPU 0-1 % (n 7)",
+      "result": "not supported"
+    },
+    {
+      "item": "OQ4 count",
+      "doc": "76 pre readings plus 2 post",
+      "mine": "76 pre readings (4+33+33+2+2+1+1), 2 post",
+      "result": "match"
+    }
+  ],
+  "drills": [
+    {
+      "item": "R0 on the edited doc (extracted in /tmp/r0chk from HEAD, not the clone)",
+      "result": "7 files extracted, every sha256 appears in the doc; the clone's .godot copies from round 1 were also verified identical; git status clean"
+    },
+    {
+      "item": "GPU runs",
+      "result": "none taken, per instruction"
+    }
+  ],
+  "unmeasured": [
+    "Any counted run",
+    "Quiet cruise phase",
+    "Hidden-map redraw share (R4)",
+    "Cruise-start crew reply on a quiet rig",
+    "GPU holder identity (sampler cannot attribute)",
+    "Effect of O2/O3"
+  ]
+}
