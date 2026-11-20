@@ -1,6 +1,6 @@
 # Live transit: what the hitch tail that decides AC12 is made of (queue row 7av)
 
-**Status:** Planned (mission iteration 105, designer). A measured attribution, **not a fix**; it stops at Open questions. **Both probe runs failed their post reading, so no run here is counted** (D-147 Q1 B). Every number below is evidence, with the condition it was taken under stated. **Release:** r1. **Milestone:** M4.6, gated half (row 7m AC1, M4 AC12, bar clause 4). Item class `[LOOP]`, measurement only; the GPU half is PARKED-ON-LANE again (V2, V4). **Revised once** after design quorum round 1 (see "Quorum verification log"): the apparatus is now in the appendices with sha256s and an extraction command, the raw runs are in the public bucket (Raw artifacts), R1's gate fails closed on malformed lines, drilled in D1, the codebase premises are quoted (P0–P4), and p1's quiet stretch is labelled inferred-quiet.
+**Status:** Planned (mission iteration 105, designer; **R1, R4, R5 run in iteration 107** under D-169's default, see "Iteration 107 counted runs"). A measured attribution, **not a fix**; it stops at Open questions. **Iteration 107 (2026-11-20, 20:29–20:44 CET): 3 of 6 runs count** (a1, and the bench runs b2 and b3; p3, b1 and the repeat p4 are evidence only). **The one counted bench run with a valid docked control, b3, misses AC12 and 7m AC1 (both bound 16.7 ms; D-147) and row 7av's 16.2 ms headroom target: control p99 16.563 ms (valid), live transit p99 17.338 ms.** That is one valid-control counted run, not two. b2 passes the post reading and the gate, but under D-147 (Q2 OQ6: count only runs whose docked control is valid) its invalid control (18.143 ms) means it does not count toward 7m AC1, so toward AC1 exactly one run (b3) counts. No counted R1 run (p3 contended from T + 0.65 s; p4 sampler-clean but its post reading was NO). `gate.sh`'s three fail-open edges are fixed and drilled (D3). The iteration-105 text below is unchanged: **both iteration-105 probe runs failed their post reading, so no run there is counted** (D-147 Q1 B). Every number below is evidence, with the condition it was taken under stated. **Release:** r1. **Milestone:** M4.6, gated half (row 7m AC1, M4 AC12, bar clause 4). Item class `[LOOP]`, measurement only; the GPU half is PARKED-ON-LANE again (V2, V4). **Revised once** after design quorum round 1 (see "Quorum verification log"): the apparatus is now in the appendices with sha256s and an extraction command, the raw runs are in the public bucket (Raw artifacts), R1's gate fails closed on malformed lines, drilled in D1, the codebase premises are quoted (P0–P4), and p1's quiet stretch is labelled inferred-quiet.
 **Priority:** P1. Row 7av is clause 4's critical path.
 **Implements:**
 - Charter row **7av** ([stapledon-mission.md](../../stapledon-mission.md), search `7av.`): attribute the slow frames in live transit (draw vs game; GC, shader compile, sim reply and map work as candidates), then propose a fix with headroom (target p99 ≤ 16.2 ms on valid-control runs), and measure the docked control's validity rate.
@@ -63,6 +63,57 @@ Slow frames (> 16.7 ms) in the two GPU probe runs, by largest component (Appendi
 - High that shader compiles, GC and event/physics time are not the tail (0 in T; no signature).
 - Low on the quiet cruise phase: never measured without contention.
 
+## Iteration 107 counted runs (2026-11-20, 20:29–20:44 CET)
+
+Mission iteration 107, designer, unattended. D-169 is unanswered; its default ("takes R1/R4/R5 whenever `quiet2.sh` holds; O2 and O3 are not built") applied. Clone of main `1468cda4`, AILANG v0.56.1 (`runtime/bin/ailang` first on `PATH`), Godot 4.7.2, apparatus extracted by R0 (all 7 sha256 OK before the runs). Order: GPU runs first (R1 `p3`, R5 `b1`, `b2`, R4 `a1`), then two repeats while `quiet2.sh` still held (`b3`, R5 again; `p4`, R1 again), then the gate fix (D3), then this text. Every run used `counted2.sh` exactly as R1/R4/R5 write it (R5's `b3` and R1's `p4` with a 180 s wait instead of 600); `.godot/tmp/bench-bridge.{log,json}` were copied to `runs/bN.bench.{log,json}` before the next run. Rows V8–V13 and D3 in the Verification Log carry the commands and readings.
+
+**Counting rule applied** (D-147 Q1 B plus R1's in-run gate, as R1/R4/R5 write it): a probe run counts only with `PRE YES`, `RC 0`, post `=> YES`, no `SCRIPT ERROR`, `probe: DONE` and the **fixed** `gate.sh` exit 0; a bench run with `bench-bridge.json` present, post `=> YES` and the fixed gate exit 0. A bench run's `RC 2` is the bench's own MISS verdict (`make bench` exits non-zero on a p99 miss), not a failed run, so it does not stop a bench run counting. This doc does not change the AC rule (D-147, OQ1 are Mark's); the gate is applied here because R1–R5 already write it.
+
+| run | PRE YES (local) | pre reading | post reading (+3 s) | RC | old gate (iter 105) | fixed gate | counts? |
+|---|---|---|---|---|---|---|---|
+| p3 (R1) | 20:29:18 (1st reading) | GPU 0/0/0, load 4.94 | 20:30:21 GPU **96/96/96**, load 8.12: **NO** | 0 | 1 | 1 | **evidence only**: post NO, and in-run contention (below) |
+| b1 (R5) | 20:35:57 (18 NO readings 20:30:37–20:35:39 first) | GPU 0/0/0, load 4.13 | 20:36:51 GPU 0/0/0, load **6.28**: **NO** | 0 | 1 | 1 | **evidence only**: post NO (load), and one sample with the second runner at 12.1 % CPU |
+| b2 (R5) | 20:38:39 (5 NO readings first, all GPU 0, load 5.25–5.80) | GPU 0/0/0, load 4.61 | 20:39:32 GPU 0/0/0, load 4.73: YES | 2 (MISS) | 0 | 0 | **counts**; docked control **invalid** (18.143) |
+| a1 (R4) | 20:39:46 (1st reading) | GPU 0/0/0, load 4.82 | 20:40:38 GPU 0/0/0, load 4.56: YES | 0 | 0 | 0 | **counts** (`ABLATION hid 7`, `probe: DONE`, 0 `SCRIPT ERROR`) |
+| b3 (R5 repeat) | 20:41:46 (1st reading) | GPU 0/0/0, load 3.27 | 20:42:38 GPU 0/0/0, load 3.74: YES | 2 (MISS) | 0 | 0 | **counts**; docked control **valid** (16.563) |
+| p4 (R1 repeat) | 20:42:48 (1st reading) | GPU 0/0/0, load 3.63 | 20:43:40 GPU **39**/0/0, load 3.70: **NO** | 0 | 0 | 0 | **evidence only**: post NO on one GPU reading; every in-run sample had both runners at 0.0 % CPU |
+
+**R5, the bench** (`grep -E '^bench-bridge: (docked control|frame ms|live transit)'` and `jq -e '.docked_control.p99_ms <= 16.7 and .timing.p99_ms <= 16.2'` on each run's copied files; boosting/cruising split and sim-wait share from the json's `frame_times_ms`, `phases`, `sim_wait_ms`). R5's jq `false` means over 16.2 (row 7av's headroom); AC12 and 7m AC1 themselves are the 16.7 ms bound, which only b1 (evidence only) meets:
+
+| run | counts? | docked control p99 (valid ≤ 16.7) | live transit p99 | over 16.7 / frames | max | R5 `jq -e` | boosting p99 / cruising p99 | slow frames with sim wait > half the frame |
+|---|---|---|---|---|---|---|---|---|
+| b1 | evidence only | 15.891 (valid) | 16.669 | 31 / 3,195 | 58.10 | **false** (16.669 > 16.2) | 16.290 / 17.460 | 11 of 31 |
+| b2 | counts | **18.143 (invalid)** | 16.811 | 38 / 3,164 | 103.73 | **false** | 16.201 / 26.645 | 14 of 38 |
+| b3 | counts | 16.563 (valid) | **17.338** | 50 / 3,086 | 153.13 | **false** | 16.934 / 26.209 | 23 of 50 |
+
+**AC12 / 7m AC1, plainly.** Two bench runs pass the post reading and the gate (b2, b3; b1 does not), but only b3 has a valid docked control, so under D-147 (Q2 OQ6) only b3 counts toward 7m AC1. **b3 MISSED** the 16.7 ms bound that AC12 and 7m AC1 share (D-147: "the unchanged 16.7 ms bound"), and row 7av's 16.2 ms headroom target, with a valid control and a sampler-clean run (in-run: GPU column 0–48 %, which is the bench's own rendering, both runner processes 0.0 % CPU in every sample). **b2 is undecidable** (invalid control, 18.143 ms); its transit p99 16.811 would also miss. The evidence-only b1 read 16.669 (under 16.7, over 16.2). So R5's "two counted runs" condition is met only with the repeat b3, and not by two valid-control runs (b1 has a valid control but is evidence only); the one valid-control counted run is a miss. This is one run's evidence, not a spread. R2's prediction (boosting-phase p99 ≤ 16.2) held in only one run, the evidence-only p4 (16.029); b2 missed it by 0.001 (16.201), and a1 (16.500), b1 (16.290) and b3 (16.934) missed it clearly.
+
+**R1/R2/R3, the probe** (R2's and R3's commands on `p3.json`/`p3.log`, and the same on the repeat `p4`):
+
+| run | counts? | transit p99 | docked phase C p99 (valid?) | T slow-frame classes | pc in T | R3 hidden-map lines | tick frames: game (`proc`) p50 |
+|---|---|---|---|---|---|---|---|
+| p3 | evidence only | 40.474 (73 over of 2,803) | 17.070 (invalid; `false`) | draw 19, sim-wait 44, tick-frame 10 | 0 | 10 | 9.065 ms (592 frames) |
+| p4 | evidence only | 16.632 (31 over of 3,184) | 16.429 (valid; `true`) | draw 20, sim-wait 11 | 0 | 10 | 7.593 ms (600 frames) |
+
+- **p3 was contended from 0.65 s into transit.** `T start unix 1795202984.236`; the first sampler line with a runner over 5 % is T + 0.651 s (`45.2,0.0`), the GPU column reads ≥ 90 % from T + 8.47 s (100), 41 of the 46 in-T samples fail the gate, and the runner reached 476–508 % CPU by the end. `ps` at 20:32:11 showed both `llama-server` processes with elapsed times 2:31 and 2:15, i.e. started about 20:29:40 and 20:29:56, around p3's transit start (inferred: a model load; the sampler cannot name the holder). p3's numbers are contended evidence, like p1/p2.
+- **p4 is the first probe run whose sampler was clean throughout** (69 samples, every runner field `0.0,0.0`, GPU column 0–42 %, i.e. the probe's own rendering). It is not counted: the post reading's first GPU sample read 39 (then 0, 0); what held the GPU 3 s after Godot exited is UNMEASURED. Boosting p99 **16.029** (11 over of 2,039), cruising p99 **17.297** (20 over of 1,145).
+- **R3:** 10 hidden-map CanvasItems emit `draw` in T in both p3 and p4 (not 4): the overlay `Control@378`, `EarthBeams`, `ProgressBar@414`, `Label@403` and `Label@542` at 591–592 draws each (one per tick), `Label@532/534/536` at 371, and `Label@524/528` at 220 (p3's counts). a1 (ablation) shows 0.
+- **pc:** 0 pipeline compiles in T in p3, p4 and a1, as predicted.
+
+**R4, the O2 ablation (a1, counted).** `probe: ABLATION hid 7 top-level CanvasItems under the hidden navigation window`. R4's commands: tick-frame game time median **5.39 ms** (595 tick frames) against p3's **9.065** (592; contended) and the repeat p4's **7.593** (600; sampler-clean, not counted); boosting-only 5.406 against 8.746 (p3), 7.555 (p4) and V1's inferred-quiet 8.69. Tick frames' game time less the SimBridge send/drain: 4.29 (a1) against 7.76 (p3). Transit p99 **16.736** (33 over of 3,213; boosting 16.500, cruising 16.932), against p4's 16.632 and p3's 40.474. Slow-frame classes: draw 11, game 1, sim-wait 19, tick-frame 2. Docked phase C p99 17.166 (6 over, max 43.64: the probe's control was invalid in this run). **Reading, bounded to these runs:** hiding the hidden map cuts tick-frame game time by about 2.2 ms (vs p4) to 3.7 ms (vs p3) at the median, and it did **not** lower the transit p99 (16.736 vs p4's 16.632), because tick frames were not where the slow frames were: in the two sampler-clean probe runs, 2 of 33 (a1) and 0 of 31 (p4) slow frames are tick-frame class. One ablation run and one comparator; the p99 difference is inside run-to-run spread (UNMEASURED with more runs).
+
+**What the sampler-clean runs' tail is made of (a1, p4, b3; new in this iteration, bounded to these runs).**
+1. **Periodic `crew` replies in cruise.** In a1, p3 and p4 the frames over 40 ms in cruise fall on the same sim ticks: 406 (the cruise switch, k ≈ +10 frames), 460, 513, 566, 620, every 53–54 ticks (about 2.7 s at 20 Hz), and each of those replies carries the `crew` section (`keys` contains `crew`, lines 38.9–42.6 KB). On the sampler-clean runs the SimBridge wait on those frames was: a1 40.1 (tick 406), 30.7 (460), 37.9 (513), 55.2 (566), 37.3 (620) ms; p4 29.5 (406), 55.4 (460), 55.3 (513), 37.3 (566), 55.4 (620) ms. The bench's own `sim_wait_ms` shows the same comb at 19.1, 21.8, 24.4, 27.1, 29.8 s of transit in b1, b2 and b3 (24–81 ms). Each such reply makes 1–3 slow frames; it is why the cruising p99 (16.932 in a1, 17.297 in p4, 26.2–26.6 in b2 and b3) is above the boosting p99.
+2. **OQ3:** the first `crew` reply (tick 406) on a sampler-clean rig waited 40.1 ms (a1) and 29.5 ms (p4), under OQ3's 50 ms; later `crew` replies reached 55.2–55.4 ms (a1 tick 566; p4 ticks 460, 513, 620). Whether that is reported upstream (O4) is Mark's (OQ3); nothing was reported in this iteration.
+3. **An unattributed boosting-phase sim-wait cluster.** b3 (8.4–9.1 s of transit, 8 frames 45–153 ms, sim wait 33–124 ms) and a1 (5.3–5.8 s, ticks 130–140, 6 frames of 48–153 ms, sim wait 38–118 ms) each had one burst of slow sim replies in boosting while the sampler read both runners at 0.0 % CPU; p3 had one at 4.0–4.8 s (contended), p4 and b1/b2 had none. Its replies carry no `crew` section and are normal size (33.1–33.3 KB). Cause UNMEASURED (not the model runner per the sampler; candidates are the sim process itself or other host load, which the sampler does not record).
+4. **Draw-bracket frames at 16.7–17.8 ms** remain the rest (a1 11, p4 20 of the slow frames, classed by their larger component; in a1 their draw bracket is 14.6–16.7 ms and game time 1.0–2.1 ms), the docked/inferred-quiet shape of finding 2.
+
+So on a quiet rig the transit p99 sits at 16.6–17.3 ms in these four sampler-clean runs (a1, b2, b3 counted; p4 evidence only: a1 16.736, p4 16.632, b2 16.811, b3 17.338), with the sim-wait comb and one-off boosting bursts carrying 35–58 % of the slow frames (probe runs use the probe's sim-wait class: a1 19 of 33, p4 11 of 31; bench runs use sim wait over half the frame: b2 14 of 38, b3 23 of 50). **This revises "Predicted headroom" (one inferred-quiet boosting stretch at 15.59): the quiet cruise phase, now measured, is above 16.2 in every run here.** No option is designed or built here (D-169 default); O3 (do not block on a late reply) is the option these numbers bear on, and that choice is Mark's (OQ2).
+
+**Docked-control validity, this iteration:** bench 2 of 3 valid (b1 15.891, b3 16.563; b2 18.143 invalid); probe phase C 1 of 3 (p4 16.429; p3 17.070, a1 17.166 invalid). With iteration 105's 1 of 2 and iteration 103's 1 of 9: 5 of 17.
+
+**Raw evidence:** bundle `7av-iter107-evidence.tgz` (see "Raw artifacts").
+
 ## Verification Log
 
 Predicate: `quiet2.sh` (7m-d lines 79–98; verbatim in Appendix B with its sha256). Every GPU run went through the as-run wrappers in Appendix B (`counted.sh` for V1, `counted2.sh` with the sampler for V5; their paths were `/tmp/stap_i105/…` then; the revised, repo-relative copies are what R1–R5 use): `quiet2.sh` YES first (bounded wait, 15 s retries), the run under `perl alarm 600`, `sleep 3`, `quiet2.sh` again. A run counts only if both readings are YES. Each run's output JSON was deleted before it and listed after it (fresh mtime). All times CET, 2026-11-20. 0 `SCRIPT ERROR` lines in every log.
@@ -78,6 +129,14 @@ Predicate: `quiet2.sh` (7m-d lines 79–98; verbatim in Appendix B with its sha2
 | V6 | — | — | `counted2.sh a1 … --ablate-map` (the hidden-map ablation), and `make bench SCENE=bridge AILANG=runtime/bin/ailang` ×2 | — | — | **UNMEASURED**: this designer's time bound ended with the GPU at 99–100 % (V5 post reading). |
 | D1 | revision, about 06:05 (no GPU window) | n/a | the R1 gate (Appendix B `gate.sh`, the round-1 reviewer's awk verbatim; the sampler's columns are `$2` GPU % and `$4` the runner CPU list, as the awk assumes) on five files | — | — | **p2.gpu (V5's sampler, 79 lines): exit 1, contended.** Empty file (0 lines): **exit 1**. Synthetic file with one `?` sample (3 lines, the revised sampler's `BAD ioreg-miss` form): **exit 1**. Synthetic file whose *second* runner process is at 47 % (1 line): exit 1. Positive control, a clean synthetic file (3 lines; GPU 20–31, runners ≤ 4 %, one `-` for no runner): **exit 0**. **Round-2 re-drill (controller, after replacing `gate.sh` with the round-2 reviewer's structure-validating version, B.2):** the same five give exit 1, 1, 1, 1, 0; plus a file whose final line is truncated mid-write (`1763697000.481 45 ollama_cpu`, no `$4`): **exit 1** (the round-1 gate exited **0** on it, which confirms the defect); a clean file whose every runner field is `-`: exit 0; and no argument (`gate.sh < /dev/null` under `alarm 5`): **exit 1, no hang**. |
 | D2 | revision (no GPU window) | n/a | Appendix B's extraction command run on this doc in the clone, then `shasum -a 256 -c`, then `.godot/tmp/7av/bin/counted2.sh drill 0 -- true` | — | — | All 7 extracted files matched their listed sha256 (`shasum -c` rc 0; the first attempt caught that the as-run `quiet2.sh` ends in a stray fence-marker line, see B.2). The extracted probe passes `godot --headless --check-only`, and the sampler passes `perl -c`. The wrapper resolved the repo root, read `quiet2.sh` once (06:06:09, GPU 99/100/100, load 6.81: NO) and wrote `.godot/tmp/7av/runs/drill.rec` ending `UNMEASURED: wait expired` / `END`, exit 3, so its paths work from the clone root. `git status` showed only this doc modified (`.godot/` ignored, P0). |
+| R0 (it. 107) | 20:29:05, before the runs | n/a | R0's `shasum -a 256 -c` on the already-extracted apparatus | — | — | 7 of 7 OK (gate.sh still the iteration-105 `5c8fb3d6…`). `quiet2.sh` at 20:29:09: GPU 0/0/0, load 4.76: YES. |
+| V8 | PRE YES 20:29:18 (1st reading: GPU 0/0/0, load 4.94, HID idle 42,254 s, session clause clean) | YES | R1 verbatim: `rm -f $s/runs/p3.json; $s/bin/counted2.sh p3 600 -- godot --audio-driver Dummy --path . --script $r/$s/probe/probe_transit.gd -- --tier=medium --out=$r/$s/runs/p3.json`, then R1's check line | **NO**: 20:30:21 GPU 96/96/96, load 8.12 | no: `p3 is evidence only` (old gate 1, fixed gate 1) | RC 0, `probe: DONE`, 0 `SCRIPT ERROR`. R2: T p99 **40.474**, C p99 17.070 → `false`, classes `{"draw":19,"game:sim-wait":44,"game:tick-frame":10}`, pc 0; R3: 10. Sampler 85 lines: runner 45.2 % at T + 0.651 s, GPU ≥ 90 from T + 8.47 s; 41 of 46 in-T samples fail. |
+| V9 | waits 20:30:37–20:35:39: 18 NO (20:30:37–20:31:52 GPU 95–96/95–97; 20:32:11–20:35:01 GPU 0/0/0 but load 5.90–14.74; 20:35:20, 20:35:39 GPU 88–89); PRE YES 20:35:57 (GPU 0/0/0, load 4.13) | YES | R5: `rm -f .godot/tmp/bench-bridge.{log,json}; $s/bin/counted2.sh b1 600 -- make bench SCENE=bridge AILANG=runtime/bin/ailang`; files copied to `runs/b1.bench.{log,json}` | **NO**: 20:36:51 GPU 0/0/0, load **6.28** | no (old 1, fixed 1) | RC 0, bench `verdict ok exit 0`. Control p99 15.89 (valid); transit p99 **16.669**, 31 over of 3,195, max 58.10; `jq -e` **false**. Sampler 70 lines: one sample (47th) with the second runner at 12.1 % CPU (GPU 41, the bench's own rendering range). |
+| V10 | waits 20:37:05–20:38:21: 5 NO (GPU 0/0/0, load 5.25–5.80); PRE YES 20:38:39 (GPU 0/0/0, load 4.61) | YES | R5 as V9, label `b2` | YES: 20:39:32 GPU 0/0/0, load 4.73 | **yes** (old 0, fixed 0) | RC 2 = bench `verdict MISS exit 2` (p99 16.811 against 16.7). Control p99 **18.14 (invalid)**; transit p99 16.811, 38 over of 3,164, max 103.73; `jq -e` **false**. Sampler 69 lines, runners 0.0 throughout, GPU column 0–42. |
+| V11 | PRE YES 20:39:46 (1st reading: GPU 0/0/0, load 4.82) | YES | R4 verbatim: `rm -f $s/runs/a1.json; $s/bin/counted2.sh a1 600 -- godot … probe_transit.gd -- --tier=medium --ablate-map --out=$r/$s/runs/a1.json`, then R4's three commands | YES: 20:40:38 GPU 0/0/0, load 4.56 | **yes**: `a1 counts (fixed gate)` (old 0, fixed 0) | RC 0, `ABLATION hid 7`, `probe: DONE`, 0 `SCRIPT ERROR`. Tick-frame game median **5.39** (p3 9.065, p4 7.593); T p99 **16.736**, 33 over of 3,213; C p99 17.166 (invalid); classes `{"draw":11,"game":1,"game:sim-wait":19,"game:tick-frame":2}`; pc 0; R3: 0. Sampler 69 lines, runners 0.0, GPU 0–50. |
+| V12 | PRE YES 20:41:46 (1st reading: GPU 0/0/0, load 3.27) | YES | R5 repeat, label `b3`, wait 180: `$s/bin/counted2.sh b3 180 -- make bench SCENE=bridge AILANG=runtime/bin/ailang` | YES: 20:42:38 GPU 0/0/0, load 3.74 | **yes** (old 0, fixed 0) | RC 2 = bench MISS (p99 17.338). Control p99 **16.56 (valid)**; transit p99 **17.338**, 50 over of 3,086, max 153.13; `jq -e` **false**. **AC12 and 7m AC1 MISS on a counted, valid-control, sampler-clean run.** Sampler 69 lines, runners 0.0, GPU 0–48. |
+| V13 | PRE YES 20:42:48 (1st reading: GPU 0/0/0, load 3.63) | YES | R1 repeat, label `p4`, wait 180, otherwise R1 verbatim | **NO**: 20:43:40 GPU **39**/0/0, load 3.70 | no: `p4 is evidence only` (old 0, fixed 0) | RC 0, `probe: DONE`, 0 `SCRIPT ERROR`. T p99 **16.632** (boosting 16.029, cruising 17.297), 31 over of 3,184; C p99 16.429 → `true`; classes `{"draw":20,"game:sim-wait":11}`; pc 0; R3: 10. Sampler 69 lines, runners 0.0 throughout, GPU 0–42. |
+| D3 | after the runs, 20:44 | n/a | `gate.sh` fixed (B.2, sha256 `db7c09ce…4976`); R0 re-extracted from this doc and `shasum -a 256 -c` (7 of 7 OK, extracted gate byte-identical to the drilled one); `drill107/drill.sh` (in the bundle) runs the iteration-105 gate (`bin/gate.iter105.sh`) and the fixed gate on each file | — | — | **The three fail-open edges now fail** (old → fixed exit): runner field `.` 0 → **1**; `1..2` 0 → **1**; an extra field after `$4` 0 → **1**; a one-line file from a sampler that died after its first line, against p3's real `.rec` 0 → **1**; p3's clean-looking first 34 lines (sampler died at 40 % of the run) 0 → **1**; a 3 s gap between samples 0 → **1**; a numeric line ending `BAD ioreg-miss` (NF 6) 0 → **1**; a `.gpu` with no `.rec` 0 → **1**. **D1's drills keep their verdicts** (old, fixed): p2.gpu 1, 1; empty 1, 1; `?` sample 1, 1; busy second runner 1, 1; clean synthetic 0, 0 (given a matching `.rec`); truncated final line 1, 1; all-`-` 0, 0; no argument 1, 1 (no hang under `alarm 5`). **Real clean sampler files exit 0:** a1, b2, b3, p4 (0, 0 each). Re-applied to this fire: p3 1, 1; b1 1, 1; b2 0, 0; a1 0, 0; b3 0, 0; p4 0, 0; with values zeroed (coverage alone), all six exit 0, so p3's and b1's failures are contention, not coverage. |
 
 **Codebase premises** (quoted from the clone at `ad929704`; each backs a command or an option above):
 
@@ -121,7 +180,7 @@ shasum -a 256 -c <<'SUMS'
 5e6fce6b57d6e299658be37b5c796ebf24bdadaf473db1d3fffbf36f6685c518  .godot/tmp/7av/bin/quiet2.sh
 2b22eece1166f700bde2f2a1dc2d6d22bc75111e5287bdfb7fd211d8e42b4b22  .godot/tmp/7av/bin/counted.sh
 c7c76f67d577ccc08a1bed78aabc60236505ff74feeaff2ae32097cfa6c7fb5f  .godot/tmp/7av/bin/counted2.sh
-5c8fb3d6079d8eb06ffc951e986c4317da84b7bc6e998d6ef77d516bb437a036  .godot/tmp/7av/bin/gate.sh
+db7c09ce45e89b067ced91672c47f3b25836a965d2514c691ec6139c541a4976  .godot/tmp/7av/bin/gate.sh
 21940053253d0afd05ee0325ce987977deff517d2f640ae5446184aef23fe16e  .godot/tmp/7av/bin/gpusampler.pl
 75eb8bd224d602491443472ea092f205f157b2165001aa815bf70f1e718f6bdd  .godot/tmp/7av/probe/probe_transit.gd
 4135e2b5bf978bf752e22c8c7e12fb667b5e6a3c1a2fee87b583d159cc6f182a  .godot/tmp/7av/probe/analyse.py
@@ -184,7 +243,7 @@ Repeat R5 as `b2`.
 - **No counted run.** Every number is from a run whose post reading failed or from a headless run. Mitigation: the claims are bounded to "in these runs"; the quiet stretch is labelled inferred-quiet; R1–R5 are the counted repeat.
 - **The sampler is coarse and partly ambiguous.** One sample per 0.6–0.7 s. The GPU column cannot say who holds the GPU (in p2 it read 0–1 % whenever the runner was under 5 % CPU before T, and 99–100 % in T while the runner's CPU was 1.6–11.2 %), and the runner CPU column alone misses GPU-resident inference; that is why the gate checks both every runner process and the GPU (D1).
 - **The gate may reject runs that were fine.** It covers the whole command, setup included, and the runner can blip above 5 % CPU without using the GPU (V5's first sample read 13.9 % with the GPU at 4 %). That costs runs, not correctness: it fails closed on malformed lines, drilled in D1.
-- **Known fail-open edges of `gate.sh` (evaluator round 1, not yet fixed).** It still exits 0 on a runner field of `.` or `1..2` (the number regex is unanchored for those), on an extra field after `$4`, and on a one-line file, so a sampler that died after its first line passes (there is no sample-count or time-coverage check). Fix before R1 is used to count a run: anchor the CPU regex (`^[0-9]+(\.[0-9]+)?$`), require `NF == 4` (or `NF == 6` with `BAD ioreg-miss`, which already fails), and require samples spanning the run (for example at least one per 1 s of the run's wall time). Also the GPU column alone is what catches p2's contended regime (finding 1); the 5 % runner-CPU rule would miss it.
+- **Known fail-open edges of `gate.sh` (evaluator round 1; fixed in iteration 107, drilled in D3, B.2 sha256 `db7c09ce…4976`).** As found: It still exits 0 on a runner field of `.` or `1..2` (the number regex is unanchored for those), on an extra field after `$4`, and on a one-line file, so a sampler that died after its first line passes (there is no sample-count or time-coverage check). Fix before R1 is used to count a run: anchor the CPU regex (`^[0-9]+(\.[0-9]+)?$`), require `NF == 4` (or `NF == 6` with `BAD ioreg-miss`, which already fails), and require samples spanning the run (for example at least one per 1 s of the run's wall time). Also the GPU column alone is what catches p2's contended regime (finding 1); the 5 % runner-CPU rule would miss it.
 - **Contention onset in p1 is inferred** (no sampler in V1): from the step in frame times and the GPU 100/100/100 post reading. p2 has the sampler.
 - **Classifier bias.** The "draw bracket" class is a wall interval; under contention it includes waiting on a GPU shared with the runner. It says where the wall time went, not why (7m-d's caveat; a Metal System Trace is still UNMEASURED).
 - **Probe perturbation.** 634 CanvasItem signal connections and per-frame `Performance` reads. The docked phase C agrees with the bench's band (15.48 and 16.77 against 15.18–19.19 in 7m-d and iteration 103).
@@ -235,6 +294,25 @@ echo "34ad9ccfa03f2bc0146a87da5c1f46bbdd9a8ef67c56e4ee3775a93265b3ddca  7av-iter
 | `bin/counted2.sh` | V2, V4, V5 wrapper (as run) | `cdffc9a744146e03c95366ca1571bc769ea7821cf54e5745f747048b3331ba21` |
 | `bin/gpusampler.pl` | V5 sampler (as run) | `5c048473fe193b2d261f9572034aad5cf7a74abbb69ea28e6a4d545375b15079` |
 | `bin/quiet2.sh` | every reading | `e95226d0648437c24f839f5ad0b895a769565ee1e46ff4913ef413bcb93b3df1` |
+
+**Iteration 107 bundle:** **https://storage.googleapis.com/stapledons-voyage-assets/benchmarks/7av-iter107/7av-iter107-evidence.tgz** (`gs://stapledons-voyage-assets/benchmarks/7av-iter107/7av-iter107-evidence.tgz`, 456,275 bytes, sha256 `bd19a388c2e403c6c92fad484f5973bd4fd8bcbdabc817d616bb72ee6602c9d9`). It is `tar czf 7av-iter107-evidence.tgz runs probe bin drill107` from `.godot/tmp/7av/` in the iteration-107 clone: every run's `.rec`, `.log`, `.gpu` and output (`pN.json`, `a1.json`, `bN.bench.{log,json}`), the probe and spike as run (R0 sha256s), `bin/` with the fixed `gate.sh` and the iteration-105 `gate.iter105.sh`, and `drill107/` (D3's `drill.sh`, its input files and `drill_output.txt`). Upload checked with `gcloud storage ls -L` (Content-Length 456275, MD5 `gOTB9LWhaOKzzjsI2MGFmA==`, created 2026-11-20T19:44:54Z), and a public re-download by `curl` hashed to the same sha256.
+
+```sh
+mkdir -p .godot/tmp/7av/evidence107 && cd .godot/tmp/7av/evidence107
+curl -sfLO https://storage.googleapis.com/stapledons-voyage-assets/benchmarks/7av-iter107/7av-iter107-evidence.tgz
+echo "bd19a388c2e403c6c92fad484f5973bd4fd8bcbdabc817d616bb72ee6602c9d9  7av-iter107-evidence.tgz" | shasum -a 256 -c && tar xzf 7av-iter107-evidence.tgz
+```
+
+| file in the bundle | V-row | sha256 |
+|---|---|---|
+| `runs/p3.{rec,log,gpu,json}` | V8 | `8b85b3026841a783daf68626b2b5c44bc96e29233964422a1b4893826f81ddd0`, `69447b48d01fc86251f04d6075853e973e337649a9058c5e39002e48ed58cec5`, `2e16a90b7cc9083961e900076da43c8974706ca5fc8e6dbe47362ae389aa0df8`, `7fed06bd1a14254a51cafb5bba1de34b4396c6a64d7153ba34fac5861d22ff4b` |
+| `runs/b1.{rec,log,gpu,bench.log,bench.json}` | V9 | `861f94c5337b805c374da473de423d77f3078d5cfbcd6d331b69a045be1f78ef`, `18b6bcb50a46548b0835f41a850d37f67fb2c104b4d63d79354c9d1e6900358d`, `543d1ba9b7ea0b8db66672ccda091d7d9910c87c5ca03c93a085b6a40ee8da40`, `fa228d555f60c502e1a6acf28d0eb07954cd6e07df3c131bdc01e2369c50079d`, `0f089d725ed30c660041ede4a8456c2a9c3bcf4c22018b00782c5419c29b967b` |
+| `runs/b2.{rec,log,gpu,bench.log,bench.json}` | V10 | `c3f8c618ba074758ec662693c6c828bc7ad9258dda97045fc12e94e32dcbd0c5`, `8acfff3fe2c15a939eb225ee13c7ef1e0097336b6d1cbb426ffa49bbbdfa49cb`, `35ec7b5529bd5f94c5e0054911ea7c5bec7efbd97d7da0b1a3b85ff90db5bddd`, `aabaa8bfccf74c6eac2e29239710d9c07d7fdfbaa104149b535c6e867f958112`, `dcba6154501144661f6ab0acdf45734a24eb4fadbdab809bdc0ea96a968b75ff` |
+| `runs/a1.{rec,log,gpu,json}` | V11 | `5ffd66206b53f8a068039db9d1da973df849e73251f68d72b08183962bc2c6e3`, `465295305148979d50660f7bee8d6c525f07ecee1c1fbf54b4eaa08475daf7ef`, `4a19d7c551e21e5a9cba732c042f485f694607fbce030c37dff9049ff31850d3`, `62dda4f4e494a5ffaa2ce107f99920d0673dcefe6d97dfe3f928b7b1c2edafe9` |
+| `runs/b3.{rec,log,gpu,bench.log,bench.json}` | V12 | `7aca75e16a502386bd92178d7f529604598e75032410a784e8c94e4389503fc2`, `dcd0c35aeeb498c7a56b7a9507e718ba56b1161cc55ad1edefab615f5ac769dd`, `db6cd8a781dd4b8dc755d397de46da701b9534c0bff12c4e846ccff67cd854ce`, `9d64f5c2832944d6b75620e313cf7ec3565a0927d58ddb0c15d932b9368452a7`, `8f29951aa9e2a84b3f69b77a9514d2d6e29167eb0c9029bacf704975a73b2007` |
+| `runs/p4.{rec,log,gpu,json}` | V13 | `c25d0f25d0b79ee496b212c9c0c9a6338644e642e9bc24b5f6ee5c11ef76e4a1`, `e0fdb870bf1553e6158076ccf8317c1cf5f5f29d69178e081ced71056fc014ca`, `429e87005434281aed291848c1017ab7aa3ffc91f60c009c8a0a8d148be5cd84`, `bef61ced676a17c369207da5a40dadfc4f9a8c6069197145bce3ffcd15c71860` |
+| `bin/gate.sh`, `bin/gate.iter105.sh` | D3 (fixed, old) | `db7c09ce45e89b067ced91672c47f3b25836a965d2514c691ec6139c541a4976`, `5c8fb3d6079d8eb06ffc951e986c4317da84b7bc6e998d6ef77d516bb437a036` |
+| `drill107/drill.sh`, `drill107/drill_output.txt` | D3 | `ccaf1e3af350f009ca83b0e93d392fcb17dfd2fb1f7909de5bcbcd824959a326`, `f4debd0061e0bc5524e1676b7aed724a88d73fca993e3bd5b1c556498ab7a6ac` |
 
 ## Quorum verification log
 
@@ -689,14 +767,38 @@ echo "POST $(echo "$q" | head -1) => $([ $rc = 0 ] && echo YES || echo NO)" >> $
 echo "END" >> $rec
 ```
 
-**`gate.sh`** (sha256 `5c8fb3d6079d8eb06ffc951e986c4317da84b7bc6e998d6ef77d516bb437a036`):
+**`gate.sh`** (sha256 `db7c09ce45e89b067ced91672c47f3b25836a965d2514c691ec6139c541a4976`; fixed in iteration 107: anchored CPU regex, `NF == 4`, and sample coverage of the run read from the sibling `.rec`. The iteration-105 gate, sha256 `5c8fb3d6079d8eb06ffc951e986c4317da84b7bc6e998d6ef77d516bb437a036`, is in git history and in the iteration-107 bundle as `bin/gate.iter105.sh`):
 
 ```zsh file=.godot/tmp/7av/bin/gate.sh
 #!/bin/zsh
-# gate.sh FILE.gpu (7av R1): exit 0 only if FILE exists, is non-empty, and EVERY line is well-formed
-# (NF>=4, $3=="ollama_cpu", $2 an integer GPU % < 100, $4 a comma list of numeric CPU %s or '-') with no runner > 5 %.
+# gate.sh FILE.gpu [FILE.rec] (7av R1; fail-open edges fixed in iteration 107): exit 0 only if FILE.gpu is non-empty,
+# EVERY line is well-formed (NF==4; $1 a unix time, increasing; $2 an integer GPU % < 100; $3=="ollama_cpu"; $4 '-' or a
+# comma list of anchored numbers ^[0-9]+(\.[0-9]+)?$) with no runner > 5 %, AND the samples span the run: FILE.rec
+# (default FILE.gpu with .rec) holds `PRE YES HH:MM:SS` and `POST quiet: HH:MM:SS`; the first sample is 0-3 s after PRE,
+# the last is at most 10 s before POST (the wrapper's sleep 3 plus quiet2.sh's ~3.5 s), no two samples are > 2 s apart,
+# and there is at least one sample per 1 s from PRE to the last sample. A `? ... BAD ioreg-miss` line (NF 6) fails.
 [ -s "$1" ] || exit 1
-awk 'NF<4 || $3!="ollama_cpu" || $2 !~ /^[0-9]+$/ {bad++; next} {n=split($4,c,","); for(i=1;i<=n;i++) { if(c[i]!="-" && c[i] !~ /^[0-9.]+$/) {bad++; next} if(c[i]+0>5) bad++ } if($2+0>=100) bad++} END {exit (bad>0)||(NR==0)}' "$1"
+rec=${2:-${1%.gpu}.rec}
+[ -s "$rec" ] || exit 1
+zmodload zsh/datetime
+pre=$(awk '/^PRE YES /{print $3; exit}' "$rec"); post=$(awk '/^POST quiet: /{print $3; exit}' "$rec")
+[[ "$pre" == <->:<->:<-> && "$post" == <->:<->:<-> ]] || exit 1
+f=$(awk 'NR==1{printf "%d", $1}' "$1"); l=$(awk 'END{printf "%d", $1}' "$1")
+[[ "$f" == <-> && "$l" == <-> ]] || exit 1
+ep() { local d t; strftime -s d '%Y-%m-%d' $2; t=$(strftime -r '%Y-%m-%d %H:%M:%S' "$d $1") || return 1
+  (( t - $2 > 43200 )) && (( t -= 86400 )); (( $2 - t > 43200 )) && (( t += 86400 )); echo $t; }
+P=$(ep $pre $f) && Q=$(ep $post $l) || exit 1
+awk -v pre=$P -v post=$Q '
+  NF!=4 || $1 !~ /^[0-9]+(\.[0-9]+)?$/ || $2 !~ /^[0-9]+$/ || $3!="ollama_cpu" {bad++; next}
+  { if ($4 != "-") { n=split($4,c,","); for(i=1;i<=n;i++) { if (c[i] !~ /^[0-9]+(\.[0-9]+)?$/) {bad++; next} if (c[i]+0>5) bad++ } }
+    if ($2+0>=100) bad++
+    if (k>0 && ($1<prev || $1-prev>2)) bad++
+    if (k==0) first=$1; prev=$1; k++ }
+  END { if (NR==0 || bad>0) exit 1
+        if (first<pre || first>pre+3) exit 1
+        if (prev<post-10 || prev>post) exit 1
+        if (k < prev-pre) exit 1
+        exit 0 }' "$1"
 ```
 
 **`gpusampler.pl`** (sha256 `21940053253d0afd05ee0325ce987977deff517d2f640ae5446184aef23fe16e`):

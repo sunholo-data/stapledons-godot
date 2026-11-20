@@ -1,0 +1,40 @@
+{
+ "sprint": "R1-M4-JOURNEY row 7av (iteration 107 measurement revision)",
+ "commit": "1cbfc38a",
+ "evaluator": "claude-sonnet-5-5 (generator was Opus 5.5)",
+ "score": 89,
+ "pass": true,
+ "categories": {
+  "numbers_match_raw_files": {"score": 30, "max": 30, "note": "every bench/probe/crew-wait/pc/hidden-map/tick-median/sampler-range figure re-derived with the doc's jq/grep"},
+  "counting_verdicts_and_gate": {"score": 25, "max": 25, "note": "6 of 6 recs/gate verdicts reproduced; R0 7/7 OK; 12 own gate drills correct"},
+  "ac_claims_bounded": {"score": 16, "max": 20, "note": "see non-blocking N1, N2"},
+  "scope_integrity": {"score": 10, "max": 10, "note": "one file (docs only), no code, no O2/O3, no counting-rule change"},
+  "clarity": {"score": 8, "max": 15, "note": "headline conflates 'counts' with D-147 OQ6 valid-control rule; boosting-prediction verdict not stated; mixed slow-frame metrics"}
+ },
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  {"id":"N1","severity":"non-blocking","text":"Headline 'Counted: a1, b2, b3' / '3 of 6 runs count' applies Q1 B + R1 gate only. D-147 Q2 OQ6 (Mark, 2026-11-12) says the loop re-runs 7m AC1 counting only runs whose docked control is valid. b2's control is 18.143 (invalid), so b2 does not count toward 7m AC1/AC12 under D-147. The doc says 'undecidable' in the prose, but the 'counts' label and 'R5 two counted runs met only with the repeat b3' could mislead. Suggested: 'b2 passes the post-reading and gate (counted under Q1 B) but, under D-147 Q2 OQ6, does not count toward 7m AC1 because its docked control is invalid; toward AC1 exactly one run (b3) counts.'"},
+  {"id":"N2","severity":"non-blocking","text":"'b3 misses AC12 and 7m AC1' is one run. Add 'one valid-control counted run; AC12 needs the doc's two-run R5 condition, which is not met by two valid runs (b1 valid but evidence-only)'. The Verification-log row already scopes it correctly."},
+  {"id":"N3","severity":"non-blocking","text":"R2's stated prediction 'boosting-phase p99 <= 16.2' is never given a verdict. Re-derived boosting p99: a1 16.500, p4 16.029, b1 16.290, b2 16.201, b3 16.934, so 3 of 5 exceed 16.2 (b2 by 0.001). Add one sentence: 'the boosting prediction (<=16.2) held in p4 only, narrowly missed in b2, missed in a1, b1, b3.'"},
+  {"id":"N4","severity":"non-blocking","text":"'35-58 % of slow frames' mixes two metrics (probe: sim-wait class; bench: sim wait over half the frame). Stated in the doc, but a reader could read it as one metric; I reproduced bench 11/31, 14/38, 23/50 and probe classes 19/33, 11/31."},
+  {"id":"N5","severity":"non-blocking","text":"'four sampler-clean runs' includes p4, which is evidence only (post NO on one GPU sample); stated elsewhere but the sentence should say '(three counted: a1, b2, b3; plus p4)'."}
+ ],
+ "verified": [
+  "bundle sha256 bd19a388... matches doc (downloaded to /tmp/i107_eval_bundle); runs/ byte-identical to clone .godot/tmp/7av/runs; gate.sh db7c09ce.., gate.iter105.sh 5c8fb3d6.. match",
+  "R0 awk+shasum -c in /tmp/i107_eval_r0: 7 of 7 OK",
+  "fixed gate on p3,b1 => 1; b2,a1,b3,p4 => 0; own drills on b3 data: base 0; '.', '1..2', extra field, one-line, truncated, runner 7.0, GPU 100, sci-notation, '-,0.0', empty field 4, POST 17 min late, no PRE => all 1",
+  "recs: PRE YES/RC/POST readings per run match the doc table (b1 post load 6.28 NO since quiet2 needs load<5; p4 post GPU 39 NO since quiet2 needs <15; b2/b3 RC 2 is the bench MISS verdict and R5 does not test RC)",
+  "bench: control p99 15.891/18.143/16.563, transit 16.669/16.811/17.338, over-16.7 31/38/50, max 58.10/103.73/153.13, jq -e false x3, boosting/cruising p99 16.29/17.46, 16.201/26.645, 16.934/26.209, half-frame sim-wait 11/14/23, b3 burst frames 900-907",
+  "probe: T p99 40.474/16.632/16.736, over 73/31/33, C p99 17.07 false/16.429 true/17.166 false, classes, pc 0, R3 10/10/0, ABLATION hid 7, 0 SCRIPT ERROR, probe: DONE, tick-frame median 9.065/7.593/5.39 over 592/600/595, p3 T start and first >5% sample at T+0.651 s",
+  "crew waits (dsend_ms at ticks 406/460/513/566/620): a1 40.1/30.7/37.9/55.2/37.3, p4 29.5/55.4/55.3/37.3/55.4; replies contain crew keys, 38.9-42.6 KB; b3 sim_wait comb values",
+  "sampler ranges: a1 0-50, b2 0-42, b3 0-48, p4 0-42, 69 lines each, runner CPU all 0.0",
+  "git: commit touches only the 7av doc (109+/7-); the 7 deleted lines are the old gate/status/risk text; D-169 default unchanged"
+ ],
+ "not_verified": [
+  "Any GPU re-run (none allowed); raw runs are single-shot, so run-to-run spread is not measured",
+  "The cause of the boosting sim-wait burst, the p4 post-reading GPU 39, and the llama-server start times (ps output not preserved)",
+  "tick-frame 'game less send/drain' 4.29/7.76 and boosting-only medians, V1 comparison values, and the Appendix D summary script outputs were not recomputed",
+  "That AILANG v0.56.1 / Godot 4.7.2 / clone main 1468cda4 were what ran (only the commit parent checked)",
+  "counted2.sh/gpusampler.pl internals beyond the shasum match"
+ ]
+}

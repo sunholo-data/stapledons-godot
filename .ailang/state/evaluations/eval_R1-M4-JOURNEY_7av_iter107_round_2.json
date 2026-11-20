@@ -1,0 +1,14 @@
+{
+ "commit": "fc5425d7",
+ "evaluator": "claude-sonnet-5-5",
+ "score": 94,
+ "pass": true,
+ "blocking_findings": [],
+ "findings": [
+  {"severity":"correction-of-evaluator","text":"Round-1 N3 said the R2 boosting prediction (<=16.2) 'held in no run'. That was wrong: p4 boosting p99 is 16.029 (<=16.2). The controller's 'held in only one run, the evidence-only p4 (16.029); b2 16.201; a1 16.500, b1 16.290, b3 16.934' is correct (re-derived from the runs' json: b1 16.29, b2 16.201, b3 16.934; a1/p4 from the probe logs' boosting split)."},
+  {"severity":"verified","text":"D-147 ledger row quotes 'the unchanged 16.7 ms bound' and 'counting only runs whose docked control is valid' (Q2 OQ6, Mark 2026-11-12): the new text matches. Makefile bench help: 'p99 < 16.7 ms or make nonzero'; m4-6rr3 AC12 is 16.7. Doc line 6: row 7av's 'target p99 <= 16.x' headroom; 16.2 appears only in 7av (R2, R5 jq, Predicted headroom). So the 16.2-as-7av-headroom correction is right and my round-1 own phrasing ('7m AC1's 16.2') inherited the doc's error."},
+  {"severity":"verified","text":"b2/b3/b1 status statements, 'toward AC1 exactly one run (b3)', 'not two valid-control runs (b1 valid, evidence only)', and the (a1,b2,b3 counted; p4 evidence only) / per-source slow-frame metric relabel are true against the recs and raw files. No over-claim; 'one run's evidence, not a spread' is an appropriate bound."},
+  {"severity":"non-blocking","text":"R5's own jq line (line 81, and the b1 table cell '16.669 > 16.2') still tests both docked<=16.7 and transit<=16.2, so 'false' there means 'over the 7av headroom', not 'misses AC12'. b1 (16.669) and none of the others pass 16.7 except b1. Optional clarifier: 'R5's jq false = over 16.2 (7av headroom); AC12/7m AC1 itself is the 16.7 ms bound, which only b1 (evidence only) meets.'"}
+ ],
+ "not_verified": ["a1/p4 boosting p99 rest on the doc's table (not recomputed this round)", "no GPU work run"]
+}
