@@ -1,0 +1,32 @@
+{
+"iteration":106,
+"score":92,
+"pass":true,
+"rubric":{
+"disposition":{"points":30,"of":30,"reason":"#435 OPEN (updated 2026-11-12T19:05:51Z); quiet2.sh read NO at 13:05:33 and 13:05:56 (GPU 100/100/100, 99+ load 2.7-3.2); sha256 matches doc R0; poll log 4/4 NO. No-pick is correct."},
+"facts":{"points":36,"of":40,"reason":"Nearly all re-derived: main 425d201d, 1 check run success, #450 15 comments all bot, #410 28 comments all bot (CLOSED), #392 open last comment ad929704 at 01:27:05Z, observe v0.1.0, ledger valid 162 rows, harness share 8/19 recomputed. Deductions: unverifiable or loosely worded items below."},
+"mechanics":{"points":19,"of":20,"reason":"Charter 598=598, 3 STATUS lines, ITERATION 103 absent from charter, last archive line byte-identical to origin, 66 queue rows both, archive 725->727, index row present, main checkout not touched by the record. Placeholders remain by design."},
+"clarity":{"points":7,"of":10,"reason":"Log entry and STATUS are very long single bullets; fine but dense."}
+},
+"blocking_findings":[],
+"non_blocking_findings":[
+{"record":"Retro 1: 'Seventh fire under D-168 B since iteration 99; six found the rig busy, one (105) caught a few minutes of quiet'","measured":"Log tags 99-106: 99,100,101,102,104,106 ADMIN, 103 REFUTATION, 105 PRODUCT. Iteration 103 saw a quiet reading and ran 7m AC1 (a pick, not a record-only fire), so 'six busy' is not accurate; I could not confirm the count of seven.","suggested":"Say 'Of the fires since iteration 99 under D-168 B, most found the rig busy; 103 and 105 each caught a short quiet window.' or cite the specific iteration numbers."},
+{"record":"Dashboard: 'A Sonnet 5.5 judge reviewed the record.' and STATUS 'A Sonnet 5.5 Agent-tool judge reviewed this record'","measured":"True only once this verdict lands; the log __EVAL__ is still empty.","suggested":"Fill with score and pass from this file, and keep the dashboard wording in sync."},
+{"record":"Dashboard Watch: 'quiet windows come around the nightly, not in the working day'","measured":"Supported by one data point at 13:01-13:05 (all NO) plus iteration 105 after the nightly golden; a generalisation, not measured over time.","suggested":"Soften to 'so far the quiet windows have followed the nightly'."},
+{"record":"Gate 0 / step 6a / skill-drift (14 files match ailang origin/dev 09e190679, driver pin) and 'ollama ps' contents, 'HID idle', billing CLEAN","measured":"Not re-checked by me (outside my named scope)."," suggested":"none"}
+],
+"measured":[
+"gh pr view 435 -> OPEN, updatedAt 2026-11-12T19:05:51Z",
+"ailang pkg info sunholo/observe -> v0.1.0",
+"quiet2.sh run twice from the clone root: 13:05:33 NO (GPU 100/100/100 load1 3.17) rc1; 13:05:56 NO (GPU 100/100/100 load1 2.72) rc1",
+"sha256 of .godot/tmp/7av/bin/quiet2.sh = 5e6fce6b...c518, equals the doc's listed value (line 121/609)",
+"/tmp/i106_quiet_poll.log: 4 readings 13:02-13:05, all rc=1 NO",
+"check-runs on 425d201d: 1 run, 'fast tier', success",
+"#450: 15 comments, all sunholo-voight-kampff; #410: CLOSED, 28 comments, all bot; #392: OPEN, 28 comments, last 2026-11-20T01:27:05Z naming ad929704",
+"charter lines 598 vs origin 598; 3 STATUS 2026 lines; ITERATION 103: count 0; archive last line cmp-identical to origin's 103 line; queue rows 66/66; archive 727 vs 725",
+"mission_decisions.sh --check -> valid, 162 rows; D-168 and D-169 OPEN read in full, B and default-C/A text consistent with the record's quotations",
+"harness share recomputed from log + log-archive headings: HARNESS 86,87,88,94-98 = 8; untagged 89; 92 absent; 19 tagged of 20 headlines -> matches",
+"main checkout: git status shows ' M design_docs/stapledon-mission.md' but its diff has 0 'ITERATION 106' lines, file mtime Nov 13: pre-existing attended edits, not the record"
+],
+"unmeasured":["skill-drift comparison, ollama ps, inbox/step 6a claims, billing, HID idle, the remaining poll readings 13:06-13:27, the 'seventh fire' count"]
+}
