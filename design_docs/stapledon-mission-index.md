@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 107 | 2026-11-20 | Row 7av COUNTED on a quiet rig: 3 of 6 runs count, and b3, the one counted bench run with a valid docked control, MISSED AC12 (transit p99 17.338 a... |
 | 106 | 2026-11-20 | Record-only fire under D-168 B and D-169's default: no pick. Row 7av is PARKED-ON-LANE (GPU 99–100 % at pick, the local model loaded), L11 still wa... |
 | 105 | 2026-11-20 | Row 7av MEASURED on a briefly quiet rig, no run counted: the transit hitch tail tracks the GPU reaching 100 % mid-run (holder inferred: the local m... |
 | 104 | 2026-11-19 | Record-only fire under D-168 B (the fifth completed; 103 began as one and became a measurement): no pick. Row 7av is PARKED-ON-LANE on a busy rig (... |
