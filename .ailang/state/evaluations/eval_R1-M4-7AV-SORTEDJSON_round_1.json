@@ -1,0 +1,41 @@
+{
+  "sprint_id": "R1-M4-7AV-SORTEDJSON",
+  "round": 1,
+  "evaluator": "claude-sonnet (Agent tool)",
+  "score": 93,
+  "pass": true,
+  "rubric": {
+    "contract_ac1_ac7_package": {"score": 38, "max": 40, "note": "line exact, scope exact, tests/quality/changelog green; minor: oracle renamed, tests live in wire.ail inline and wire_test.ail"},
+    "downstream_byte_identity_ac8_ac10_ac13": {"score": 24, "max": 25, "note": "AC10 independently reproduced to the byte; AC8 and AC12 relied on controller logs"},
+    "determinism_ac12": {"score": 14, "max": 15, "note": "logs consistent with claims; not re-run"},
+    "measurement_honesty_ac11": {"score": 9, "max": 10, "note": "arithmetic recomputed; interleaved; honestly states AC12 of the game is not cleared"},
+    "pr_and_no_publish_ac5_ac14": {"score": 8, "max": 10, "note": "PR open, nothing published; a hash naming inconsistency in the report"}
+  },
+  "blocking": [],
+  "non_blocking": [
+    "Report AC5 cites 'new content hash sha256:09a86dc2...c688' while AC8/AC9/AC10 use 3fd1ec48... as the PR's hash. They are probably different hash kinds (tarball vs registry-slot content) but the report does not say so; a reader cannot reconcile them.",
+    "Design doc V-q/V-o cite the rehearsal hash 533967f1 and mutant hash c81cfc63; the final PR tree is 3fd1ec48 (tie test text changed). Fine, but the doc's numbers are rehearsal-stage, not final.",
+    "'wire.ail' inline test count: 13 tests with 5 skipped (existing properties lacking a generator) needs --allow-skips; the plain package run is the gate. Pre-existing, correctly disclosed.",
+    "My length-only comparator mutant fails 6 inline tests but only 1 test in the package-level run (145/146), so package-level coverage of sortedJson is thinner than inline; AC6 requires >=1 on both so it passes.",
+    "Speedup is about 21 ms of a ~65 ms step; the game's 50 ms window is still missed (about 62 ms with encoding). Disclosed up front in the design and PR; the gain the row hoped for is not realised."
+  ],
+  "independent_checks": [
+    {"command": "grep -cF '<SJ1 line>' wire.ail in a copy; git diff --name-only origin/main", "reading": "1; exactly 4 files (wire.ail, wire_test.ail, ailang.toml, CHANGELOG.md). Diff of wire.ail: the old line is replaced by SJ1 and the same old line is kept as sortedJsonOracle040 (renamed only), flatMap import added."},
+    {"command": "test --package .; test --allow-skips wire.ail; pkg quality --strict . (in a copy)", "reading": "146 tests passed (tail seen); wire.ail 13 tests, 8 passed, 0 failed, 5 skipped, six 'sortedJson ...' tests green including the 120-order test; quality --strict: @0.4.1, kind fix, changelog_section true, interface v2 3d27ec9e9e00, 146 passed, no gates (one PUB016 note)."},
+    {"command": "tie fixture inspection", "reading": "fixture [\"a\", {id:x,v:1}, \"a\", 1, {id:x,v:1}] has two pairs of identical encodings; perms yields 5! = 120 lists (asserted length==120), each compared both to a fixed expected string and to the oracle."},
+    {"command": "own mutation X1: comparator on encoded string length only (not in doc list)", "reading": "killed: 6 inline sortedJson tests fail (13 tests: 2 passed, 6 failed); package run 145/146, 1 failed."},
+    {"command": "own mutation X2: drop last element after the sort", "reading": "killed: same six inline tests fail (2 passed, 6 failed)."},
+    {"command": "own scratch HOME registry with PR wire.ail in 0.4.0 slot + own clone of main 059bad3c; first run reports the new hash; edit lock; run ship.ail on h4.req.ndjson", "reading": "Positive control: error 'content changed (locked 3ecabb4a, current 3fd1ec48)' under scratch HOME; after lock edit under real HOME the reverse message appears. Run rc 0, 640 lines, sha256 dd62855ccabb348d227cf2af30ffa978560e60525127813a14934fb40e5f1d04 = claimed. Only sim/ailang.lock differs."},
+    {"command": "recompute AC11 from /tmp/sdk-i109/ctl/ac11.log", "reading": "3240/50=64.80, 2253/50=45.06, 3324/50=66.48, 2196/50=43.92, 3254/50=65.08, 2176/50=43.52; deltas 19.74, 22.56, 21.56 as reported; order A B A B A B with uptime before each; loads 3.5 to 4.6 as reported. Not re-run (my own pair not executed)."},
+    {"command": "inspect neg_*.log/rc and pos_*.log/rc", "reading": "All four negatives rc=2 within 0s, failing on 'content changed (locked: 3fd1ec48, current: 3ecabb4a)' (counts 1,1,12,1), i.e. the stated reason. Positives rc=0 with strict digestScripted a9a7c96e, parity '1 cases, all identical', replay '12 cases, all identical', crew-parity 'ok (6 recordings...)'; 0 FAIL in pos_replay."},
+    {"command": "gh pr view 206; pkg versions sunholo/social_dynamics; git status of package clone", "reading": "PR OPEN, title 'social_dynamics 0.4.1: ...', body quotes the AC4 numbers, AC11 table and #144 sentence, matches the report; the body states 'not for publishing'. Registry lists 2 versions with v0.4.0 latest; clone clean."}
+  ],
+  "not_rechecked": [
+    "AC8: 5 example recordings x VM and interpreter, and its M1 control (read the logs only via the report, not re-run)",
+    "AC12 positive runs (strict/parity/replay/crew-parity) not re-run; only the log contents were inspected",
+    "AC11 own A/B pair not run; only arithmetic and ordering checked",
+    "AC5 publish --dry-run interface hash 9b3a358a not re-run",
+    "Evidence tarball sha256 not re-downloaded",
+    "Mutations M1-M3 from the doc not re-run (ran two own mutants instead)"
+  ]
+}
