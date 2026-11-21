@@ -1,0 +1,370 @@
+{
+  "id": "R1-M4-7AV-SORTEDJSON",
+  "status": "planned",
+  "design_doc": "design_docs/planned/r1/m4-7av-sortedjson-keyed-sort.md",
+  "sprint_plan": "design_docs/planned/r1/m4-7av-sortedjson-keyed-sort-sprint.md",
+  "iteration": 109,
+  "features": [
+    {
+      "id": "SJ2",
+      "title": "Add oracle, tie-permutation, and export tests",
+      "description": "Keep the 0.4.0 implementation in `wire.ail` while adding its private oracle and `agrees040`, all six approved inline cases, and the `flatMap` permutation helpers. The tie case checks all 120 orders against the fixed oracle bytes and each order’s oracle bytes. Add the `wire_test.ail` export test for strain before trust in both orders through `encodeConfig`. Save the tests-only 0.4.0 snapshot so the controller can replay both runs. Apply SJ1’s keyed line and Appendix A’s M1 only in paired scratch copies of the old suite and the tests-only snapshot to show M1 survives before the new tests and fails in both layers after they are added. Preserve the logs for AC6.",
+      "owner": "executor and controller",
+      "dependencies": [],
+      "acceptance_criteria": [
+        "AC2"
+      ],
+      "commands": [
+        "cd $P && $A test --allow-skips wire.ail",
+        "cd $P && $A check --package . && $A test --package ."
+      ],
+      "expected_reading": "AC2 returns 0 with all six `sortedJson …` tests green, including the tie test, and `0 failed`. Five existing inline properties skip. AC3’s package run includes the export test and reports 146 passed, 0 failed, 0 skipped on the tests-only 0.4.0 snapshot. M1 survives the old package suite at 145/145 and is killed after the additions.",
+      "estimate": {
+        "minutes": 20,
+        "loc": 15
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SJ1",
+      "title": "Apply the approved one-line keyed sort",
+      "description": "Replace only `sortedJson`’s implementation with SJ1’s measured line in `packages/social-dynamics/wire.ail`. Keep it private. The export test and existing example recordings cover the public path.",
+      "owner": "executor and controller",
+      "dependencies": [
+        "SJ2"
+      ],
+      "acceptance_criteria": [
+        "AC1"
+      ],
+      "commands": [
+        "grep -cF 'ja(map(\\p. p.j, sortBy(\\a b. if a.k<b.k then 0-1 else if a.k==b.k then 0 else 1, map(\\x. {k: encode(x), j: x}, xs))))' $P/wire.ail",
+        "git -C $C diff --name-only origin/main"
+      ],
+      "expected_reading": "The grep prints `1`. The diff is confined to `packages/social-dynamics/{wire.ail,wire_test.ail,ailang.toml,CHANGELOG.md}`. The two release files enter the diff in SJ3. Recheck the four paths on the final tree.",
+      "estimate": {
+        "minutes": 5,
+        "loc": 1
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SJ3",
+      "title": "Update release metadata and run package gates",
+      "description": "Set `version = \"0.4.1\"`, `[release] kind = \"fix\"`, and add `## 0.4.1` to `CHANGELOG.md` per §2. Run check, package tests, inline tests, both quality modes, and the dry run in that order from `$P`. Use the existing example recordings in EXAMPLES. The example Makefile’s `validate` target rewrites the example lock, so use the three scratch trees for that check.",
+      "owner": "executor and controller",
+      "dependencies": [
+        "SJ1"
+      ],
+      "acceptance_criteria": [
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC7"
+      ],
+      "commands": [
+        "cd $P && $A check --package . && $A test --package .",
+        "cd $P && $A test --allow-skips wire.ail",
+        "cd $P && $A pkg quality . && $A pkg quality --strict .",
+        "cd $P && $A publish --dry-run 2>&1 | grep -E 'Interface hash:|Dry run complete'",
+        "git -C $C status --porcelain",
+        "$A pkg versions sunholo/social_dynamics | sed -n 3p",
+        "sed -n 3p $P/CHANGELOG.md",
+        "grep -E '^(version|kind) =' $P/ailang.toml"
+      ],
+      "expected_reading": "AC3 check passes all 18 files and the package reports 146 passed (or more), 0 failed, 0 skipped for the 146-test run. The inline run repeats AC2. AC4 returns 0 in both modes with `quality sunholo/social_dynamics@0.4.1`, `release: kind fix  changelog_section true`, interface `✓ v2 3d27ec9e9e00…`, `0 failed` and `✓ no gates`. V-s measured 11/48 contracts verified, 0 refuted. AC5 prints interface `sha256:9b3a358aa0d8e54d50343eebc1fb0cdea4824749e0110e331ad596545d1d9ed2` and `Tarball ready but not uploaded`, leaves no untracked tarball, and lists `v0.4.0 ← latest`. AC7 prints `## 0.4.1`, `version = \"0.4.1\"`, and `kind = \"fix\"`.",
+      "estimate": {
+        "minutes": 10,
+        "loc": 6
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "MUTATIONS",
+      "title": "Kill M1, M2, and M3 in both test layers",
+      "description": "Run the Appendix A mutation loop on copies of the final package. Keep full package and inline test logs to show the named failures and retain `$W/m_M1/wire.ail` for EXAMPLES.",
+      "owner": "executor and controller",
+      "dependencies": [
+        "SJ3"
+      ],
+      "acceptance_criteria": [
+        "AC6"
+      ],
+      "commands": [
+        "for m in M1 M2 M3; do rm -rf \"${W:?}/m_$m\"; cp -R $P $W/m_$m; $W/mut.sh $W/m_$m $m; (cd $W/m_$m && $A test --package . | grep -E '^[0-9]+ tests:'; $A test --allow-skips wire.ail | grep -E '^[0-9]+ tests:'); done"
+      ],
+      "expected_reading": "M1, M2 and M3 each report at least one failure in both layers and each kills the tie test. V-t measured six `sortedJson` failures per mutant, with two unrelated inline tests passing and five skips. E1 is observation only.",
+      "estimate": {
+        "minutes": 10,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "EXAMPLES",
+      "title": "Prove example byte identity with both controls",
+      "description": "Run Appendix A’s `examples.sh` with an empty `$W/exhome` and the controller’s regenerated M1. Use the three archives and fresh path locks, then run all five recordings in both VM and interpreter.",
+      "owner": "controller",
+      "dependencies": [
+        "MUTATIONS"
+      ],
+      "acceptance_criteria": [
+        "AC8"
+      ],
+      "commands": [
+        "$W/examples.sh"
+      ],
+      "expected_reading": "`x0` prints `$OLD` with `path`; `x1` and `xM` each print a hash different from `$OLD` with `path`. `x0 vs x1: same 10 DIFF 0` and `x0 vs xM(M1): same 0 DIFF 10`.",
+      "estimate": {
+        "minutes": 8,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SJ4",
+      "title": "Establish the scratch pin with PC-A and PC-B",
+      "description": "Run Appendix A’s `pin.sh`. Copy the eight locked packages into `$W/home`, overlay the final PR’s `wire.ail` in the 0.4.0 cache slot, and keep that slot’s 0.4.0 manifest. In the detached scratch game at `origin/main`, take `$NEW` from PC-A before changing the scratch lock. Record the full `$NEW` and set it in the controller shell for SJ5.",
+      "owner": "controller",
+      "dependencies": [
+        "EXAMPLES"
+      ],
+      "acceptance_criteria": [
+        "AC9"
+      ],
+      "commands": [
+        "$W/pin.sh"
+      ],
+      "expected_reading": "Slot-to-PR `cmp` is silent and returns 0. `PC-A ok` shows the scratch HOME and original lock reject `locked: $OLD, current: $NEW`; `PC-B ok` shows the real HOME and edited scratch lock reject `locked: $NEW, current: $OLD`. `$NEW` differs from `$OLD`.",
+      "estimate": {
+        "minutes": 6,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SESSION-HASH",
+      "title": "Verify the recorded session hash",
+      "description": "Replay `h4.req.ndjson` through the pinned VM under the scratch HOME. Preserve the reply stream to check its line count alongside the hash.",
+      "owner": "controller",
+      "dependencies": [
+        "SJ4"
+      ],
+      "acceptance_criteria": [
+        "AC10"
+      ],
+      "commands": [
+        "cd $W/stap && HOME=$W/home $A run --quiet --bytecode --package-dir sim --caps IO --entry main sim/ship.ail < $W/ev/runs/h4.req.ndjson | shasum -a 256"
+      ],
+      "expected_reading": "640 replies and SHA-256 `dd62855ccabb348d227cf2af30ffa978560e60525127813a14934fb40e5f1d04`.",
+      "estimate": {
+        "minutes": 4,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "TIMING",
+      "title": "Measure interleaved decision-day timing",
+      "description": "Run Appendix A’s `decision.sh` with `uptime` before each of A B A B A B. A uses 0.4.0 and the real HOME. B uses the PR’s 0.4.1 wire code and scratch HOME. Request line 462 (`\"at\":462`) is tick 460. Enable `Clock` only in each scratch timing copy.",
+      "owner": "controller",
+      "dependencies": [
+        "SESSION-HASH"
+      ],
+      "acceptance_criteria": [
+        "AC11"
+      ],
+      "commands": [
+        "$W/decision.sh"
+      ],
+      "expected_reading": "Each run prints `control tick 459 … total_ms` and `decision tick 460 reps 50 total_ms N`. Report each arm’s load and N/50 ms per call, and A − B for each adjacent pair (PC-C). Put these alongside iteration 108 (64.1–64.8 → 43.6–44.1 ms) and V-n (Δ 20.1–21.3 ms). AC11 has no timing bound. A decision day still takes about 62 ms against the 50 ms window.",
+      "estimate": {
+        "minutes": 10,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "SJ5",
+      "title": "Prove determinism with four per-target negative controls",
+      "description": "Run all four real-HOME negative controls on the same scratch lock before the positive loop. The first line is AC12 verbatim. The second expands its prescribed scratch-HOME loop and records elapsed time.",
+      "owner": "controller",
+      "dependencies": [
+        "TIMING"
+      ],
+      "acceptance_criteria": [
+        "AC12"
+      ],
+      "commands": [
+        "cd $W/stap && for t in strict parity replay crew-parity; do perl -e 'alarm 300; exec @ARGV' make $t AILANG=$A > $W/neg_$t.log 2>&1; echo \"$t rc=$?\"; grep -c \"content changed (locked: $NEW, current: $OLD)\" $W/neg_$t.log; done",
+        "cd $W/stap && for t in strict parity replay crew-parity; do alarm_code='alarm 600; exec @ARGV'; if [ \"$t\" = replay ]; then alarm_code='alarm 1200; exec @ARGV'; fi; (time HOME=$W/home perl -e \"$alarm_code\" make $t AILANG=$A) > $W/pos_$t.log 2>&1; echo \"$t rc=$?\"; done"
+      ],
+      "expected_reading": "Each negative `strict`, `parity`, `replay`, and `crew-parity` returns nonzero within 300 s with at least one matching hash diagnostic in its own log. With the scratch HOME, expect rc 0 for each and `strict digestScripted: …`, `1 cases, all identical`, `replay: 12 cases, all identical`, and `crew-parity: ok (6 recordings…`. Allow 1,200 s for replay and 600 s per other positive. If replay exceeds its bound or fails, record rc, elapsed time, and the first `FAIL` line (or its absence) as an observation. State in the PR that replay was not proven. The other three positive targets and all four negative controls still decide AC12.",
+      "estimate": {
+        "minutes": 20,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "NO-PIN",
+      "title": "Verify that no game pin was committed",
+      "description": "Check the mission and scratch clones after determinism. Record the exact outputs.",
+      "owner": "controller",
+      "dependencies": [
+        "SJ5"
+      ],
+      "acceptance_criteria": [
+        "AC13"
+      ],
+      "commands": [
+        "git -C $G status --porcelain -- sim",
+        "git -C $W/stap diff --name-only",
+        "git -C $G diff origin/main --stat -- sim/ailang.toml sim/ailang.lock"
+      ],
+      "expected_reading": "The mission `sim` status and manifest/lock diff are empty. The scratch diff lists only `sim/ailang.lock`.",
+      "estimate": {
+        "minutes": 2,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    },
+    {
+      "id": "PR",
+      "title": "Open and verify the unmerged package PR",
+      "description": "After the controller accepts AC1–AC13 using AC12’s documented fallback if applicable, the controller commits the package changes and opens its PR from `fix/social-dynamics-sortedjson-keyed` against `sunholo-data/ailang-packages` `main`. Inspect the full body in addition to the state/title check.",
+      "owner": "controller",
+      "dependencies": [
+        "NO-PIN"
+      ],
+      "acceptance_criteria": [
+        "AC14"
+      ],
+      "commands": [
+        "gh pr view fix/social-dynamics-sortedjson-keyed --repo sunholo-data/ailang-packages --json state,title,body --jq '.state,.title'"
+      ],
+      "expected_reading": "`OPEN`, title starts `social_dynamics 0.4.1:`, and the body quotes AC4’s report numbers, AC11’s table, and the exact §2 sentence about #144. Include the replay disclosure if the fallback applied.",
+      "estimate": {
+        "minutes": 8,
+        "loc": 0
+      },
+      "status": "pending",
+      "passes": false,
+      "started": null,
+      "completed": null,
+      "notes": null
+    }
+  ],
+  "velocity": {
+    "estimated_total_loc": 22,
+    "estimated_minutes": 103,
+    "estimated_days": 1
+  },
+  "registry_reuse": [
+    {
+      "milestone": "SJ2",
+      "package": "sunholo/social_dynamics",
+      "action": "contribute",
+      "reason": "Patch the existing package identified in design V-b/V-c. CLI registry search and info were blocked by DNS; package docs resolved locally."
+    },
+    {
+      "milestone": "SJ1",
+      "package": "sunholo/social_dynamics",
+      "action": "contribute",
+      "reason": "Patch the existing package identified in design V-b/V-c. CLI registry search and info were blocked by DNS; package docs resolved locally."
+    },
+    {
+      "milestone": "SJ3",
+      "package": "sunholo/social_dynamics",
+      "action": "contribute",
+      "reason": "Patch the existing package identified in design V-b/V-c. CLI registry search and info were blocked by DNS; package docs resolved locally."
+    },
+    {
+      "milestone": "MUTATIONS",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "EXAMPLES",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "SJ4",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "SESSION-HASH",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "TIMING",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "SJ5",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "NO-PIN",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    },
+    {
+      "milestone": "PR",
+      "package": null,
+      "action": "none",
+      "reason": "Uses existing package tests, fixtures, or operational tooling without a new dependency."
+    }
+  ]
+}
