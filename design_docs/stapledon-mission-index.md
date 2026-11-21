@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 108 | 2026-11-21 | Row 7av MEASURED under D-170 A, headless: the cruise comb is crew_core's monthly decision-day step on the AILANG VM (62.6–64.8 ms against 0.3–1.0 m... |
 | 107 | 2026-11-20 | Row 7av COUNTED on a quiet rig: 3 of 6 runs count, and b3, the one counted bench run with a valid docked control, MISSED AC12 (transit p99 17.338 a... |
 | 106 | 2026-11-20 | Record-only fire under D-168 B and D-169's default: no pick. Row 7av is PARKED-ON-LANE (GPU 99–100 % at pick, the local model loaded), L11 still wa... |
 | 105 | 2026-11-20 | Row 7av MEASURED on a briefly quiet rig, no run counted: the transit hitch tail tracks the GPU reaching 100 % mid-run (holder inferred: the local m... |

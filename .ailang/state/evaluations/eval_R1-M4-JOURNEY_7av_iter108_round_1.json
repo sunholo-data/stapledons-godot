@@ -1,0 +1,43 @@
+{
+  "sprint": "R1-M4-JOURNEY row 7av (iteration 108 measurement: where the crew reply's time goes, D-170 default A)",
+  "commit": "8cdb31e8",
+  "evaluator": "claude-sonnet-5-5 (generator was a different model)",
+  "score": 91,
+  "pass": true,
+  "categories": {
+    "numbers_match_raw_files": {"score": 30, "max": 30, "note": "comb ticks/cadence, tap latencies, decision-tick step, ablation, byte hashes, parse cost all re-derived from the bundle or re-run"},
+    "reproducibility_and_evidence_integrity": {"score": 23, "max": 25, "note": "bundle sha256 matches; V-rows carry commands and load; two small gaps (N1, N2)"},
+    "scope_discipline": {"score": 20, "max": 20, "note": "one doc changed (git diff --stat 49314f81 8cdb31e8: 1 file, +58 -3); no code; D-170 not decided; unmeasured items labelled UNMEASURED; upstream draft explicitly not sent"},
+    "clarity_answers_question": {"score": 18, "max": 25, "note": "clear verdict and split table, but see N3-N5"}
+  },
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    {"id": "N1", "text": "Interpreter run V17 (609 s) ignored its perl alarm 500; the doc says so honestly. The 6.7x ratio rests on a single interpreter run (VM runs x3); not re-run by me (too long)."},
+    {"id": "N2", "text": "The 'ordinary reply 17.0-17.4 ms diff/encode' and 'comb diff/encode 17.6-18.1' come from serve minus tick means (V16); I could only confirm serve/tick directly for the decision tick (see re-ran). The subtraction is two instruments' means, and the 22%/78% shares inherit that."},
+    {"id": "N3", "text": "The 'rest ~43.3-43.8 ms, 54%' is explicitly not decomposed (Go pprof cannot name AILANG functions); the doc says so, but the Verdict still reads as if the step is understood. O4 alone is correctly stated as not predicted to remove the comb (44+18 = 62 ms > 50 ms)."},
+    {"id": "N4", "text": "Off-cadence bursts (h4 394-402, h5 595-604) are attributed to 'host scheduling or the sim runtime, e.g. GC', labelled UNMEASURED. Correct label; I confirmed in h4.lat/h5.lat that they exist and are absent from V16 replay (16-21 ms). It means the p99 tail has a second, unexplained component that O4 and the comb analysis do not address; the doc should perhaps state that in OQ3 more prominently."},
+    {"id": "N5", "text": "Tap-clock tick labels differ from Godot-side by 2 (lat file 408/462/515/568/622 vs doc's 406/460/513/566/620). The doc states 'reply n is tick n-2' in V14 only; easy to misread when cross-checking the raw .lat files."},
+    {"id": "N6", "text": "Draft/repro: see upstream_draft_verdict."}
+  ],
+  "upstream_draft_verdict": "Fit to send after small edits. Repro /tmp/stap108/repro/sortedjson.ail is standalone, no packages, and shows what the draft claims: I ran it on v0.56.1 VM, n=12 reps=2000 per-compare 75 and 68 ms vs keyed 26 and 27 ms; n=40 reps=500 98 vs 28 ms; same_output true. The recipient is right (package maintainers via inbox user, not a VM-vs-interpreter bug; draft says so). Edits wanted: (1) the repro shows only a 2.5-3.5x pattern cost, so the title's 'a third of ~64 ms' is the game's number, not the repro's; say that the repro demonstrates the pattern and the 20.5 ms comes from the byte-identical ablation. (2) State that the repro emits a MOD010 temp-path warning (harmless) or move the module name to 'sortedjson'. (3) The draft says Hot spot 2 releaseFrame/memclr 14.3% 'not specific to this path'; fine, but the V24 negative (frame-pool hypothesis not reproduced) is correctly omitted. (4) Attach the repro file and bundle URL as it says; the draft's 'sha256 in the doc' is OK. (5) It cites crew_auto.ail cadenceLongSkip: verified at sim/crew_auto.ail:34. No claim overreaches.",
+  "verified": [
+    "git diff --stat 49314f81 8cdb31e8: only design_docs/planned/r1/m4-7av-transit-hitch-attribution.md (58 insertions, 3 deletions); git status of clone clean of tracked code changes",
+    "Bundle download into /tmp/ev108: sha256 694cd6d3da02c0ec97b77f584877bbb43c932b1aa9e677fe8bdce0917b9fccd3 matches the doc",
+    "h4.tap.rep sha256 dd62855ccabb348d227cf2af30ffa978560e60525127813a14934fb40e5f1d04, 640 lines (the doc's live-reply hash)",
+    "RE-RAN (load 5.3, uptime 04:12, other processes awk/fseventsd/contactsd busy; no ollama in top): decision tick 460 50 reps on the VM via the designer's stap108_decision.ail with h4.req.ndjson: control 17 ms/50 (0.34 ms), decision 3234 ms/50 = 64.7 ms (doc 64.1-64.8)",
+    "RE-RAN the ablated sim (simabl + abl-home) on h4.req.ndjson: output sha256 dd62855c...1d04, identical to unmodified; wire.ail:77 diff shows the keyed line in the ablation copy vs the per-comparison encode in the clone's registry copy (the real package source line matches the doc's quote)",
+    "RE-RAN repro (see upstream verdict): VM per-compare 68-75 vs keyed 26-27 (n=12), 98 vs 28 (n=40), same_output true",
+    "Re-derived from h3/h4/h5 .lat: >40 ms cruise replies at ticks 408/462/515/568/622 (= doc ticks 406/460/513/566/620, offset 2), 77.6-91.4 ms; other cruise replies p50 19.2/19.3/19.5, p90 21.3/21.5/25.4 (doc 19.3-19.5, 21.3-26.8)",
+    "jq on h4.tap.rep: crew turns 1, 31, 61, 91, 121 at ticks 406/460/513/566/620 with revisions 45, 94, 134, 176, 215; 131 crew-carrying cruise replies, matching the doc",
+    "sim/crew_auto.ail: header comment 'decision days are absolute (tick % cadence == 1)', line 34 cadenceLongSkip() = 30 (cadence monthly on long skips, D-76)",
+    "parse.txt: JSON.parse_string p50 0.430/0.431/0.440 ms (38,909 B), 0.419/0.384/0.375 ms (34,966 B), matching V21",
+    "decision_vm.txt and decision_abl_vm.txt raw totals (3241/3221/3205 and 2193/2206/2180 per 50) match V18/V20"
+  ],
+  "not_verified": [
+    "V17 interpreter 609 s run (not re-run; single reading)",
+    "go pprof percentages (read from the .top files only in spirit; not re-profiled)",
+    "serve-minus-tick means for ordinary ticks (V16 runs) not re-run",
+    "godot SimBridge wait ranges 11.0-92.5 ms (spot-checked h4.gwait format only)",
+    "V24 frameclear negative result not re-run"
+  ]
+}
