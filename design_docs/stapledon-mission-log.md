@@ -1090,3 +1090,92 @@ Append-only. One entry per iteration, newest at the bottom.
   - Charter: STATUS 108 added, STATUS 105 rotated to the end of the archive (charter 599 → 600 with D-171; archive 729 → 731; `ITERATION 105:` 0 in the charter and 1 in the archive, the moved line byte-identical; control `ITERATION 104:` 1 in the archive; 66 queue rows before and after). Goal line 107 → 108. Row 7av tagged MEASURED iteration 108. Ledger: D-171 OPEN (164 rows, `mission_decisions.sh --check` valid). D-170 stays OPEN (its default ran; it is not resolved by the loop).
   - This log entry, the dashboard, the index (regenerated through a temporary registry pointed at this clone).
 - **Next:** D-171 (Mark): prepare the `sortedJson` fix in `sunholo/social_dynamics` and stop before publishing (A, the default from the next fire unless the inbox shows the maintainers have taken it), design O3 (B), both (C, recommended), or wait for upstream (D). Watch the `user` inbox for a reply to `inbox_1795230842850_a05aeea5`. The off-cadence bursts (judge N4) stay UNMEASURED. D-169's GPU-window question stays open. L11 once #435 gets `sunholo/observe` 0.2.0. For Mark: D-166, D-168, D-169, D-170, D-171, GPU scheduling, D-FLEET-47 and the two attended nightly reds (7as, 7at).
+
+## 109 — 2026-11-21 — Row 7av BUILT under D-171 A, up to the publish: social_dynamics 0.4.1 (keyed `sortedJson`) in ailang-packages#206, byte-identical on a scratch pin, decision day 64.8–66.5 → 43.5–45.1 ms; still over the 50 ms window; D-172 filed [PRODUCT]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (AC12: one counted valid-control MISS at 17.338 from iteration 107; about 21 ms of the comb's ~65 ms step is now fixed in an unpublished package PR; next step D-172); clause 5 ongoing (one DX gap reported). Goal moved on the critical path, but not across it: the fix cannot clear the 50 ms window alone, and the game cannot take it until crew_core is republished.
+- **Pick:** row 7av under D-171's default ("A from the next fire, up to the publish and no further, unless the inbox shows the maintainers have taken the fix"). The inbox has no reply to `inbox_1795230842850_a05aeea5`. It is the only routable row on the UNMET clause (L11 waits on #435; 7m AC1 and L4 M1b need a quiet GPU), and it needs no GPU.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #450: 0 allowlisted directives of 18 comments; #410: 0 of 28; no watermark files (whole-issue reads), so nothing is marked. No rotation (#450 created Monday 2026-11-16).
+  - Step 6a: verdict "A FIRE DIED" (rc 1 by contract), control 4:5 ok, watermarks 0 of 2. The one crash notice is iteration 92's (`#issuecomment-6855501436`), credited in 102; not re-credited. One transcript-scan notice (1 hit), fire `stapledon-1795099037-45912`, iteration 103's, reported in 104.
+  - Died-mid-flight traces: the open loop-account PRs are #435, #380 and #373 (attended). Iteration 108's clone was clean (no porcelain, no unpushed commits, no stash; its PR #471 merged), so it was renamed `../stapledons-godot-iter109` and branched `mission/stapledon-iter109` from `origin/main` `059bad3c`. The main checkout is the attended `feat/captain-command`, 250 commits behind main, untouched.
+  - Skill: `SKILL.md` and all 13 resources at the resolved symlink target and at the driver pin (`74d34c5d8`) match ailang `origin/dev` (28 of 28 files OK, per-file verdicts printed).
+  - Main `059bad3c` (iteration 108's record merge, #471): fast tier success (1 check run). Nightly #392: the 05:58Z run on `059bad3c` kept the same 2 attended reds (7as `ui-theme-check`, 7at `basis-gate`).
+  - Inbox: nothing new for this mission (the `stapledons_godot` unread is the 2026-11-02 celestial reply, already handled).
+- **Reality check:** `sunholo/social_dynamics` latest is 0.4.0 (registry); no `sortedJson` fix exists on ailang-packages `origin/main` (`6991f54`) or in any PR. Draft #144 (`sprint/social-dynamics-0.4.1`, "linear wire framing") is a different change, held since 2026-10-15 under Mark's fix-at-source ruling for ailang#1827; it claims the 0.4.1 number but never published. Index grep for `sortedJson`/`social_dynamics`: nothing before 108.
+- **Design:** Opus 5.5 designer (Agent tool, foreground). It wrote `design_docs/planned/r1/m4-7av-sortedjson-keyed-sort.md` and settled two questions with evidence:
+  - It is not a VM-bug workaround: the comparator does 2–4 encodes per compare on any engine; the interpreter gains too (510 → 400 ms); both engines' `sortBy` call `sort.SliceStable`.
+  - The version is 0.4.1 `kind fix`: the number is free in the registry, and #144 rebases if it is ever revived.
+
+  It also measured that no local path override works: a direct path dependency is silently replaced by crew_core 0.6.0's exact pin (warning, exit 0), so the scratch-registry method of iteration 108 is the only pin. That is F6, now reported upstream.
+  - Quorum r1 (`…-2026-11-21T10-24-12Z`, $0.27; glm, kimi, codex): **BLOCKED** 3 of 3. AC8 could pass vacuously; two premises were cited but not logged, and AC11's arms were not interleaved; E1 broke the comparator contract.
+  - Revision 1 (SendMessage resume) answered all three by measuring them (V-l to V-p).
+  - Quorum r2 (`…T10-36-06Z`, $0.27): **BLOCKED** 3 of 3. `make replay` was never run under the pin; `pkg quality --strict` was never run on the changed tree; there was no per-target negative control.
+  - Every r2 objection carried a concrete reviewer-authored fix and none disputed the direction, so the narrow-refinement carve-out applied. Revision 2 applied the fixes verbatim by measuring them (V-q to V-u: replay 12/12 identical in 98 s; strict quality no gates; all four targets rc 2 on the original package). The doc went straight to the planner. Final doc 277 lines.
+- **Plan:** codex `gpt-6.2-sol` (cross-provider recipe, probe rc 0, run in the iteration clone, which is a full clone, not a worktree; 88,941 tok). It wrote 11 milestones (SJ2, SJ1, SJ3, MUTATIONS, EXAMPLES, SJ4, SESSION-HASH, TIMING, SJ5, NO-PIN, PR). The executor owns the package half and the controller owns AC8–AC13 outside the sandbox. Commit `dacf4160`.
+- **Build:** codex `gpt-6.2-sol` executor (workspace-write on `../ailang-packages-sd-sortedjson`, `--add-dir /tmp/sdk-i109`, scratch HOME; 117,946 tok). It ran test first: six inline oracle tests (0.4.0's line kept as `sortedJsonOracle040`, including all 120 orders of a list with two pairs of identical encodings) and one export test, all passing on 0.4.0; then the line; then the release metadata. It snapshotted each milestone and wrote the Appendix A scripts. It labelled the registry checks UNINFORMATIVE UNDER SANDBOX (DNS).
+  - Controller, out of the sandbox:
+    - Re-ran every package gate: 146/146; inline 8 passed, 5 skipped; quality and `--strict` `@0.4.1`, `kind fix`, no gates, interface v2 `3d27ec9e…` unchanged; dry run only, interface hash `9b3a358a…`.
+    - Re-ran the mutations: M1 1 and 6 failed, M2 and M3 2 and 6, E1 an observation only.
+    - Read the scripts for writes outside `/tmp` before running them, then ran AC8–AC12 as one bounded chain:
+      - AC8: 10/10 same, with an M1 control at 0/10.
+      - AC9: PC-A and PC-B ok, new hash `3fd1ec48…`.
+      - AC10: 640 lines, `dd62855c…1d04`.
+      - AC11: three interleaved pairs, 64.80/45.06, 66.48/43.92 and 65.08/43.52 ms per call, at load 3.6–4.6.
+      - AC12: negatives rc 2 ×4; positives strict 220 s, parity 73 s, replay 96 s with 12 cases identical, crew-parity 50 s.
+    - AC13: no pin anywhere.
+  - The package commits were rebuilt per milestone from the snapshots (tests at each boundary, 146/146), and the final tree was sha256-checked against the executor's. PR [#206](https://github.com/sunholo-data/ailang-packages/pull/206) is open (`2a36c86`, `31c23f7`, `2935883`); its body was scanned for closing keywords (none).
+  - Report `…-report.md`; bundle `gs://stapledons-voyage-assets/benchmarks/7av-iter109/7av-iter109-evidence.tgz` (6,646,488 B, sha256 `057f6be98bf8aca9b1ff8c485d6b11a715d357dff12a8f5382329c2a38fd5d79`, re-downloaded, secret scan clean).
+- **Evaluation:** Sonnet 5.5 (Agent tool, foreground; 62,070 tok, 13 tool calls, 1.8 min; handed the code and the contract, not the controller's verdicts). **93/100 PASS**, 0 blocking.
+  - Its own checks:
+    - It read the diff and the verbatim oracle.
+    - It re-ran the gates in a copy.
+    - It ran two mutants of its own, a length-only comparator and dropping the last element; both were killed.
+    - It re-derived AC10 with its own scratch registry and clone: lock-hash controls both ways, 640 lines, `dd62855c…`.
+    - It recomputed AC11 from the raw `total_ms` lines.
+    - It read AC12's raw logs, and checked the PR and that nothing was published.
+  - Non-blocking:
+    - N1: the report's dry-run content hash and the pin's hash are different kinds, and the report did not say so. Fixed in the report.
+    - N2: the design's V-o/V-q hashes come from the designer's rehearsal tree.
+    - N3: the package-level suite covers `sortedJson` thinly (1 of 146 fails for the length mutant), while the inline layer catches it (6).
+    - N4: AC12 is still not cleared.
+  - Not re-checked by it: AC8, the AC12 positive runs, its own AC11 pair, the bundle hash.
+  - Controller check of the judge: its scratch dir `/tmp/eval-i109-1795259751` exists. Its `out.ndjson` is 640 lines with the same sha256; its scratch clone's diff is `sim/ailang.lock` only; its registry slot `cmp`s equal to the PR's `wire.ail`; and its mutant is the length comparator it names.
+  - File: `.ailang/state/evaluations/eval_R1-M4-7AV-SORTEDJSON_round_1.json`.
+- **Upstream report (F6):** `inbox_1795259886367_207a73de` to `user` `--from stapledons_godot`: on v0.56.1 a direct path dependency is silently replaced by a transitive registry pin (warning, exit 0), or fails with `version conflict` at another version, so a patched dependency cannot be tested against a consumer. The CLI also opened sunholo-data/ailang#2442 (its default).
+- **CI:** a docs-only PR in this repo (the doc, the plan, the sprint JSON, the report, the evaluation, the record). It lands on the fast tier (Mark's 2026-11-03 rule; nothing visible changed, so no dev build). The package PR #206 stays open and unmerged by design (D-171 A).
+- **Routing evidence**
+
+  base=059bad3c11c98835c9a8be29f6d6f82c47411e41 (Gate 1, read 2026-11-21T09:57:45Z). Resolver (`resolve-role-spawn.sh … m4-7av-transit-hitch-attribution.md`): designer `recipe claude:claude-opus-5-5 declared:provider-pin`; planner `recipe codex:gpt-6.2-sol declared:planner-lane-default-pin` (`derive-planner-lane.sh` the same); executor `recipe codex:gpt-6.2-sol declared:provider-pin`; evaluator `agent-tool sonnet declared:alias-pin`. Driver `MISSION_ROUTING_NOTE` empty, `MISSION_OVER_RATION` empty. Codex probe: rc 0, `model: gpt-6.2-sol`, reply `ok`.
+
+  The operator's standing request asked for the Agent tool for the roles "exactly as the routing table specifies", with the evaluator REQUIRED.
+  - The designer ran through the Agent tool (`opus`, the driver's `claude:claude-opus-5-5`), and its prompt began `MISSION-ROLE: designer`. It was resumed twice by `SendMessage` for the quorum revisions.
+  - The planner and executor ran on the routing table's lane, codex `gpt-6.2-sol`, through the cross-provider recipe: bounded 30-min wrappers, closed stdin, delivery assertions, directives beginning `MISSION-ROLE:`. The routing table pins them to `codex:`, so the Agent tool is not their spawn path, and the spawn-pin hook denies an alias spawn for a provider-pinned role. This is not a spawn failure.
+  - The evaluator ran through the Agent tool (`sonnet`) with `MISSION-ROLE: evaluator`.
+  - No role failed to spawn. Fable was not used.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Designer Agent `opus`: 211,962 tok (create) + 247,744 (revision 1) + 264,402 (revision 2), as reported per resume. Quota bucket anthropic. The doc took 2 revisions, both protocol-mandated: one under the quorum rule, the second under the carve-out. FLAG: second revision.
+  - Planner `codex:gpt-6.2-sol`: 88,941 tok. Quota bucket codex.
+  - Executor `codex:gpt-6.2-sol`: 117,946 tok. Quota bucket codex.
+  - Evaluator Agent `sonnet`: 62,070 tok. Quota bucket anthropic.
+  - Judge independence: `judge-independence: cross-vendor` against the generator (codex wrote the code, Sonnet judged). Opus designed and Sonnet judged: same vendor, different model. D-166 default C: a package change is outside the test-and-tooling class, and the cross-vendor seat was satisfied by the code's generator.
+  - Quorum: r1 3 present rejects ($0.27), r2 3 present rejects ($0.27), carve-out applied; seats oc-glm-5-3, oc-kimi-k3 and codex:gpt-6.2-sol (the author's vendor sat out). Metered **$0.54 of $5**.
+- **Ruled out:**
+  - Treating the fix as a VM-bug workaround (Mark's 2026-10-15 ruling): it is algorithmic (§1 of the doc; the interpreter gains too).
+  - A local path override for the test pin: AILANG v0.56.1 silently prefers crew_core's registry pin (V-a; F6).
+  - Publishing 0.4.1, or pinning it in the game: D-171 A stops before the publish, and the Guardrails say packages other than `sunholo/relativity` need Mark. The game pin also needs a crew_core 0.6.1 first.
+  - E1 (ties as less) as an acceptance mutant: it breaks the comparator contract (quorum r1).
+  - A third quorum round: every r2 objection was a reviewer-specified measurement, now run.
+- **Retro:**
+  1. The doc reached two quorum blocks, both on expected readings the designer had asserted rather than run: AC8's control, the replay run, strict quality and per-target negatives. Each was cheap to measure (seconds to 98 s). Mission-level fix for future designer directives here, not a skill edit: "every AC's expected reading comes from a run in this design pass, or is marked UNMEASURED with a fallback". One instance; recorded.
+  2. Instrument slip, caught: the first quorum launch used `timeout`, which macOS lacks; it exited rc 127 in under a second, and the rc file showed it before anything was read as a verdict. It was relaunched under a `date +%s` wrapper.
+  3. The codex planner and executor ran cleanly in full clones (this repo's convention; no `git worktree`). The executor obeyed "no git writes", and per-milestone snapshots plus a sha256 manifest rebuilt three bisectable commits. The recipe's worktree wording does not match this repo's clone rule; the practice works, and is noted, not changed (Guardrails: no skill edits from this mission).
+  4. Rotation pointer vs resolver, fourth fire running (105, 107, 108, 109): the pointer reads `claude:claude-opus-5-5`, and the driver and resolver hand the designer to Opus. Worth a fleet look; reported.
+  5. `ailang messages send` opened a GitHub issue by default (#2442). It is harmless for a real bug report, but the loop did not ask for it; noted.
+  6. Harness share over the last 20 log headlines (90–109; 92 has no entry): HARNESS 5 of 19 (94–98), ADMIN 6 (99–102, 104, 106), PRODUCT 6 (90, 91, 93, 105, 108, 109), REFUTATION 2 (103, 107). That is under one third.
+- **Record:**
+  - Charter: STATUS 109 added, and STATUS 106 rotated to the end of the archive. The charter goes from 600 to 601 lines with D-172; the archive from 731 to 733. `ITERATION 106:` occurs 0 times in the charter and once in the archive, and the moved line is byte-identical; the control `ITERATION 105:` occurs once in the archive; there are 66 queue rows before and after.
+  - Goal line 108 → 109. Row 7av is tagged BUILT iteration 109. Ledger: D-172 OPEN (165 rows, `mission_decisions.sh --check` valid). D-171 stays OPEN: its A ran, and its B is unanswered.
+  - This log entry, the dashboard, and the index (regenerated through a temporary registry pointed at this clone).
+- **Next:** D-172 (Mark): publish 0.4.1 and crew_core 0.6.1 yourself (A), let the loop do it under the relativity-style gate (B), B plus an O3 design (C, recommended), or hold (D). The default is record-only fires on 7av. Close draft ailang-packages#144 (its cause, ailang#1827, is fixed). Watch the `user` inbox for replies to `inbox_1795230842850_a05aeea5` and `inbox_1795259886367_207a73de`. The remaining ~44 ms of the decision step and the off-cadence bursts stay UNMEASURED. L11 waits on #435 getting `sunholo/observe` 0.2.0. For Mark: D-166, D-168, D-169, D-170, D-171, D-172, GPU scheduling, D-FLEET-47, and the two attended nightly reds (7as, 7at).
