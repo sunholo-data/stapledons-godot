@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 111 | 2026-11-23 | D-173's default executed: the option-A design for L4's AC9 load rule (count only CPU from outside the run; let a keep-going red run count on an ide... |
 | 110 | 2026-11-23 | L4's M1b baseline (1f) taken up on a quiet rig and refuted at Gate 2: the design's load rule rejects every serial run (the suite's own `worlds-leak... |
 | 109 | 2026-11-21 | Row 7av BUILT under D-171 A, up to the publish: social_dynamics 0.4.1 (keyed `sortedJson`) in ailang-packages#206, byte-identical on a scratch pin,... |
 | 108 | 2026-11-21 | Row 7av MEASURED under D-170 A, headless: the cruise comb is crew_core's monthly decision-day step on the AILANG VM (62.6–64.8 ms against 0.3–1.0 m... |
