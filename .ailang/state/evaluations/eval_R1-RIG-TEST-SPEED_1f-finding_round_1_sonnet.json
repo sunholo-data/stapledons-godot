@@ -1,0 +1,41 @@
+{
+  "iteration": 110,
+  "judge": "claude-sonnet (Agent tool)",
+  "score": 92,
+  "pass": true,
+  "rubric": {
+    "facts": {"points": 37, "out_of": 40, "reason": "Every table number, the report verdicts, rc=2, the bundle hash, the standalone 6.26/10.86 and the three worlds-leak peaks re-derived exactly; minor: the peaks are listed 7.26/11.13/10.35 in a different order from the table, and the 'suite makes its own load' claim rests on one standalone run that my rerun reproduced only roughly (max 8.05, not 10.86)."},
+    "disposition": {"points": 28, "out_of": 30, "reason": "Refuting at Gate 2 was right: the nightlies are the same instrumented serial gmake runs, and any fresh run on red main would also be refused for rc, so 100 rig minutes could not have produced a counted baseline; option C leans on span agreement, which is weaker than the guard the quorum wanted, and the finding does not say so."},
+    "record mechanics": {"points": 19, "out_of": 20, "reason": "Ledger valid (166 rows), queue rows 44 before and after, STATUS 107 line byte-identical in the archive, heading regex matches, D-173 OPEN with options, recommendation and default and resolves nothing; D-173 is dense with jargon (quorum, -j6, median-of-three, 7as/7at)."},
+    "clarity": {"points": 8, "out_of": 10, "reason": "Finding is well structured with re-check commands and an explicit UNMEASURED label; the -j6 section overstates slightly and the peaks ordering is ambiguous."}
+  },
+  "measured": [
+    "Bundle downloaded to /tmp/eval-i110-b, sha256 = 7d614b67...ff57 (matches the finding); extracted into its own dir.",
+    "Raw nightly load.tsv x3 (207 rows each): medians 3.96/3.97/3.51, max 10.35/13.27/11.74, samples >8 = 8/13/6, >5 = 53/60/41 (matches table). Spans 6212.736/6191.149/6187.863 s, CPU sum 9729.341/9516.427/9517.337 (matches).",
+    "tools/suite_profile.sh report --load-rule strict and fallback on scratch copies with rc=0: all three 'loaded', exit 1, both rules (matches). Isolation by setting rc=0 is legitimate: the rc check is a separate refuse() before the load rule, and nothing else in the header (make, closure, jobs, attempt) was changed.",
+    "Unmodified 17623c04 profile dir with --load-rule fallback: 'suite-profile: failed run u/profile.tsv', exit 1. All three headers read rc=2, make 4.4.1, jobs=1.",
+    "worlds_leak.py line 127: ThreadPoolExecutor(max_workers=4) over 8 cases (2 engines x 4 presets) = four concurrent AILANG processes (confirmed).",
+    "Bundle worlds-leak-standalone/load.tsv: 27 samples, median 6.26, max 10.86, last 6.86; quiet_pre YES, load 2.65, GPU 0/0/0, HID idle 152553 s (42 h); rc=0 (matches).",
+    "Worlds-leak peaks inside each nightly's worlds-leak window: 49314f81 = 10.35, 059bad3c = 11.13, 17623c04 = 7.26 (the set matches the finding; the finding's order 7.26/11.13/10.35 is the reverse of the table's order).",
+    "My own rerun of gmake worlds-leak (quiet2.sh YES at start, load 2.93, GPU 0/0/0, 377.8 s, rc 0) with a 15 s sampler: load median 5.44, max 8.05, 26 samples; ps shows the worlds_leak/ailang tree at about 470% CPU of about 560% total host CPU during the run (about 84%). So the suite's own processes are most of the host's CPU load, and the strict max<=5 fails; the fallback max<=8 fails marginally (8.05).",
+    "profile.tsv's own table (in issue #392 comment) shows worlds-leak cpu/wall 4.66 and sim 2.12, consistent with internally-parallel self-load.",
+    "Issue #392 comments for 059bad3c and 17623c04 name ui-theme-check and basis-gate as failing; charter rows 7as (ui-theme-check) and 7at (basis-gate) are [ATTENDED].",
+    "mission_decisions.sh --check: 'decision ledger valid: 166 rows'. Queue-row count (^N[a-z]?. ) 44 after and 44 on origin/main. STATUS 107 line: identical via cmp between origin/main's charter and the archive. New heading matches the regex. D-173 is OPEN, has A-D, a recommendation (A) and a default (design doc and quorum only, then stop for OK)."
+  ],
+  "unmeasured": [
+    "No -j6 or -j8 run was taken (by me or the controller), so the claim that six lanes add about 6 to the load is reasoning, not measurement.",
+    "Whether the other spikes (sim, strict, title-screen-test, ship-demo-launch-test, ai-live-guard) are suite load or rig/model-runner load; the finding itself marks this UNMEASURED.",
+    "The quiet2.sh readings at 10:38 and the 'no screen sharing' statement at the controller's pick time (I only checked at my own start).",
+    "GitHub issue #392 comment for 49314f81 (the header rc=2 is confirmed, but I did not locate the issue comment for that sha).",
+    "Gate 2 refutation versus a fresh baseline run was judged by argument; no fresh baseline was taken."
+  ],
+  "blocking_findings": [],
+  "non_blocking_findings": [
+    "Finding section 2 lists the worlds-leak peaks as 7.26, 11.13 and 10.35, which reads as the table's order (49314f81, 059bad3c, 17623c04) but is reversed: the true pairs are 49314f81 = 10.35, 059bad3c = 11.13, 17623c04 = 7.26. Give the sha beside each number.",
+    "'Fails in 3 of the 4 runs observed' rests on one standalone sample; my rerun gave max 8.05 and median 5.44, a 5th observation that marginally fails max<=8. Say that the standalone max varies (8.05-10.86) and the median is 5.4-6.3, both above the fallback's 5; the strict failure is the robust claim.",
+    "Section 3 ('by construction') overstates: no -j6 run exists, and a 1-minute load average only reaches about 6 after about 3 minutes of six continuously busy lanes. Reword as 'expected to exceed 5 once lanes stay busy; not measured' (internally-parallel targets such as sim at cpu/wall 2.1 would push it higher, not lower).",
+    "Option C in D-173 (count runs whose spans agree within 2%) drops the noise guard the quorum asked for and would also let a -j6 'after' run count on span agreement alone; say that in the option so Mark sees the cost.",
+    "D-173 is long and jargon-heavy for an unattended-ledger row (quorum, -j6, median-of-three, 7as/7at, keep-going run); add one plain sentence at the front saying what the choice changes (whether the loop spends 100-minute rig slots on a baseline that the rule cannot accept).",
+    "Note in the finding that a fresh baseline run could only count on a green main or a branch where 7as and 7at are fixed, since the rc rule is checked before the load rule; this is the strongest argument for refuting at Gate 2 rather than running."
+  ]
+}

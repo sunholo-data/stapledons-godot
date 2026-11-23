@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 110 | 2026-11-23 | L4's M1b baseline (1f) taken up on a quiet rig and refuted at Gate 2: the design's load rule rejects every serial run (the suite's own `worlds-leak... |
 | 109 | 2026-11-21 | Row 7av BUILT under D-171 A, up to the publish: social_dynamics 0.4.1 (keyed `sortedJson`) in ailang-packages#206, byte-identical on a scratch pin,... |
 | 108 | 2026-11-21 | Row 7av MEASURED under D-170 A, headless: the cruise comb is crew_core's monthly decision-day step on the AILANG VM (62.6–64.8 ms against 0.3–1.0 m... |
 | 107 | 2026-11-20 | Row 7av COUNTED on a quiet rig: 3 of 6 runs count, and b3, the one counted bench run with a valid docked control, MISSED AC12 (transit p99 17.338 a... |
