@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 112 | 2026-11-24 | Record-only fire under D-168 B: no pick. L4 waits on D-173, row 7av on D-172, L11 on #435; V21 (iteration 111's overnight sampler) is still running... |
 | 111 | 2026-11-23 | D-173's default executed: the option-A design for L4's AC9 load rule (count only CPU from outside the run; let a keep-going red run count on an ide... |
 | 110 | 2026-11-23 | L4's M1b baseline (1f) taken up on a quiet rig and refuted at Gate 2: the design's load rule rejects every serial run (the suite's own `worlds-leak... |
 | 109 | 2026-11-21 | Row 7av BUILT under D-171 A, up to the publish: social_dynamics 0.4.1 (keyed `sortedJson`) in ailang-packages#206, byte-identical on a scratch pin,... |
