@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### r1-7aw-rig-profile-secret-hygiene
+
+#### Fixed
+
+- **The evidence publisher checks for credential values before upload** (D-174, sprint R1-7AW-PROFILE-SECRETS). An optional names file extends the set of credential variables it checks. The profiler streams the make database, records the numeric query status, and removes recipe temporary files when the run exits. The nightly rig control exercises synthetic leaks and upload refusals with a stubbed `gsutil`.
+
 ### r1-rig-test-speed-m1b-fix (2026-11-17)
 
 #### Fixed
