@@ -276,6 +276,64 @@ GOLD
       printf "0 Makefile:1: update target 'a' due to: x\n204 done\n" > "$D/trace"; expect_rc 0 profile agree "$D/s.tsv" "$D/trace"
       printf "0 Makefile:1: update target 'a' due to: x\n205 done\n" > "$D/trace"; expect_rc 1 profile agree "$D/s.tsv" "$D/trace"
       printf '0 done\n200 done\n' > "$D/trace"; expect_rc 1 profile agree "$D/s.tsv" "$D/trace" ;;
+    secret-no-dump)
+      # Exercise both the make database and the recipe's temp directory.
+      tok="sp-canary-$(date +%s)-$$"; SP_FAKE_TOKEN=$tok; export SP_FAKE_TOKEN
+      cat > Makefile <<'MAKE'
+all: leak
+leak:
+	@printf '%s\n' "$$SP_FAKE_TOKEN" > "$$TMPDIR/suite-left.tmp"
+MAKE
+      no_canary() {
+        if grep -rFq -- "$tok" "$D/out"; then
+          echo 'secret-no-dump: canary in the profile dir' >&2; exit 1
+        else
+          [ "$?" = 1 ] || { echo 'secret-no-dump: profile scan failed' >&2; exit 1; }
+        fi
+      }
+      run -- all
+      if [ -e "$D/out/database.txt" ]; then echo 'secret-no-dump: database.txt in the profile dir' >&2; exit 1; fi
+      if [ -e "$D/out/tmp" ]; then echo 'secret-no-dump: out/tmp survived the run' >&2; exit 1; fi
+      no_canary
+      printf '%s\n' "$tok" > "$D/out/positive-control.tmp"
+      grep -rFq -- "$tok" "$D/out"
+      rm "$D/out/positive-control.tmp"
+      no_canary
+      [ -s "$D/out/closure.txt" ]
+      [ "$(shasum -a 256 < "$D/out/closure.txt" | awk '{print $1}')" = "$(header closure_sha256)" ] ;;
+    query-no-stderr)
+      tok="sp-query-canary-$(date +%s)-$$"
+      mkdir "$D/home"
+      query_failed=0
+      query_fail() { printf 'query-no-stderr (%s): %s\n' "$form" "$1" >&2; query_failed=1; }
+      for status in 0 1 2; do printf 'query_rc=%s\n' "$status" > "$D/status-$status"; done
+      for form in warning error broken; do
+        query_out=$D/out-$form
+        case "$form" in
+          warning|error) printf '$(%s $(SP_FAKE_TOKEN))\nall:\n\t@true\n' "$form" > Makefile ;;
+          broken) printf 'this is not a makefile\n' > Makefile ;;
+        esac
+        query_rc=0
+        env -i PATH="$PATH" HOME="$D/home" TMPDIR="$TMPDIR" SP_FAKE_TOKEN="$tok" \
+          sh "$P" run --make "$M" --out "$query_out" -- all > "$D/result" 2>&1 || query_rc=$?
+        if grep -raFq -- "$tok" "$query_out"; then
+          query_fail 'canary in the profile dir'
+        else
+          [ "$?" = 1 ] || query_fail 'profile scan failed'
+        fi
+        if [ "$form" = warning ]; then
+          [ "$query_rc" = 0 ] || query_fail "profiled run exited $query_rc"
+          if cmp -s "$D/status-0" "$query_out/query.err" || cmp -s "$D/status-1" "$query_out/query.err"; then :
+          else query_fail 'query.err must contain exactly query_rc=0 or query_rc=1'; fi
+          printf '%s\n' "$tok" > "$query_out/positive-control.tmp"
+          grep -raFq -- "$tok" "$query_out" || query_fail 'planted canary missed'
+          rm "$query_out/positive-control.tmp"
+        else
+          if [ "$query_rc" = 0 ]; then query_fail 'profiled run succeeded'; fi
+          cmp -s "$D/status-2" "$query_out/query.err" || query_fail 'query.err must contain exactly query_rc=2'
+        fi
+      done
+      [ "$query_failed" = 0 ] ;;
     temp-only)
       # Observe known external paths only; the positive observation probe stays inside T.
       observe() { for f in "$HOME" "$HOME/.ailang" "$ROOT/.ailang" "$T/outside-fixture"; do ls -ld "$f" 2>/dev/null || :; done; }
@@ -287,13 +345,14 @@ GOLD
       ls -ld "$T/outside-fixture" > "$D/probe-before"
       rm "$T/outside-fixture"; mkdir "$T/outside-fixture"
       ls -ld "$T/outside-fixture" > "$D/probe-after"
-      ! cmp -s "$D/probe-before" "$D/probe-after"
+      if cmp -s "$D/probe-before" "$D/probe-after"; then exit 1; fi
       rmdir "$T/outside-fixture"
+      if [ -e "$D/out/tmp" ]; then exit 1; fi
       test -f "$D/out/header.txt"; test -f "$D/out/profile.tsv"; test -f "$D/out/load.tsv" ;;
   esac
 )
-cases='rc-passthrough bare-true submake-level top-target-j2 caller-top-poison parallel-overlap cpu-busy-sleep compare-missing compare-fewer-extra closure-mismatch overhead-200 atomic-rows load-sampler sampler-cleanup report-version report-load report-medians summary-targets gap-agree temp-only'
-case_count=20
+cases='rc-passthrough bare-true submake-level top-target-j2 caller-top-poison parallel-overlap cpu-busy-sleep compare-missing compare-fewer-extra closure-mismatch overhead-200 atomic-rows load-sampler sampler-cleanup report-version report-load report-medians summary-targets gap-agree temp-only secret-no-dump query-no-stderr'
+case_count=22
 # Optional single-case invocation makes independent scratch mutation drills quick.
 if [ "$#" -gt 0 ]; then
   [ "$#" = 1 ] || exit 1

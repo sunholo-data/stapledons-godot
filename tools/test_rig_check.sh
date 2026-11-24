@@ -117,6 +117,13 @@ else
   cat "$T/suite-profile.log"
   echo 'rig-check control suite-profile: FAIL (see fixture output)'; fails=$((fails + 1))
 fi
+# 7aw: run the evidence publication control alongside the profiler control.
+if sh tools/test_evidence_secret_guard.sh > "$T/evidence-guard.log" 2>&1; then
+  echo 'rig-check control evidence-guard: ok'
+else
+  cat "$T/evidence-guard.log"
+  echo 'rig-check control evidence-guard: FAIL (see fixture output)'; fails=$((fails + 1))
+fi
 # Row 7ag: a red make test target must not stop the run before the other targets (make -k) or hide them (the nightly list).
 HERE=$(cd "$(dirname "$0")/.." && pwd -P)
 if sh "$HERE/tools/test_rig_keep_going.sh" "$HERE" > "$T/keep-going.log" 2>&1; then
@@ -266,15 +273,15 @@ if [ -f "$pad"golden-keeps-profile.profile/profile.tsv ]; then :; else gk="$gk; 
 why=$gk; preport golden-keeps-profile
 # caller-poison: the whole control again under a caller's overrides; it must stay green (D-126, iteration 52). The profile
 # overrides (RIG_PROFILE, RIG_TRACE) and the profiler's top-target variable are caller values too.
-n=25
+n=26
 if [ -z "${RIG_CHECK_NESTED:-}" ]; then
-  n=26; nrc=0
-  # The profiler sets TMPDIR to its --out directory, which is long (its rows sit beside the log): a caller's TMPDIR of
-  # at least 110 characters is a caller value too, and the control must still run under it (iteration 95).
+  n=27; nrc=0
+  # The profiler sets TMPDIR to $out/tmp inside its long --out path (its rows sit beside the log).
+  # The control must still run with a caller's TMPDIR of at least 110 characters (iteration 95).
   longtmp="$T/caller-tmp"; while [ ${#longtmp} -lt 110 ]; do longtmp="${longtmp}x"; done; mkdir "$longtmp"
   RIG_CHECK_NESTED=1 MAKEFLAGS=k RIG_TEST_S=1234 RIG_GOLDEN_S=7 RIG_SETUP_S=9 RIG_DL_S=9 RIG_PROFILE=0 RIG_TRACE=1 SUITE_TOP_TARGET=poison TMPDIR="$longtmp" sh "$0" "$RIG" > "$T/nested.log" 2>&1 || nrc=$?
   nok=$(grep -c ': ok$' "$T/nested.log" || true)
-  if [ "$nrc" = 0 ] && [ "$nok" = 25 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 25 ok)"; fails=$((fails + 1)); fi
+  if [ "$nrc" = 0 ] && [ "$nok" = 26 ]; then echo "rig-check control caller-poison: ok"; else echo "rig-check control caller-poison: FAIL (rc $nrc, $nok of 26 ok)"; fails=$((fails + 1)); fi
 fi
 echo "rig-check control: $n cases, $fails failures"
 test "$fails" = 0
