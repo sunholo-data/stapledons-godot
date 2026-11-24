@@ -23,7 +23,7 @@ closure() (
   while [ "$#" -gt 0 ]; do
     case "$1" in
       -f|--file|-C|--directory|-I|--include-dir)
-        [ "$#" -ge 2 ] || exit 1
+        [ "$#" -ge 2 ] || die 'closure query failed'
         case "$1" in
           -f|--file) has_file=1 ;;
           -C|--directory) query_dir=$(cd "$query_dir" && cd "$2" && pwd -P) ;;
@@ -49,8 +49,13 @@ closure() (
     done
   fi
   printf '.PHONY: __suite_profile_nop__\n__suite_profile_nop__:\n' > "$out/query.mk"
-  query_rc=0; "$@" -f "$out/query.mk" __suite_profile_nop__ > "$out/database.txt" 2> "$out/query.err" || query_rc=$?
-  [ "$query_rc" -le 1 ] || { cat "$out/query.err" >&2; exit 1; }
+  # Both the database and make diagnostics can contain environment values.
+  # Stream the database and store only the query's exit status.
+  : > "$out/query.err" || die 'closure query status missing or invalid'
+  {
+    rc=0; "$@" -f "$out/query.mk" __suite_profile_nop__ 2> /dev/null || rc=$?
+    printf 'query_rc=%s\n' "$rc" > "$out/query.err"
+  } |
   awk '
     FILENAME==ARGV[1] {goals[++ng]=$0; next}
     /^\.DEFAULT_GOAL *[:=]/ {default_goal=$NF}
@@ -64,8 +69,11 @@ closure() (
       n=split(edge[t],a," "); for(i=1;i<=n;i++) walk(a[i])
     }
     END {if(!ng) walk(default_goal); else for(g=1;g<=ng;g++) walk(goals[g])}
-  ' "$out/goals" "$out/database.txt" | sort -u > "$out/closure.txt"
-  [ -s "$out/closure.txt" ] || exit 1
+  ' "$out/goals" - | sort -u > "$out/closure.txt"
+  query_rc=$(sed -n '$s/^query_rc=\([0-9][0-9]*\)$/\1/p' "$out/query.err" 2>/dev/null) || die 'closure query status missing or invalid'
+  [ -n "$query_rc" ] && [ "$query_rc" -le 255 ] 2>/dev/null || die 'closure query status missing or invalid'
+  [ "$query_rc" -le 1 ] || die "closure query failed (make status $query_rc)"
+  [ -s "$out/closure.txt" ] || die 'closure query failed'
   shasum -a 256 "$out/closure.txt" | awk '{print $1}'
 )
 summary() {
@@ -122,21 +130,11 @@ case "$cmd" in
     done
     case "$jobs" in ''|*[!0-9]*|0) die 'jobs must be positive' ;; esac
     mkdir -p "$out"; out=$(cd "$out" && pwd -P)
-    export TMPDIR="$out"
-    SUITE_PROFILE_LOG=$out/profile.tsv; export SUITE_PROFILE_LOG
-    : > "$SUITE_PROFILE_LOG"; : > "$out/load.tsv"; : > "$out/header.txt"
-    unset SUITE_TOP_TARGET
-    # A profiled run is a top-level make even when a make started us (levels, -w, jobserver).
-    unset MAKELEVEL MAKEFLAGS MFLAGS MAKEOVERRIDES GNUMAKEFLAGS MAKE_TERMOUT MAKE_TERMERR
-    hash=$(closure "$@") || die 'closure query failed'
-    version=$("$maker" --version | sed -n '1p')
-    cores=$(sysctl -n hw.ncpu 2>/dev/null) || cores=$(getconf _NPROCESSORS_ONLN)
-    start=$(ms); load_start=$(load1)
-    sha=$(git rev-parse HEAD 2>/dev/null) || sha=untracked-fixture
     sampler=; child=
     cleanup() {
       if [ -n "$sampler" ]; then kill "$sampler" 2>/dev/null || :; wait "$sampler" 2>/dev/null || :; fi
       if [ -n "$child" ]; then kill "$child" 2>/dev/null || :; wait "$child" 2>/dev/null || :; fi
+      rm -rf "$out/tmp" 2>/dev/null || :
     }
     finish() {
       rc=$1; cleanup
@@ -146,6 +144,19 @@ case "$cmd" in
     trap cleanup EXIT
     trap 'finish 130' INT
     trap 'finish 143' TERM HUP
+    # Keep query and recipe temp files inside the profile for the life of the run.
+    mkdir -p "$out/tmp"
+    export TMPDIR="$out/tmp"
+    SUITE_PROFILE_LOG=$out/profile.tsv; export SUITE_PROFILE_LOG
+    : > "$SUITE_PROFILE_LOG"; : > "$out/load.tsv"; : > "$out/header.txt"
+    unset SUITE_TOP_TARGET
+    # A profiled run is a top-level make even when a make started us (levels, -w, jobserver).
+    unset MAKELEVEL MAKEFLAGS MFLAGS MAKEOVERRIDES GNUMAKEFLAGS MAKE_TERMOUT MAKE_TERMERR
+    hash=$(closure "$@")
+    version=$("$maker" --version | sed -n '1p')
+    cores=$(sysctl -n hw.ncpu 2>/dev/null) || cores=$(getconf _NPROCESSORS_ONLN)
+    start=$(ms); load_start=$(load1)
+    sha=$(git rev-parse HEAD 2>/dev/null) || sha=untracked-fixture
     # Killing the sampler also reaps its sleep child, including on interruptions.
     (
       sleeper=
