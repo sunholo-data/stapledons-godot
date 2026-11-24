@@ -59,6 +59,7 @@ run_guard() {
       multi) export SP_FAKE_TOKEN="$multi" ;;
       short) export SP_FAKE_TOKEN="$short" ;;
       pem) export SP_FAKE_TOKEN="$pem" ;;
+      GIT_PAT|X_AUTH|MY_CREDENTIAL) export "$mode=$name_canary" ;;
       none) ;;
     esac
     exec sh "$G" "$@"
@@ -108,6 +109,45 @@ run_guard none "$T/nonexistent"
 check 'missing input with no candidates' expect_rc 2
 run_guard token "$T/bad.tar.gz"
 check 'bad archive' expect_rc 2
+
+mkdir "$T/packs" "$T/layers"
+cp "$T/evidence pack.tgz" "$T/packs/dirty pack.tar.gz"
+run_guard token "$T/packs"
+check 'directory archive refusal and member attribution' hit "SP_FAKE_TOKEN value is in $T/packs/dirty pack.tar.gz:.database copy.txt" "$tok"
+rm "$T/packs/dirty pack.tar.gz"
+tar -czf "$T/packs/clean.tgz" -C "$T/clean dir" profile.tsv
+# A clean result alone cannot distinguish extraction from scanning compressed bytes.
+cat > "$T/bin/tar" <<'STUB'
+#!/bin/sh
+printf '%s\n' "$1" >> "$(dirname "$0")/tar.calls"
+PATH=/usr/bin:/bin exec tar "$@"
+STUB
+chmod +x "$T/bin/tar"
+: > "$T/bin/tar.calls"
+run_guard token "$T/packs"
+clean_nested_archive() { expect_rc 0 && grep -Fxq -- '-xzf' "$T/bin/tar.calls"; }
+check 'clean directory archive unpacked and accepted' clean_nested_archive
+rm "$T/bin/tar" "$T/packs/clean.tgz"
+cp "$T/bad.tar.gz" "$T/packs/bad.tgz"
+run_guard token "$T/packs"
+check 'corrupt directory archive' expect_rc 2
+
+cp "$T/evidence pack.tgz" "$T/layers/inner.tar.gz"
+tar -czf "$T/middle.tgz" -C "$T/layers" inner.tar.gz
+tar -czf "$T/outer.tgz" -C "$T" middle.tgz
+run_guard token "$T/outer.tgz"
+check 'three archive levels scanned' hit "SP_FAKE_TOKEN value is in $T/outer.tgz:middle.tgz:inner.tar.gz:.database copy.txt" "$tok"
+tar -czf "$T/too-deep.tgz" -C "$T" outer.tgz
+run_guard token "$T/too-deep.tgz"
+check 'fourth archive level refused' expect_rc 2
+
+for name in GIT_PAT X_AUTH MY_CREDENTIAL; do
+  name_canary="synthetic-$name.canary"
+  printf '%s\n' "$name_canary" > "$T/name-leak.txt"
+  run_guard "$name" "$T/name-leak.txt"
+  check "default name filter matches $name" hit "$name value is in $T/name-leak.txt" "$name_canary"
+done
+
 run_guard none --require-candidates "$T/clean.txt"
 check 'zero candidates with requirement' expect_rc 2
 run_guard none "$T/clean.txt"

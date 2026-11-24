@@ -7,6 +7,7 @@
 #### Fixed
 
 - **The evidence publisher checks for credential values before upload** (D-174, sprint R1-7AW-PROFILE-SECRETS). An optional names file extends the set of credential variables it checks. The profiler streams the make database, records the numeric query status, and removes recipe temporary files when the run exits. The nightly rig control exercises synthetic leaks and upload refusals with a stubbed `gsutil`.
+- The evidence guard scans tarballs up to three levels deep and rejects corrupt or deeper packs. The controls cover make query diagnostics on both GNU make versions and detect values under `GIT_PAT`, `X_AUTH`, and `MY_CREDENTIAL`.
 
 ### r1-rig-test-speed-m1b-fix (2026-11-17)
 

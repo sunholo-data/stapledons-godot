@@ -4,6 +4,7 @@
 set -u
 umask 077
 MIN_LEN=8
+MAX_ARCHIVE_DEPTH=3
 NAME_FILTER='TOKEN|KEY|SECRET|PASSWD|PASSWORD|_PAT|AUTH|CREDENTIAL'
 fail2() { printf 'evidence-guard: %s\n' "$*" >&2; exit 2; }
 usage() {
@@ -101,35 +102,35 @@ scan_file() {
     done
   fi
 }
+scan_archive() {
+  [ "$3" -lt "$MAX_ARCHIVE_DEPTH" ] || fail2 "archive nesting exceeds $MAX_ARCHIVE_DEPTH levels: $2"
+  [ -r "$1" ] || fail2 "unreadable input: $2"
+  guard_unpack=$(mktemp -d "$guard_tmp/unpack.XXXXXX" 2>/dev/null) || fail2 'mktemp failed'
+  TAR_OPTIONS= tar -xzf - -C "$guard_unpack" >/dev/null 2>&1 < "$1" || fail2 "tar failed: $2"
+  scan_dir "$guard_unpack" "$2:" "$(($3 + 1))"
+}
 scan_dir() {
   [ -r "$1" ] && [ -x "$1" ] || fail2 "unreadable directory: $2"
   for guard_entry in "$1"/.[!.]* "$1"/..?* "$1"/*; do
     [ -e "$guard_entry" ] || [ -L "$guard_entry" ] || continue
     if [ "$guard_entry" -ef "$guard_tmp" ]; then continue; fi
-    scan "$guard_entry" "$2${guard_entry##*/}"
+    scan "$guard_entry" "$2${guard_entry##*/}" "$3"
   done
 }
 scan() {
   if [ -L "$1" ]; then fail2 "symbolic link input: $2"; fi
-  if [ -d "$1" ]; then scan_dir "$1" "${2%/}/"
-  elif [ -f "$1" ]; then scan_file "$1" "$2"
+  if [ -d "$1" ]; then scan_dir "$1" "${2%/}/" "$3"
+  elif [ -f "$1" ]; then
+    case "$1" in
+      *.tgz|*.tar.gz) scan_archive "$1" "$2" "$3" ;;
+      *) scan_file "$1" "$2" ;;
+    esac
   else fail2 "missing or unsupported input: $2"; fi
 }
 
 guard_hits=0
 for guard_input do
-  case "$guard_input" in
-    *.tgz|*.tar.gz)
-      if [ -f "$guard_input" ] && [ ! -L "$guard_input" ]; then
-        [ -r "$guard_input" ] || fail2 "unreadable input: $guard_input"
-        guard_unpack=$(mktemp -d "$guard_tmp/unpack.XXXXXX" 2>/dev/null) || fail2 'mktemp failed'
-        TAR_OPTIONS= tar -xzf "$guard_input" -C "$guard_unpack" >/dev/null 2>&1 ||
-          fail2 "tar failed: $guard_input"
-        scan_dir "$guard_unpack" "$guard_input:"
-        continue
-      fi ;;
-  esac
-  scan "$guard_input" "$guard_input"
+  scan "$guard_input" "$guard_input" 0
 done
 if [ "$guard_hits" -gt 0 ]; then
   printf 'evidence-guard: refused: %s secret hit(s) across the given inputs\n' "$guard_hits" >&2
