@@ -1,0 +1,19 @@
+{"evaluator_model":"sonnet 5.5","iteration":112,"score":93,"pass":true,
+"breakdown":{"disposition":29,"facts":37,"mechanics":19,"clarity":8},
+"checks":[
+{"what":"PR 435","command":"gh pr view 435 --json state,updatedAt","result":"OPEN 2026-11-12T19:05:51Z"},
+{"what":"packages PR 206 / 144","command":"gh pr view","result":"206 OPEN, mergedAt null, updated 2026-11-21T11:14:33Z; 144 OPEN draft"},
+{"what":"package versions","command":"ailang pkg info","result":"observe v0.1.0, social_dynamics v0.4.0, crew_core v0.6.0"},
+{"what":"directives","command":"gh issue view 474/450 --json comments","result":"474: 2 comments, 450: 28, all sunholo-voight-kampff only"},
+{"what":"CI/nightly on d8b7baf9","command":"gh api check-runs, statuses; issue 392","result":"fast tier success 18:28:32Z; rig/full failure 23:13:52Z; rig/golden success 23:34:39Z; #392 last comment 23:13:56Z naming ui-theme-check basis-gate"},
+{"what":"V21","command":"ps/wc/tail","result":"pid 31503 alive etime 07:08:07 at 00:35Z; host.tsv 853 rows, last epoch 1795480538 (00:35:38Z)"},
+{"what":"rotation","command":"wc, grep -c, cmp","result":"charter 602 vs origin 602; ITERATION 109 charter 0, archive 1, byte-identical to origin; 108 in archive 1; 11 queue rows both; ledger valid 166 rows; 0 malformed STATUS headings"},
+{"what":"controller slip (a)","command":"tail mission-stapledon-base","result":"d3c2c785 at 00:31:00Z then d8b7baf9 at 00:31:07Z, as claimed"},
+{"what":"harness share","command":"sort/tail -20 of headlines","result":"93-112: HARNESS 94-98, 111 = 6/20; all tagged"},
+{"what":"scope","command":"git diff --name-only; secret grep","result":"only the five design_docs files; no secret/email hits"},
+{"what":"defaults","command":"grep ledger rows","result":"D-168 default C; D-172 default record-only on 7av; D-173 default design doc only (already done in 111); D-166, D-169-171 OPEN with no work-now default found"}],
+"findings":[
+{"id":"F1","severity":"non-blocking","claim":"Check 8(c): ailang messages list --inbox user not confirmed in this run for the unread marker","evidence":"My grep of the list for a05aeea5 printed no line (output limited by --limit/format); I could not confirm the unread state independently","fix":"Re-run list with a larger limit or show full inbox before merge"},
+{"id":"F2","severity":"non-blocking","claim":"Idle-fingerprint skip is consistent with gate-5 rule 8 (waiting on a clock) but the dashboard says the nightly 'ran inside' V21 without stating V21 started about 17:27Z","evidence":"etime 07:08 at 00:35Z implies start 17:27Z; fine, just not stated","fix":"Optional: state start time"},
+{"id":"F3","severity":"non-blocking","claim":"Dashboard jargon: AC12, OQ1/OQ3, V21, p99 unexplained for Mark","evidence":"dashboard lines on R1 and Human gates","fix":"One plain phrase each, e.g. 'AC12 (the frame-time limit)'"}],
+"not_checked":["queue rows 7ap/7aq/7av/L4/L11 full text (grep patterns for 7a* rows did not match; relied on stamp, D-168/172/173 defaults and 11 vs 11 queue row count)","JUDGE_SCORE placeholder replacement (controller step)","unread marker of inbox_1795230842850_a05aeea5 (F1)","skill copy parity claim (28 copies)","died-mid-flight trace claims on iter111 clone"]}
