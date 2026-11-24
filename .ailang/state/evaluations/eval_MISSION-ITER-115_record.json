@@ -1,0 +1,25 @@
+{
+ "iteration":115,"judge_model":"sonnet (claude-sonnet-5-5, Agent tool)","score":93,"verdict":"PASS",
+ "breakdown":{"disposition":29,"facts":37,"mechanics":19,"clarity":8},
+ "blocking_findings":[],
+ "non_blocking_findings":[
+  {"finding":"STATUS/log/dashboard say '13 credentials still carry the exposed values' / 'rotation not done or cache not refreshed'. The guard's 13 'value is in' count was reproduced (13) but it counts matches against this session's environment; the wording is hedged correctly in the log (Ruled out) but the dashboard headline reads as a stronger finding.","fix":"In the dashboard first paragraph, say 'the guard still finds 13 of the old values in the Studio environment', keep the 'or cache not refreshed' clause adjacent."},
+  {"finding":"Log says 'mid-run tmp/ present, gone at exit' and the 23:02/23:22Z load figures; those are not re-measurable after the run (UNMEASURED by me).","fix":"None needed; optionally mark them 'observed during the run'."},
+  {"finding":"Harness share written as 5/19 under a '20 headlines (96-115)' label; the 20th (115) is the current untagged entry. Recompute gives 5 HARNESS tags (96,97,98,111,114) among 96-114 plus 115 ADMIN = 5/20; conclusion (<1/3) unchanged.","fix":"Write 5/20 or say 'last 19 completed fires'."},
+  {"finding":"Dashboard 'rm' line uses a brace glob with no 'on the Studio' in the Action list item and removes only database.txt; fine, but it is a bare shell one-liner for Mark.","fix":"Add 'on the Studio' to the Action bullet (the Next field has it)."}],
+ "measurements":[
+  {"claim":"#435 OPEN, updated 2026-11-12T19:05:51Z","command":"gh pr view 435","your_result":"OPEN 2026-11-12T19:05:51Z","matches_record":true},
+  {"claim":"ailang-packages#206 OPEN 2026-11-21T11:14:33Z","command":"gh pr view 206","your_result":"OPEN 2026-11-21T11:14:33Z","matches_record":true},
+  {"claim":"observe v0.1.0, social_dynamics v0.4.0, crew_core v0.6.0","command":"ailang pkg info","your_result":"same","matches_record":true},
+  {"claim":"0 allowlisted comments: #474 (6 total), #450 (28 total)","command":"gh issue view --json comments","your_result":"0/6 and 0/28","matches_record":true},
+  {"claim":"No ledger commit since iteration 114 record","command":"git log origin/main --since","your_result":"only d5a4a7b1 (iteration 114 record, 17:38+01)","matches_record":true},
+  {"claim":"origin/main = 59754995","command":"git fetch; git log -1","your_result":"59754995 (still)","matches_record":true},
+  {"claim":"New profile dir: no database.txt, no tmp/, query.err one query_rc line, both controls ok, totals wall_s=6873.416","command":"ls/grep","your_result":"files closure.txt goals header.txt load.tsv profile.tsv query.args query.err query.mk sleeper.pid; 1 query_rc line; both ok; wall 6873.416","matches_record":true},
+  {"claim":"16 profile dirs, 4 with database.txt (059bad3c,17623c04,328b01f8,d8b7baf9)","command":"ls","your_result":"16 and 4; the four prefixes match","matches_record":true},
+  {"claim":"Guard: new dir rc 0 (17 candidate lines); old 328b01f8 rc 1, 13 value lines","command":"sh tools/evidence_secret_guard.sh","your_result":"rc=0 clean (17 candidate value lines); rc=1, 13 'value is in' lines","matches_record":true},
+  {"claim":"#392 newest comment names 59754995 and 2 failing targets at 23:25:15Z","command":"gh issue view 392","your_result":"yes: ui-theme-check basis-gate, 2026-11-24T23:25:15Z","matches_record":true},
+  {"claim":"Charter 605 lines (=origin), 3 STATUS lines, ITERATION 112 absent/1 in archive, byte-identical, ledger 168 valid, 67 queue rows both","command":"wc/grep/cmp/mission_decisions.sh","your_result":"all equal","matches_record":true},
+  {"claim":"Harness share 5/19","command":"grep headlines","your_result":"5 tagged (96,97,98,111,114) in 96-114; 5/20 with 115","matches_record":"approximately"},
+  {"claim":"No personal email, secret pattern or closing keyword + #N in diff","command":"git diff | grep","your_result":"0 email hits, 0 key patterns, 0 closing keywords","matches_record":true}],
+ "not_checked":["mid-run tmp/ presence and load 4.84/9.30 (past observations)","pid 62468 and 22:30:03 start time","skill/resource sync against ailang origin/dev (23-day-old driver claims)","step 6a inbox/unread status of the two private messages","regenerated index contents beyond last-3-landing commit subjects","EVAL_PLACEHOLDER/EVAL_TOKENS left for controller, not edited"]
+}

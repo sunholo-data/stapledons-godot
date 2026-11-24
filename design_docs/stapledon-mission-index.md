@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 115 | 2026-11-25 | Record-only fire under D-168 B: no pick. Row 7aw read on its first production nightly: no make dump and no temp files left; the guard refuses last ... |
 | 114 | 2026-11-24 | Row 7aw LANDED under D-174's default A (PR #478): no environment in nightly profile directories (no make database, no raw make stderr, suite temp f... |
 | 113 | 2026-11-24 | V21 read into L4's AC9 design (§I, revision 3): outside CPU ≤ 4.13 in both night windows, co-primary by the letter, nightlies the expected source; ... |
 | 112 | 2026-11-24 | Record-only fire under D-168 B: no pick. L4 waits on D-173, row 7av on D-172, L11 on #435; V21 (iteration 111's overnight sampler) is still running... |
