@@ -1,0 +1,30 @@
+{
+ "sprint_id": "R1-L4-AC9-V21",
+ "round": 1,
+ "evaluator": "sonnet (Agent tool)",
+ "score": 91,
+ "pass": true,
+ "breakdown": {"correctness_numbers_and_verdict": 37, "evidence_and_reproducibility": 22, "safety": 19, "clarity_for_mark": 13},
+ "blocking": [],
+ "non_blocking": [
+  "Evidence dir oldrule-retro.txt has two lines (load.tsv n/median/max per run) that scripts/run_all.sh does not produce; cmp of the regenerated oldrule-retro.v.txt differs (175 vs 267 bytes). Those two lines were checked by hand and are correct (207/3.87/14.66, 224/3.72/13.15). rows.tsv, summary.txt, extra.txt are byte-identical (cmp).",
+  "The 5.03 figure is the raw, undamped x of one row (23:14:56 CET, H 7.68, own 2.65, x 5.028), used for the thread-burst test. OQ2 and the prose call it 'the estimate read 5.03 cores' of outside CPU, but the damped E on that row is 3.24. The doc discloses that the burst test uses raw x, but a reader could take 5.03 as the E reading. The verdict (co-primary) is a strict reading of the rule's second clause ('all spikes classify as thread bursts') and is conservative; a looser reading (E <= 5 throughout) would give nightlies-primary. Either way the controller-primary flip does not trigger.",
+  "Secret scan used the name pattern given (_TOKEN|_KEY|_SECRET|PASSWORD|_PAT, length >= 16): 30 values, 0 hits in pack, evidence dir and doc; positive control 15 hits in one database.txt. Secrets under other variable names would not be caught by this pattern.",
+  "My idle-control row count was 1092 vs the doc's 1096 (different exclusion margins); H median 2.08 and max 8.16 match exactly."
+ ],
+ "checks_run": [
+  "Own awk (own.awk in /tmp/i113-eval-sonnet): run A 206 rows E med 1.785 max 4.128, E>5 0, E>8 0, load1>5/>8 56/9 (doc: 1.79/4.13, 0/0, 56/9). Run B whole 222 rows E med 1.662 max 3.084, load1 68/10; 05:00-06:07 part 132 rows (doc 133, midpoint boundary) E med 1.52 max 2.87. Windows 22:30-00:15 and 05:00-06:30 CET: E>8 in 0 rows each. Sum of own CPU 19737.3 s = 9494.8 + 10336 less edges, matches doc controls.",
+  "Rows with raw x > 5 inside runs: exactly two, 23:14:56 (x 5.028, a load1 jump +3.58, during replay) and 23:55:38 (x 7.38, not a >=3 load1 jump). The 5.03 claim is real.",
+  "Flip rule re-read from origin/main text: controller-primary needs E>8 in a row in each window, or E>5 in >10% of rows: not met. Nightlies-primary needs outside CPU <=5 and all spikes bursts: one jump (x 5.03) is not a burst by the stated test, so co-primary. Doc verdict agrees.",
+  "Facts: both header.txt rc=2; failing MAKELEVEL-1 sets both {basis-gate, ui-theme-check}; closure 47d40348 on both; host.tsv 1552 rows, gaps 30 s x1321 and 31 s x230, none other; CET conversions via TZ=Europe/Berlin date -r give 22:30:26-00:13:51 and 04:15:32-06:07:12; rig-nightly log shows golden 00:31:44-00:34:41 and 06:16:46-06:19:43; load.tsv 207 rows med 3.87 max 14.66 >5 58 >8 9 and 224 rows 3.72/13.15/71/12; idle control H med 2.08 max 8.16; host_sampler.sh sha af550012.. matches.",
+  "Re-derivation: sh scripts/run_all.sh into a fresh dir on a copy of the evidence; cmp rows.tsv, summary.txt, extra.txt identical; SHA256SUMS in the evidence dir verifies all OK and itself hashes to c2d305f1...",
+  "Pack: downloaded, sha256 740c9a10...b3cc matches, 365,238 B, no database.txt in listing or extracted tree, file list equals the evidence dir; secret-value scan 0 hits in pack, 0 in evidence dir, 0 in the doc, positive control 15.",
+  "Doc: no fa37f768 or db74c3a8 left; git diff shows changes only in status line, V21 references (lines 90, 117), section I, risks R1/R7, OQ2/OQ3 text, quorum/verification log; rule text, thresholds 5/8, ACs, OQ1/OQ4/OQ5 unchanged; D-173 still 'still OPEN in the ledger'; tools/suite_profile.sh line 52 does write make -p output to database.txt as the warning states."
+ ],
+ "not_checked": [
+  "attrib.txt attribution (eval/fixture/fleet timing) against live launchd and mission logs.",
+  "That the public bucket object was removed for the earlier leaked pack (first pack, about 90 s public); not probed, and the incident itself is the controller's.",
+  "Quorum-log and verification-log rows V27-V32 line by line.",
+  "Whether secrets under variable names outside the scan pattern exist in the pack (only the stated pattern was scanned)."
+ ]
+}
