@@ -1,0 +1,17 @@
+{"sprint_id":"MISSION-ITER-118","evaluator":"sonnet (Agent tool)","date":"2026-11-25","score":93,"pass":true,
+"rubric":{"disposition":29,"facts":37,"mechanics":19,"clarity":8},
+"measurements":[
+{"check":"directives #474/#450","command":"mission_directives.sh (no --mark)","reading":"0 directives, 9 and 28 comments","matches_record":true},
+{"check":"ledger","command":"mission_decisions.sh --check","reading":"valid, 168 rows; newest charter commit on origin/main a98d7dde (iteration 117)","matches_record":true},
+{"check":"blockers","command":"gh pr view / ailang pkg info","reading":"#435 OPEN 2026-11-12T19:05:51Z; pkgs#206 OPEN unmerged 2026-11-21T11:14:33Z; #144 draft OPEN; observe 0.1.0, social_dynamics 0.4.0, crew_core 0.6.0","matches_record":true},
+{"check":"main CI","command":"gh api check-runs","reading":"46dc3691: 1 check run, fast tier success","matches_record":true},
+{"check":"old dumps","command":"evidence_secret_guard.sh","reading":"328b01f8 rc1 13 lines; d8b7baf9 rc1 13; d00b9dc0 control rc0; 17 profile dirs","matches_record":true},
+{"check":"harness finding","command":"git log -1 with exclusions x3","reading":"a98d7dde, 176e2d20, 4dc44bed; each only an eval JSON; idle-fingerprint.sh head computed with exactly that pathspec; fingerprint file absent; ticket open","matches_record":true},
+{"check":"mechanics","command":"wc/grep/diff","reading":"charter 605->606; 3 STATUS stamps (118,117,116); ITERATION 115 count 0 charter/1 archive, byte-identical; 114 in archive 1; 20 live log entries; heading set lossless plus 118; index row 118; dashboard 35 lines; 7ax present","matches_record":true},
+{"check":"harness share","command":"headline tags 99-118","reading":"HARNESS on 111 and 114 only (2); 113 MEASUREMENT; all 20 headlines carry a tag (118 ADMIN), so the denominator may be 20 not 19","matches_record":"mostly"},
+{"check":"hygiene","command":"grep over added diff lines","reading":"no closing keywords, no emails, no secret-shaped strings or credential names beyond count","matches_record":true}],
+"blocking_findings":[],
+"non_blocking_findings":[
+"design_docs/stapledon-mission-log.md ## 118 / dashboard: the 'last 20 iterations, 19 tagged' denominator reads 20 of 20 tagged on my count (99-118 all carry a trailing tag); harness share 2 of 20 holds either way.",
+"design_docs/stapledon-mission-log.md ## 118 still holds EVAL_PENDING and EVAL_TOKENS placeholders, to be filled by the controller.",
+"Dashboard 'main is 46dc3691 (iteration 117's record)' is correct (merge of #482); charter commit a98d7dde is the record commit itself, so both references are consistent."]}

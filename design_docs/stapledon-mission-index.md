@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 118 | 2026-11-25 | Record-only fire under D-168 B: no pick. Nothing changed since iteration 117; filed a harness ticket because the driver's idle skip can never fire ... |
 | 117 | 2026-11-25 | Record-only fire under D-168 B: no pick. Nothing changed since iteration 116: no ruling, no blocker moved, no nightly since; the two old dumps stil... |
 | 116 | 2026-11-25 | Record-only fire under D-168 B: no pick. Row 7aw's second production nightly is clean too; two of the four old dumps aged out of the rig's temp fol... |
 | 115 | 2026-11-25 | Record-only fire under D-168 B: no pick. Row 7aw read on its first production nightly: no make dump and no temp files left; the guard refuses last ... |
