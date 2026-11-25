@@ -1,0 +1,26 @@
+{
+ "iteration":116,"judge_model":"sonnet (claude-sonnet-5-5, Agent tool)","score":94,"verdict":"PASS",
+ "breakdown":{"disposition":29,"facts":38,"mechanics":19,"clarity":8},
+ "blocking_findings":[],
+ "non_blocking_findings":[
+  {"finding":"The STATUS stamp is one very long paragraph (blockers, profile reading, old dumps, clause map); for Mark it is dense, and the 13-credential line reads as a finding about rotation when it only reports that the guard matches 13 values in this session's environment.","fix":"Keep 'match this fire's environment' next to 'rotation not done or cache not refreshed' wherever the dashboard repeats it (as in 115's finding)."},
+  {"finding":"Harness share '4/19' is correct (HARNESS tags 4 over 97-116, 20 entries, 113 is MEASUREMENT-tagged) but the denominator 19 versus the 20 entries is only explained in one clause.","fix":"Say '4 of 20 headlines, 19 inside the pattern'."},
+  {"finding":"The 'macOS daily temp clean' attribution is hedged ('inferred, not verified'), which is right. Evidence supports it (every older profile dir mtime is 03:35 on each day 11-20..11-25), but 328b01f8 (mtime 11-24 06:07) and d8b7baf9 (11-24 00:13) are only 1-2 days old, so the 'about three days' prediction is untested.","fix":"None; the next fire can confirm or refute."}
+ ],
+ "measurements":[
+  {"claim":"#474 0 of 7, #450 0 of 28 Mark comments","command":"gh issue view N --json comments, count author MarkEdmondson1234","your_result":"474: 7 total, 0 Mark; 450: 28 total, 0 Mark","matches_record":true},
+  {"claim":"No ledger commit since 115; origin/main d00b9dc0","command":"git log origin/main -3 -- charter; rev-parse origin/main","your_result":"newest 4dc44bed; origin/main d00b9dc0aca727b5f29de0f5d8ecf94aca62c148","matches_record":true},
+  {"claim":"Blockers: #435 OPEN 11-12T19:05:51Z; #206 OPEN unmerged 11-21T11:14:33Z; #144 OPEN; observe 0.1.0, social_dynamics 0.4.0, crew_core 0.6.0","command":"gh pr view; ailang pkg info","your_result":"identical","matches_record":true},
+  {"claim":"Main CI green on d00b9dc0","command":"check-runs","your_result":"fast tier (lock, strict VM, parity, replay) success","matches_record":true},
+  {"claim":"Nightly #392 05:15:15Z d00b9dc0, 2 red ui-theme-check basis-gate","command":"gh issue view 392 last comment","your_result":"2026-11-25T05:15:15Z, failed at d00b9dc0, 2 red: ui-theme-check basis-gate","matches_record":true},
+  {"claim":"Profile dir: no database.txt/tmp, query.err one line, controls ok, wall_s 7169.255, guard clean 17 lines","command":"ls, cat, grep log, guard","your_result":"no database.txt/tmp; query.err 'query_rc=0'; both controls ok; totals wall_s=7169.255; 'evidence-guard: clean (17 candidate value line(s), 1 input(s))'","matches_record":true},
+  {"claim":"059bad3c and 17623c04 trimmed to header/load(/sleeper.pid) at 03:35; 328b01f8 and d8b7baf9 still hold database.txt; guard rc 1, 13 'value is in' each","command":"ls -la; guard | grep -c","your_result":"059bad3c: header+load, 03:35; 17623c04: header+load+sleeper.pid, 03:35; others hold database.txt (~499 KB); 13 and 13","matches_record":true},
+  {"claim":"Ledger valid 168 rows; OPEN D-166, D-168..D-175","command":"mission_decisions --check/--open","your_result":"valid 168 rows; OPEN exactly those 9","matches_record":true},
+  {"claim":"Charter mechanics","command":"wc, grep","your_result":"605 lines before and after; 'ITERATION 113:' 0 in charter, 1 in status archive; moved line byte-identical to origin/main line 96 (found in archive); 3 STATUS stamps (plus the rotation-rule heading); 7av row present; queue rows 67 before/after; stamp heading canonical","matches_record":true},
+  {"claim":"Log rotation lossless; 20 live entries; index row for 116","command":"diff of sorted '## N ' headings origin vs clone","your_result":"only entry 116 added; 20 live numbered entries; index has 116","matches_record":true},
+  {"claim":"Harness share 4/19 over 97-116","command":"tag count from log+archive headlines","your_result":"HARNESS 4, ADMIN 9, PRODUCT 3, REFUTATION 3, MEASUREMENT 1 (20 total)","matches_record":true},
+  {"claim":"Diff hygiene","command":"grep added lines for closing keywords, emails, key shapes; 13 names","your_result":"no closing-keyword, email or key-shaped additions; 0 of 13 variable names appear in added lines","matches_record":true},
+  {"claim":"Disposition: no pick is right","command":"read D-168 row and 115 Next","your_result":"D-168 OPEN default C already exhausted 7ap/7aq (landed); remaining rows blocked (#435, quiet rig, D-172 default record-only); clause 4 (AC12) has nothing routable; no OPEN default obliges a build. Record-only is correct.","matches_record":true}
+ ],
+ "unmeasured":["Load 3.77/5.46/5.08 at 06:08Z and blocker re-read time (not re-measurable after the fact)","Whether the 03:35 trim is the macOS temp clean (inferred by the record, hedged)","Which iterations carry the 4 HARNESS tags (count verified, numbers not itemised)"]
+}

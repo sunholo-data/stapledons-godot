@@ -1,13 +1,13 @@
 # Mission dashboard — Stapledon
 
-Updated 2026-11-25, iteration 115. A record-only fire (nothing to build without a ruling), plus one look at last night's test run. **The credentials exposed in iteration 113 still need rotating:** the secret check still finds 13 of the exposed values in this fire's environment on the Studio (either not rotated yet, or the rig's environment cache not refreshed after rotating), and both private messages about it are still unread (`[SECURITY] … rotate`, `… soft delete (private)`). Metered $0.
+Updated 2026-11-25, iteration 116. A record-only fire (nothing to build without a ruling), plus a second look at last night's test run. **The credentials exposed in iteration 113 still need rotating:** the secret check still finds 13 of the exposed values in this fire's environment on the Studio (either not rotated yet, or the rig's environment cache not refreshed after rotating), and both private messages about it are still unread (`[SECURITY] … rotate`, `… soft delete (private)`). Metered $0.
 R1: clauses 1–3 are MET. Clause 4 is UNMET: AC12 (frames during the live transit must stay under 16.7 ms, judged on the slowest 1 % of frames, the p99) has one counted miss on a valid run, 17.338 ms (iteration 107); row 7av waits on D-172. Clause 5 is ongoing. This iteration did not move the goal.
-What was checked, in plain words: last night's full test run (on `59754995`, the first one with iteration 114's fix) no longer saved the settings dump that held passwords and tokens, and it deleted its temporary files when it finished. The new secret check passed that run's folder and refused the night before's. Four folders from before the fix still hold the old dump on the Studio; the loop left them for you to delete on the Studio (`rm $TMPDIR/rig-check/{059bad3c,17623c04,328b01f8,d8b7baf9}*.profile/database.txt`).
+What was checked, in plain words: last night's full test run (on `d00b9dc0`) again saved no settings dump and cleaned up its temporary files, and the secret check passed its folder. Of the four old folders that still held the dump, two lost it overnight at 03:35, the time the Mac's daily clean-up of old temporary files runs (an inference from the pattern, not verified; the loop did not delete them). Two remain on the Studio: `rm $TMPDIR/rig-check/{328b01f8,d8b7baf9}*.profile/database.txt`, or let them age out (likely by about 27 November, if the pattern holds). Either way the values in them stay live until rotated.
 Last design: `design_docs/implemented/r1/rig-profile-secret-hygiene.md` (iteration 114).
-Latest release: no release tag. Game and runtime pins are unchanged (AILANG v0.56.1, Godot 4.7.2). AILANG v0.61.0 is out; a bump is attended work.
-Current: main is `59754995` (iteration 114's record). Fast tier green.
+Latest release: no release tag. Game and runtime pins are unchanged (AILANG v0.56.1, Godot 4.7.2). AILANG v0.61.x is out; a bump is attended work.
+Current: main is `d00b9dc0` (iteration 115's record). Fast tier green.
 Visible: nothing new, so no dev build is needed.
-Nightly: #392 still red on the 2 attended targets, `ui-theme-check` (7as) and `basis-gate` (7at); tonight's run took 6,873 s. Its two new checks (`suite-profile`, `evidence-guard`) printed `ok`.
+Nightly: #392 still red on the 2 attended targets, `ui-theme-check` (7as) and `basis-gate` (7at); tonight's run took 7,169 s. Its two checks (`suite-profile`, `evidence-guard`) printed `ok`.
 Lanes: no lane degraded. Controller Opus 5.5; judge Sonnet 5.5 (Agent tool). No designer, planner or executor ran (D-168 B).
 Next: record-only fires under D-168 B unless you rule.
 Still waiting: D-172 (default record-only on 7av: no publish, no O3).
@@ -24,11 +24,11 @@ Human gates, all OPEN:
 - D-166: default C applied (same-vendor judge on a tooling doc or record, flagged).
 - D-168: C applied; in its B half (record-only fires).
 Action for Mark (not a ledger decision):
-- **Rotate the exposed credentials** (names in the private `[SECURITY]` message), refresh the rig's environment cache, then delete the four old dumps.
+- **Rotate the exposed credentials** (names in the private `[SECURITY]` message), refresh the rig's environment cache, then delete the two old dumps left (or let them age out).
 - Close draft ailang-packages#144; its cause, ailang#1827, is fixed.
 - Rows 7as and 7at (attended nightly reds).
 - GPU scheduling.
 - D-FLEET-47.
 Cadence: armed six-hour driver.
-Canonical checkout untouched (attended `feat/captain-command`). This record was written in a clone at `../stapledons-godot-iter115`.
-Full history: stapledon-mission-log.md, entry 115.
+Canonical checkout untouched (attended `feat/captain-command`). This record was written in a clone at `../stapledons-godot-iter116`.
+Full history: stapledon-mission-log.md, entry 116.
