@@ -4143,3 +4143,46 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
   - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
   - #392: one triage comment (the two new reds are environmental).
 - **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (Ollama holds it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`). If `ai-key-check` or `display-audit-comms` goes red again on a later nightly, re-run it on its own first.
+
+## 102 — 2026-11-19 — Record-only fire, the fourth running (D-168 B): no pick. Row 7au is resolved by the fleet's fix, the crash it uncovered is iteration 92 (already credited), and main's nightly is back to its two attended reds [ADMIN]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written and one harness row was closed on the fleet's reply.
+- **Pick:** none. D-168 B applies (default C finished with 7aq in iteration 98, and D-168 is still OPEN). Every blocker was re-measured at pick:
+  - L11: #435 is `OPEN`, last updated 2026-11-12T19:05Z. `ailang pkg info sunholo/observe` gives v0.1.0, and `~/.ailang/cache/registry/sunholo/observe/` holds only `0.1.0`.
+  - 7m AC1: PARKED-ON-LANE. `quiet2.sh`, extracted verbatim from `design_docs/planned/r1/m4-7md-docked-p99-attribution.md`, at 08:18:34Z: **NO**, GPU `Device Utilization %` 94/99/79, 1-min load 4.30, HID idle 61,784 s, remote-procs 0, launchd control 1, vnc 0. Only the GPU clause failed. Ollama holds `qwen3.8:27b-mxfp8` (49 GB, `100% GPU`, mlx runner, 59 min keep-alive left) and `embeddinggemma`.
+  - 7as (`ui-theme-check`) and 7at (`basis-gate`) are attended and still red on the newest nightly (below).
+- **Row 7au resolved (the one change on the loop's side):** the fleet loop replied `[harness-resolved] gate0:self-notices-rc2-no-watermark-file` at 2026-11-19T02:35Z: fixed in sunholo-data/ailang#2421 (merge `cf540337e`). Step 6a now does a labelled DEGRADED read of the whole of each issue when no watermark file exists. This fire, with neither `mission-450-last-seen` nor `mission-410-last-seen` on disk, 6a returned **rc 1** (control 4:5 ok), which is 7au's own resume predicate. The row is marked RESOLVED; the reply was acknowledged.
+- **Crash credit (`url=https://github.com/sunholo-data/stapledons-godot/issues/410#issuecomment-6855501436`):** the widened read found one crash notice on the `-prev` issue, rc 1 at 2026-11-13T14:15:39Z, which the rc-2 floor had hidden on iterations 98–101. The slot-verdicts log has `2026-11-13T14:14:47Z verdict=CRASHED_at=gate-3 rc=1 elapsed_s=7243`, which is iteration 92. Iteration 93 already credited that orphan and judged and landed its build (row 7ar, PR #448), so nothing is re-run. The died-mid-flight traces found nothing else: no `stapledons-godot-iter*` clone; the open loop-account PRs are the attended #435, #380 and #373; the main checkout's uncommitted state is the attended `feat/captain-command` work, not loop output. Later fires will keep seeing this notice until #410 rotates out of `-prev`; this entry is its one credit.
+- **Nightly:** main's nightly on `b0c4d751` (iteration 101's record merge; `make test` 04:15–06:11 CET) failed with **2** targets, `ui-theme-check` (7as) and `basis-gate` (7at). `ai-key-check` and `display-audit-comms`, red on `dbdd20a0`, pass there, which corroborates iteration 101's verdict that they were environmental. The 06:15 golden half did not start (GPU 87 %). #392 stays open on 7as and 7at; no new comment was needed.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #450: 0 allowlisted directives of 10 comments (watermark file absent, so every comment was read). No issue rotation: #450 was created 2026-11-16T10:21Z, after Monday 07:00 local.
+  - Inbox: the 7au `harness-resolved` reply is the only item addressed to this mission that is not the loop's own notice. The fleet's iteration-123 digest (to `controlplane`, `[normal]`, D-FLEET-46) reports the same fix and says this mission was told about the hidden crash notice; D-FLEET-46 is the fleet's ask, not this mission's.
+  - Skill: all 28 files (14 at the resolved symlink target, 14 in the driver pin `93e6e4604`) are byte-identical to ailang `origin/dev`.
+  - Main and CI: main at `b0c4d751`, fast tier success (1 check run; control `dbdd20a0` also 1).
+  - Iteration 101: COMPLETED; its PR #464 merged. This record was written from a fresh clone of `origin/main` at `/tmp/stap-iter102/repo`.
+- **Reality check:** the blocker readings above, plus the one premise that could have changed the pick: a crash notice is a died-fire signal, and Gate 2 says to verify and land an orphan rather than redo it. The slot verdict and the iteration-93 entry show it was already verified and landed.
+- **Design / Plan / Build:** none (record-only fire).
+- **Evaluation:** an independent check of this record, not of a build. Sonnet 5.5 (Agent tool, different model from the controller) re-measured every claim first-party: **93/100 PASS**, 0 blocking. It confirmed 7au (6a rc 1, both watermark files absent, the reply present), the iteration-92 attribution (slot-verdicts line, iteration-93 credit, no stale clone), the blockers (#435 OPEN, observe v0.1.0, fast tier success, its own `quiet2.sh` at 09:21Z: NO, GPU 86/70/99), the nightly (2 reds on `b0c4d751`), the no-pick disposition under D-168 B, and the record mechanics (3 stamps, heading regex, `ITERATION 99:` moved once, `mission_decisions.sh --check` 161 rows rc 0, no auto-close keyword). Its two non-blocking notes were applied: the 7au reply was acknowledged before this entry was committed, and the inbox line now names the fleet's own iteration-123 digest.
+- **Routing evidence**
+
+  base=b0c4d751ab17180d30b2f0eee24446e8aa055924 (Gate 1). Controller `claude:claude-opus-5-5` (tok: not reported). Driver `MISSION_ROUTING_NOTE`: the planner and executor codex lanes (`gpt-6.2-sol`) were unusable (probe rc 1); the planner was handed to `pi:ollama/kimi-k3:cloud` and the executor to `claude:claude-haiku-5-5`. Designer resolved `claude:claude-opus-5-5`, evaluator `sonnet` (Agent tool).
+
+  One role was spawned: the evaluator, `sonnet` through the Agent tool, foreground, as the operator's standing request requires for any fire that lands a record (51,659 tok, 4 tool calls, 44 s). No designer, planner or executor ran, because D-168 B is record-only. No role failed to spawn. Fable was not used.
+
+  Metered: **$0 of $5**. Quota: Anthropic subscription (controller and the Sonnet judge).
+- **CI:** no code PR. The record PR waits for the fast tier before merging.
+- **Ruled out:**
+  - Re-running iteration 92's work on the strength of the crash notice: iteration 93 judged and landed it (7ar).
+  - Building a hygiene row: D-168 B forbids self-sourced hygiene spend while the row is OPEN.
+  - Waiting on the GPU in-turn: Ollama's model has about an hour of keep-alive, and a counted 7m AC1 run needs the predicate before every run.
+  - Fixing `basis-gate` or `ui-theme-check`: attended files (7as, 7at).
+  - Writing the idle fingerprint: Gate 5 forbids it while an item is PARKED-ON-LANE (7m AC1).
+- **Retro:**
+  1. The 6a floor (7au) hid a real crash notice for four fires. The fleet's fix exposed it on the first fire after landing, and the credit already existed, so nothing was lost this time; but a floor that reads as "instrument unavailable" is silent about exactly what it would have reported. Ticketing it (iteration 99) rather than living with it is what surfaced the notice.
+  2. With 7au closed, the idle fingerprint is blocked by the 7m AC1 lane park alone. Each idle fire still costs a full record PR until the GPU is free at a pick or Mark answers D-168.
+  3. Four record-only fires in a row. Harness share 12/19 tagged over iterations 82–102 (89 untagged; 92 has no entry), still above one third. The rows responsible are 82–88 and 94–98 (HARNESS); ADMIN fires are what lower it.
+- **Record:**
+  - Charter: STATUS 102 added, STATUS 99 rotated to the end of the archive (charter 596 → 596, archive 717 → 719, `ITERATION 99:` 0 in the charter and 1 in the archive, control `ITERATION 98:` 1 in the archive). Goal line 101 → 102. Row 7au marked RESOLVED.
+  - Ledger: no new row; D-166 and D-168 OPEN with defaults applied.
+  - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
+- **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (Ollama holds it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).
