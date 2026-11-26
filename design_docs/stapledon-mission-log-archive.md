@@ -4057,3 +4057,43 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
   - Ledger: no new row. D-166 and D-168 are OPEN with their defaults applied, and all 161 rows are valid.
   - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
 - **Next:** record-only fires until #435 merges or the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle). Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), the GPU-quiet signal, and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).
+
+## 100 — 2026-11-18 — Record-only fire, the second running (D-168 B): no pick. #435 still waits on `sunholo/observe` 0.2.0, and 7m AC1 is parked on a GPU held by a local fine-tune (100 %) [ADMIN]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written.
+- **Pick:** none. D-168 B applies (default C finished with 7aq in iteration 98, and D-168 is still OPEN). Every blocker was re-measured at pick:
+  - L11: #435 is `OPEN`, last updated 2026-11-12T19:05Z. `ailang pkg info sunholo/observe` gives v0.1.0, and `~/.ailang/cache/registry/sunholo/observe/` holds only `0.1.0`.
+  - 7m AC1: PARKED-ON-LANE. `quiet2.sh`, extracted verbatim from `design_docs/planned/r1/m4-7md-docked-p99-attribution.md`, at 19:04:30Z: **NO**, GPU `Device Utilization %` 100/100/100, 1-min load 4.02, HID idle 14,139 s, remote-procs 0, launchd control 1, vnc 0. Only the GPU clause failed. The GPU holder is a local fine-tune (`~/models/finetune/.venv/bin/python`, elapsed about 28 min); Ollama had only `embeddinggemma` loaded. A fine-tune typically runs for hours, so no bounded wait was spent on it.
+  - 7as and 7at (the attended nightly reds): main has moved only by iteration 99's record (`a4cb30a2`, merge `dd3a7cf7`), which touches no code. Both reds stand. No routable UNMET-clause row was passed over.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #450: 0 allowlisted directives of 8 comments (watermark file absent, so every comment was read).
+  - Self-notices rc 2 (watermark channel unavailable), the third fire running. Instrument floor, not a verdict; row 7au, no `harness-resolved` reply in the inbox.
+  - Inbox: nothing addressed to this mission (the unread stapledon items are the loop's own iteration-98/99 notices and the iteration-99 harness ticket).
+  - Skill: all 14 files at the resolved symlink target (ailang main checkout) are byte-identical to ailang `origin/dev`; driver pin `18e848db6`, drift 0.
+  - Main and CI: main at `dd3a7cf7`, fast tier success on it and on `7c97b505`. Open loop-account PRs: #435, #380, #373, all attended.
+  - Nightly: none since `9081260f` (the last log lines are the 04:15–06:15 golden skips, GPU 98–100 %). Issue #392 open.
+  - Iteration 99: COMPLETED (slot-verdicts log, 13:02:50Z, 1,187 s). Its record clone `stapledons-godot-iter99` was clean, with no unpushed commit and no stash, and its PR (#462) had merged, so it was deleted. This record was written from a fresh clone of `origin/main` at `/tmp/stap-iter100`.
+- **Reality check:** see the blocker readings above. No premise to check, because there was no pick.
+- **Design / Plan / Build / Evaluation:** none (record-only fire).
+- **Routing evidence**
+
+  base=dd3a7cf7 (Gate 1). Controller `claude:claude-opus-5-5` (tok: not reported). Driver `MISSION_ROUTING_NOTE`: the planner and executor codex lanes (`gpt-6.2-sol`) were unusable (probe rc 1); the planner was handed to `pi:ollama/kimi-k3:cloud` and the executor to `claude:claude-haiku-5-5`. Designer resolved `claude:claude-opus-5-5`, evaluator `sonnet` (Agent tool).
+
+  No role was spawned. The operator's standing request asked for Agent-tool spawns of every role and makes the evaluator mandatory for any work that lands; this fire landed no work, so there was nothing for a judge to judge, and spawning one on an empty diff would be a vacuous review. This is not a spawn failure: the evaluator lane (`sonnet`, `agent-tool`) was available and unused, and no designer, planner or executor ran because D-168 B is record-only. Fable was not used.
+
+  Metered: **$0 of $5**. Quota: Anthropic subscription (controller only).
+- **CI:** no code PR. The record PR waits for the fast tier before merging.
+- **Ruled out:**
+  - Building a hygiene row: D-168 B forbids self-sourced hygiene spend while the row is OPEN.
+  - Waiting on the GPU in-turn: the holder is a fine-tune with no visible end, and 7m AC1 needs the predicate before every counted run, so a bounded wait would most likely expire unused.
+  - Fixing `basis-gate` or `ui-theme-check`: attended files (7as, 7at).
+  - Writing the idle fingerprint: Gate 5 forbids it while an item is PARKED-ON-LANE (7m AC1) and while the fire is degraded (6a rc 2). So this fire cost a full record even though nothing changed.
+- **Retro:**
+  1. Two record-only fires in a row produced the same verdict, and the idle fingerprint cannot short-circuit the next one: a lane park (7m AC1) and the 6a floor (7au) each block it on their own. Until one of those clears, every idle fire writes a full record PR. Already ticketed as 7au; the lane-park half belongs to Mark's GPU scheduling (standing rule 8 (e)), not to the loop.
+  2. The GPU holder has changed from Ollama runners (iterations 56–99) to a local fine-tune. Either way, local-model work holds the GPU at most picks, which blocks 7m AC1 (the only critical-path row) and the nightly golden.
+  3. Harness share 14/19 tagged over the last 20 entries (rows 80–91 and 93–100; 89 untagged, 92 has no entry). It stays above one third until rows 80–88 age out; record-only ADMIN fires are what lower it.
+- **Record:**
+  - Charter: STATUS 100 added, STATUS 97 rotated to the end of the archive (charter 596 → 596, archive 713 → 715, `ITERATION 97` 1 hit in the archive, control `ITERATION 96` 1 hit). Goal line 99 → 100.
+  - Queue: no new row. Ledger: no new row; D-166 and D-168 OPEN with defaults applied; 161 rows valid.
+  - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
+- **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (the fine-tune and Ollama hold it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).

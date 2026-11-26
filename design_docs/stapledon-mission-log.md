@@ -7,46 +7,6 @@ Append-only. One entry per iteration, newest at the bottom.
 > the thing to grep before picking work, so the loop never repeats itself — is in
 > `stapledon-mission-index.md`.
 
-## 100 — 2026-11-18 — Record-only fire, the second running (D-168 B): no pick. #435 still waits on `sunholo/observe` 0.2.0, and 7m AC1 is parked on a GPU held by a local fine-tune (100 %) [ADMIN]
-
-- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written.
-- **Pick:** none. D-168 B applies (default C finished with 7aq in iteration 98, and D-168 is still OPEN). Every blocker was re-measured at pick:
-  - L11: #435 is `OPEN`, last updated 2026-11-12T19:05Z. `ailang pkg info sunholo/observe` gives v0.1.0, and `~/.ailang/cache/registry/sunholo/observe/` holds only `0.1.0`.
-  - 7m AC1: PARKED-ON-LANE. `quiet2.sh`, extracted verbatim from `design_docs/planned/r1/m4-7md-docked-p99-attribution.md`, at 19:04:30Z: **NO**, GPU `Device Utilization %` 100/100/100, 1-min load 4.02, HID idle 14,139 s, remote-procs 0, launchd control 1, vnc 0. Only the GPU clause failed. The GPU holder is a local fine-tune (`~/models/finetune/.venv/bin/python`, elapsed about 28 min); Ollama had only `embeddinggemma` loaded. A fine-tune typically runs for hours, so no bounded wait was spent on it.
-  - 7as and 7at (the attended nightly reds): main has moved only by iteration 99's record (`a4cb30a2`, merge `dd3a7cf7`), which touches no code. Both reds stand. No routable UNMET-clause row was passed over.
-- **Preflight / observation:**
-  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #450: 0 allowlisted directives of 8 comments (watermark file absent, so every comment was read).
-  - Self-notices rc 2 (watermark channel unavailable), the third fire running. Instrument floor, not a verdict; row 7au, no `harness-resolved` reply in the inbox.
-  - Inbox: nothing addressed to this mission (the unread stapledon items are the loop's own iteration-98/99 notices and the iteration-99 harness ticket).
-  - Skill: all 14 files at the resolved symlink target (ailang main checkout) are byte-identical to ailang `origin/dev`; driver pin `18e848db6`, drift 0.
-  - Main and CI: main at `dd3a7cf7`, fast tier success on it and on `7c97b505`. Open loop-account PRs: #435, #380, #373, all attended.
-  - Nightly: none since `9081260f` (the last log lines are the 04:15–06:15 golden skips, GPU 98–100 %). Issue #392 open.
-  - Iteration 99: COMPLETED (slot-verdicts log, 13:02:50Z, 1,187 s). Its record clone `stapledons-godot-iter99` was clean, with no unpushed commit and no stash, and its PR (#462) had merged, so it was deleted. This record was written from a fresh clone of `origin/main` at `/tmp/stap-iter100`.
-- **Reality check:** see the blocker readings above. No premise to check, because there was no pick.
-- **Design / Plan / Build / Evaluation:** none (record-only fire).
-- **Routing evidence**
-
-  base=dd3a7cf7 (Gate 1). Controller `claude:claude-opus-5-5` (tok: not reported). Driver `MISSION_ROUTING_NOTE`: the planner and executor codex lanes (`gpt-6.2-sol`) were unusable (probe rc 1); the planner was handed to `pi:ollama/kimi-k3:cloud` and the executor to `claude:claude-haiku-5-5`. Designer resolved `claude:claude-opus-5-5`, evaluator `sonnet` (Agent tool).
-
-  No role was spawned. The operator's standing request asked for Agent-tool spawns of every role and makes the evaluator mandatory for any work that lands; this fire landed no work, so there was nothing for a judge to judge, and spawning one on an empty diff would be a vacuous review. This is not a spawn failure: the evaluator lane (`sonnet`, `agent-tool`) was available and unused, and no designer, planner or executor ran because D-168 B is record-only. Fable was not used.
-
-  Metered: **$0 of $5**. Quota: Anthropic subscription (controller only).
-- **CI:** no code PR. The record PR waits for the fast tier before merging.
-- **Ruled out:**
-  - Building a hygiene row: D-168 B forbids self-sourced hygiene spend while the row is OPEN.
-  - Waiting on the GPU in-turn: the holder is a fine-tune with no visible end, and 7m AC1 needs the predicate before every counted run, so a bounded wait would most likely expire unused.
-  - Fixing `basis-gate` or `ui-theme-check`: attended files (7as, 7at).
-  - Writing the idle fingerprint: Gate 5 forbids it while an item is PARKED-ON-LANE (7m AC1) and while the fire is degraded (6a rc 2). So this fire cost a full record even though nothing changed.
-- **Retro:**
-  1. Two record-only fires in a row produced the same verdict, and the idle fingerprint cannot short-circuit the next one: a lane park (7m AC1) and the 6a floor (7au) each block it on their own. Until one of those clears, every idle fire writes a full record PR. Already ticketed as 7au; the lane-park half belongs to Mark's GPU scheduling (standing rule 8 (e)), not to the loop.
-  2. The GPU holder has changed from Ollama runners (iterations 56–99) to a local fine-tune. Either way, local-model work holds the GPU at most picks, which blocks 7m AC1 (the only critical-path row) and the nightly golden.
-  3. Harness share 14/19 tagged over the last 20 entries (rows 80–91 and 93–100; 89 untagged, 92 has no entry). It stays above one third until rows 80–88 age out; record-only ADMIN fires are what lower it.
-- **Record:**
-  - Charter: STATUS 100 added, STATUS 97 rotated to the end of the archive (charter 596 → 596, archive 713 → 715, `ITERATION 97` 1 hit in the archive, control `ITERATION 96` 1 hit). Goal line 99 → 100.
-  - Queue: no new row. Ledger: no new row; D-166 and D-168 OPEN with defaults applied; 161 rows valid.
-  - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
-- **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (the fine-tune and Ollama hold it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).
-
 ## 101 — 2026-11-19 — Record-only fire, the third running (D-168 B): no pick. Main's nightly has two new reds (`ai-key-check`, `display-audit-comms`); both re-measured green in a fresh clone of `dbdd20a0`, so they are environmental, not regressions [ADMIN]
 
 - **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written, plus a triage comment on #392.
@@ -931,5 +891,45 @@ Append-only. One entry per iteration, newest at the bottom.
   3. Harness share over the last 20 log headlines (100–119): **2 of 20** HARNESS (111, 114); 19 use Gate 5's four tags and 113 uses `[MEASUREMENT]`, so 2/19 by the pattern. Under one third.
 - **Record:**
   - Charter: STATUS 119 added; STATUS 116 rotated to the end of the status archive (moved line byte-identical to origin/main's; the `ITERATION 116:` stamp is 0 in the charter, 1 in the archive; control `ITERATION 115:` 1 in the archive). Charter 606 → 606 lines; archive 751 → 753. Goal line 118 → 119. Row 7aw: iteration 119's note (third clean nightly; the fleet's resolution). Ledger unchanged at 168 rows; no new row.
+  - This log entry, the dashboard, and the index (regenerated through a temporary registry pointed at this clone).
+- **Next:** record-only under D-168 B unless Mark rules: D-175 (default A), D-174 (applied), D-173 (L4 AC9 design awaits OK), D-172 (7av), D-166, D-168 to D-171, GPU scheduling, D-FLEET-47, draft ailang-packages#144, and the two attended nightly reds (7as, 7at). **For Mark, first:** rotate the exposed credentials (13 still carry the exposed values in this fire's environment) and refresh the rig's environment cache; the two dumps left (`$TMPDIR/rig-check/{328b01f8,d8b7baf9}*.profile/database.txt` on the Studio) can be removed by hand or left to age out.
+
+## 120 — 2026-11-26 — Record-only fire under D-168 B: no pick. A fourth production nightly on row 7aw's fix leaves no credentials dump either (still red only on the 2 attended targets); nothing else changed since iteration 119, and the rig was busy (load 39) [ADMIN]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (AC12: one counted valid-control MISS at 17.338 from iteration 107; row 7av waits on D-172, default record-only); clause 5 ongoing. Goal unmoved: nothing was designed or built.
+- **Pick:** none. Iteration 119's **Next** was record-only under D-168 B unless Mark ruled, and he has not: no allowlisted directive on #474 (11 comments; the 11th is iteration 119's own report) or #450 (28), and the newest charter commit on origin/main is `a510c43b`, iteration 119's record (merged as `891c3bc0`). D-168 (OPEN, default C) stays in its B half until #435 merges or the quiet-rig predicate holds; #435 is open, and the load at pick was 39.55, far from quiet. The rows a quiet rig would serve are parked on rulings (7av on D-172, L4 on D-173) or ruled out (7m AC1, iteration 110). The one new input (a clean nightly) unparks nothing and adds no routable row. Clause map: 1 MET, 2 MET, 3 MET, 4 UNMET (nothing routable moves it), 5 ongoing.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #474: 0 allowlisted directives in 11 comments; #450 (prev): 0 in 28. No watermark files, so both were read whole and nothing was marked. Step 6a: rc 0, control 4:5 ok, 0 crash notices; 1 transcript-scan notice (fire `stapledon-1795099037-45912`, iteration 103's, already reported in 104).
+  - Inbox: `mission-stapledon`, `stapledon` and `stapledon_godot` no unread; `stapledons_godot` still holds the one 2026-11-02 FYI from ailang core (celestial 0.6.0's validator memory budget), left unread. The fleet inbox still holds this mission's ticket `idle-fingerprint:record-eval-json-moves-head` (row 7ax) unread, so no reply to act on.
+  - Skill: SKILL.md and all 13 resources at the resolved symlink target (`~/dev/sunholo-data/ailang/.claude/skills/mission-control`) match the ailang checkout's `origin/dev` byte for byte (per-file `cmp`, 14 same, 0 differ). The driver reported `AILANG_DRIVER_DRIFT=2` (was 4 in iteration 119); the skill files followed are origin's.
+  - Main and CI: main `891c3bc0` (iteration 119's record, #484); fast tier success on it (1 check run, the control `total_count`).
+  - Nightly: `rig/full` ran on `891c3bc0` (log written 06:12 local, `totals wall_s=6980.442`); red only on the 2 attended targets `ui-theme-check` (7as) and `basis-gate` (7at), #392 commented at 2026-11-26T05:12:06Z (37 comments).
+  - Died-mid-flight traces: open loop-account PRs are #435, #380 and #373 (attended branches). Iteration 119's clone was clean (no porcelain, nothing unpushed or stashed; #484 `MERGED`); renamed `../stapledons-godot-iter120`, `git remote set-head origin main`, branched `mission/stapledon-iter120` from `origin/main` `891c3bc0`. The main checkout is the attended `feat/captain-command` with its own dirty paths (65), untouched.
+- **Reality check (blockers, re-measured this fire at about 08:39Z):** `gh pr view 435` → `OPEN`, updated 2026-11-12T19:05:51Z. ailang-packages#206 → `OPEN`, unmerged, updated 2026-11-21T11:14:33Z; draft #144 `OPEN`. `ailang pkg info`: `sunholo/observe` v0.1.0 (latest), `social_dynamics` v0.4.0, `crew_core` v0.6.0. `mission_decisions.sh --check`: valid, 168 rows; `--open`: D-166 and D-168 to D-175 OPEN. Load 39.55/41.34/28.79 at 08:38Z.
+- **Measurement (read-only):** `$TMPDIR/rig-check` holds 19 profile directories (18 plus last night's). The `891c3bc0` profile holds no `database.txt` and no `tmp/`; `query.err` reads `query_rc=0`; its log has `rig-check control suite-profile: ok` and `rig-check control evidence-guard: ok`. `sh tools/evidence_secret_guard.sh` (run from the record clone) passes it, rc 0, `clean (17 candidate value line(s), 1 input(s))`. `328b01f8` and `d8b7baf9` still hold `database.txt`; the guard refuses both, rc 1 with 13 `value is in` lines each (output in a scratch directory, deleted; no value or name copied here). The private `[SECURITY]` message (`inbox_1795505042463_90e973b8`) is still unread.
+- **Design / Plan / Build:** none (D-168 B: no designer, planner or executor spend while every routable row is blocked).
+- **Evaluation:** an independent Sonnet 5.5 judge (Agent tool, foreground, a different model from the Opus controller; handed the clone and the checks to run, not the controller's readings as verdicts) re-measured the record first-party: **92/100 PASS, 0 blocking** (disposition 29/30, facts 38/40, mechanics 19/20, clarity 6/10; `.ailang/state/evaluations/eval_MISSION-ITER-120_record.json`). Every reading matched: 0 directives on #474 (11) and #450 (28); ledger valid at 168 rows, newest charter commit `a510c43b`; #435, ailang-packages#206 and #144 `OPEN` with the same update times; observe v0.1.0, social_dynamics v0.4.0, crew_core v0.6.0; fast tier green on `891c3bc0`; #392 at 37 comments, last 05:12:06Z, the same 2 reds; the `891c3bc0` profile with no dump and no `tmp/`, both controls ok, `wall_s=6980.442`, 19 profile directories; guard rc 0 (17 lines) on `891c3bc0` and rc 1 with 13 lines on each old dump; charter 606 → 606, 3 stamps, moved line byte-identical, `ITERATION 116:` control present, heading set equal to origin/main's plus 120, index row, 7aw note, dashboard; harness share 2 of 20; no closing keywords, emails, secret-shaped strings or credential names in added lines. Non-blocking: (1) the headline called the nightly "clean" while #392 is red on the 2 attended targets (headline reworded here); (2) 7ax still open, so unchanged fires still cost a controller and a judge; (3) the pick-time load 39.55 cannot be re-read (the judge read 16/28/26 later, plausible). No cross-vendor judge ran (D-166 default C: a record, no sim, physics, package or player-facing change; FLAGGED as same-vendor, different model).
+
+- **Routing evidence**
+
+  base=891c3bc082b50756664584bcaed23531277160f1@2026-11-26T08:38:04Z (Gate 1 `record gate1`). Driver env: designer `recipe claude:claude-opus-5-5`, planner `recipe codex:gpt-6.2-sol`, executor `recipe codex:gpt-6.2-sol`, evaluator `agent-tool sonnet`; `MISSION_ROUTING_NOTE` empty; `MISSION_OVER_RATION` `google`; fire `stapledon-1795682147-49549`.
+
+  The operator's standing request asked for the Agent tool for every role as the routing table specifies, and makes the evaluator REQUIRED. Roles spawned: one, the evaluator, `sonnet` through the Agent tool, foreground, prompt beginning `MISSION-ROLE: evaluator`. The designer, planner and executor were **not spawned**: not a spawn failure, but D-168 B (no pick, nothing to design, plan or build). No role failed to spawn; no fallback. The designer rotation pointer was not advanced.
+
+  - Controller `claude:claude-opus-5-5` (tok: not reported; subscription).
+  - Evaluator Agent `sonnet`: 51,313 tok, 9 tool calls, 47 s. Quota bucket anthropic.
+  - Metered: **$0 of $5**.
+
+- **CI:** no code PR. The record PR merges on the fast tier (Mark's 2026-11-03 rule; nothing visible changed, so no dev build). Its staged bytes and the issue report are scanned with `scripts/mission_evidence_secret_scan.sh` before push and post (Gate 4 Public publish).
+- **Ruled out:**
+  - Taking a quiet-rig row: load 39.55 at pick, and every row a quiet rig would serve is parked on a ruling or ruled out.
+  - Deleting the two remaining `database.txt` files, reading the 13 variable names into the record, bumping AILANG, fixing `basis-gate` or `ui-theme-check`: same reasoning as iterations 115–119 (Mark's call, private, attended).
+  - A drift alarm: the last three landings (7aw in 114; 7aq in 98; 7ap in 97) moved no UNMET clause, but no routable row moves an UNMET clause either, so Gate 5 2c does not fire.
+- **Retro:**
+  1. Thirteenth record-only fire since D-168 B began (99–102, 104, 106, 112, 115–119 and this one; fifteenth counting the 103 and 105 measurement fires). One input changed in about 6.5 hours, and it was expected; 7ax (the idle skip) is still open, so this fire still cost a controller and a judge.
+  2. Friction: none new. The rotate-log CLI on the rig (v0.62.0-dirty) still lacks `--workdir`, so the temp-registry route was used again, as iterations 70 onward did; already covered by Gate 4's own note.
+  3. Harness share over the last 20 log headlines (101–120): **2 of 20** HARNESS (111, 114). Under one third.
+- **Record:**
+  - Charter: STATUS 120 added; STATUS 117 rotated to the end of the status archive (moved line byte-identical to origin/main's; the `ITERATION 117:` stamp is 0 in the charter, 1 in the archive; control `ITERATION 116:` 1 in the archive). Charter 606 → 606 lines; archive 753 → 755. Goal line 119 → 120. Row 7aw: iteration 120's note (fourth clean nightly). Ledger unchanged at 168 rows; no new row.
   - This log entry, the dashboard, and the index (regenerated through a temporary registry pointed at this clone).
 - **Next:** record-only under D-168 B unless Mark rules: D-175 (default A), D-174 (applied), D-173 (L4 AC9 design awaits OK), D-172 (7av), D-166, D-168 to D-171, GPU scheduling, D-FLEET-47, draft ailang-packages#144, and the two attended nightly reds (7as, 7at). **For Mark, first:** rotate the exposed credentials (13 still carry the exposed values in this fire's environment) and refresh the rig's environment cache; the two dumps left (`$TMPDIR/rig-check/{328b01f8,d8b7baf9}*.profile/database.txt` on the Studio) can be removed by hand or left to age out.
