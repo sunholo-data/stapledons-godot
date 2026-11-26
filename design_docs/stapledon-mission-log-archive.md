@@ -4016,3 +4016,44 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
 - **Retro:** (1) The Ollama session limit has now killed a role on two consecutive fires (iteration 97 planner; iteration 98 designer and planner), and it takes GLM, Kimi and the oc-glm quorum seat down together: a routing-policy signal for Mark (standing rule 8 (e)), reported, not changed. (2) A pi role that dies on quota can leave real work in its scratch tree; salvaging the draft and handing it to the next rotation entry as a review cost one Opus run instead of a fresh design. (3) The quorum's OpenAI seat could not be filled at all this fire (6.2 refused by the CLI's allowlist, 6.1 out of quota): ticket `quorum:codex-gpt-6.2-sol-not-allowlisted` filed to the fleet. (4) The script gate reuses `.godot/tmp/<target>.log`; the controller's first read of a baseline log was the JM1 run's (caught by comparing with the per-run make log). Per-run copies, as the doc's helpers do, are the fix. (5) Controller slip: a smoke extraction of the doc's AC block kept a stray fence that started an interactive `sh`; killed, no tree change.
 - **Record:** charter STATUS 98 added, STATUS 95 rotated to the archive end; row 7aq LANDED; row 7at NEW (attended `basis-gate`); goal line 97 → 98; iteration-98 backlog line; dashboard overwritten; index regenerated through a temporary registry pointed at this clone. Ledger: no new row (D-166, D-168 OPEN with defaults applied; D-168 C now complete); 161 rows valid.
 - **Next:** record-only fires (D-168 C → B) until #435 merges or the quiet-rig predicate holds (1-min load < 5, GPU < 15 % ×3, console idle); then 7m AC1 under D-147 or L11. For Mark: D-166 and D-168 (defaults C applied), the Ollama session-limit signal, and two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).
+
+## 99 — 2026-11-18 — Record-only fire (D-168 B): no pick. #435 is still blocked on `sunholo/observe` 0.2.0, 7m AC1 is parked on a busy GPU (100 %), and harness ticket `gate0:self-notices-rc2-no-watermark-file` is filed (row 7au) [ADMIN]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written; no design, plan, build or evaluation ran.
+- **Pick:** none. D-168's default C finished with 7aq in iteration 98, so B applies: record-only fires until #435 merges, the quiet-rig predicate holds, or Mark answers. I re-measured every blocker at pick:
+  - L11: #435 is `OPEN`, last updated 2026-11-12T19:05Z. `ailang pkg info sunholo/observe` gives v0.1.0, and both caches hold only `0.1.0`.
+  - 7m AC1: PARKED-ON-LANE. Three samples, 12:45:58–12:46:19Z: GPU `Device Utilization %` 100/100/100, 1-min load 3.35/3.30/3.02, HID idle 3,189–3,209 s, one screen-sharing process. The predicate needs GPU < 15 % ×3.
+  - 7as and 7at (the attended nightly reds): `git diff --stat 9081260f origin/main` shows no change to `ui/survey_map_layer.gd`, `ui/theme`, `demos/ship_finish_review.gd` or `Makefile`. The one `mk/` hunk is 7aq's `mk/script-gates.mk`. No routable UNMET-clause row was passed over.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. Neither issue had an allowlisted directive: #450 had 0 of 7 comments, #410 had 0 of 28. Both watermark files are absent, so every comment was read.
+  - Self-notices rc 2: the watermark channel is unavailable. That is an instrument floor, not a verdict, and this is its second fire running. It is ticketed as row 7au.
+  - Inbox: nothing addressed to this mission, and no `harness-resolved` reply.
+  - Skill: all 14 files at the resolved symlink target are byte-identical to ailang `origin/dev`.
+  - Main and CI: main is at `7c97b505`, iteration 98's record merge. The fast tier is success on it. Since `9081260f`, main has only the iteration-98 PRs (#460, #461).
+  - Nightly: none since `9081260f`. `~/Library/Logs/stapledon-rig-nightly.log` shows `rig/full` red at 02:25 on `ui-theme-check` and `basis-gate` (#392 commented). The 04:15–06:15 golden attempts did not start because the GPU was at 98–100 %.
+  - Iteration 98: COMPLETED (slot-verdicts log, 06:42Z). Open loop-account PRs are #435, #380 and #373, all attended. No stale `stapledons-godot-iter*` clone besides this record clone.
+- **Reality check:** see the blocker readings above. No premise to check, because there was no pick.
+- **Design / Plan / Build / Evaluation:** none (record-only fire).
+- **Routing evidence**
+
+  base=7c97b505f72518222bf66ecf46aceb2b9971cd73 (Gate 1). Controller `claude:claude-opus-5-5` (tok: not reported). Driver `MISSION_ROUTING_NOTE`: the planner and executor codex lanes were unusable (probe rc 1), and those roles were handed to `pi:ollama/kimi-k3:cloud` (planner) and `claude:claude-haiku-5-5` (executor).
+
+  No role was spawned. No designer, planner or executor ran because D-168 B is record-only. No evaluator ran because nothing was generated, so there was nothing to judge. This is not a spawn failure: the Agent-tool evaluator lane (`sonnet`, resolver `agent-tool`) was available and unused. Fable was not used.
+
+  Metered: **$0 of $5**. Quota: Anthropic subscription (controller only).
+- **CI:** no code PR. The record PR waits for the fast tier before merging.
+- **Ruled out:**
+  - Building another hygiene row from the backlog lines: D-168 B forbids self-sourced hygiene spend.
+  - Fixing `basis-gate` or `ui-theme-check` in the loop: both are attended files (7as, 7at).
+  - Fixing the self-notices floor in `mission_gate0_self_notices.sh`: harness paths belong to the fleet loop, so I filed a ticket instead.
+  - Writing the idle fingerprint: Gate 5 forbids it while an item is PARKED-ON-LANE (7m AC1) and while the fire is degraded (6a rc 2).
+- **Retro:**
+  1. Step 6a has read rc 2 on two consecutive fires because `--mark` alone creates watermark files. On a mission whose human rules mostly in attended sessions, the issue never gets a directive, so the died-fire check is blind. I ticketed it to the fleet loop, and it is recorded as row 7au.
+  2. The harness share is 14/19 tagged over the last 20 entries, still above the one-third alarm. The responsible rows are 80–88 and 94–98 (HARNESS). This record-only fire is what D-168 B is for, so the share should fall from here.
+  3. The quiet-rig predicate has failed at every pick for days, on GPU use rather than load. Local-model work holds the GPU, so 7m AC1 and the golden half of the nightly both wait on it. That is a routing and scheduling signal for Mark (standing rule 8 (e)), and the loop cannot change it.
+- **Record:**
+  - Charter: STATUS 99 added, STATUS 96 rotated to the end of the archive (charter 595 → 595 before the 7au row, archive +2, `ITERATION 96` 1 hit in the archive, control 95 1 hit).
+  - Queue: row 7au added. Goal line 98 → 99.
+  - Ledger: no new row. D-166 and D-168 are OPEN with their defaults applied, and all 161 rows are valid.
+  - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
+- **Next:** record-only fires until #435 merges or the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle). Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), the GPU-quiet signal, and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).

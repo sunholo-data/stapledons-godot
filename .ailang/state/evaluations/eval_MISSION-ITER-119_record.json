@@ -1,0 +1,28 @@
+{
+ "sprint_id": "MISSION-ITER-119",
+ "evaluator": "sonnet (Agent tool)",
+ "date": "2026-11-26",
+ "score": 94,
+ "pass": true,
+ "rubric": {"disposition": 28, "facts": 38, "mechanics": 19, "clarity": 9},
+ "measurements": [
+  {"check":"directives #474/#450","command":"mission_directives.sh --issue N (no --mark)","reading":"0 directives; 10 and 28 comments; watermark files absent so all comments read","matches_record":true},
+  {"check":"ledger","command":"mission_decisions.sh --check / --open","reading":"valid 168 rows; OPEN D-166, D-168..D-175; newest charter commit on origin/main 6fd5f76c","matches_record":true},
+  {"check":"blockers","command":"gh pr view 435/206/144; ailang pkg info","reading":"#435 OPEN updated 2026-11-12T19:05:51Z; ailang-packages#206 OPEN unmerged 2026-11-21T11:14:33Z; #144 draft OPEN; observe 0.1.0, social_dynamics 0.4.0, crew_core 0.6.0","matches_record":true},
+  {"check":"main CI","command":"gh run list --branch main --limit 2","reading":"#483 success (518a56b3 merge), #482 success","matches_record":true},
+  {"check":"nightly","command":"gh issue view 392; profile dir; log grep","reading":"last comment 2026-11-25T23:25:38Z, 2 reds ui-theme-check basis-gate, 36 comments; no database.txt, no tmp/, query_rc=0; totals wall_s=6894.095; controls suite-profile and evidence-guard ok; 18 profile dirs","matches_record":true},
+  {"check":"secret guard","command":"tools/evidence_secret_guard.sh <profile> (output to mktemp, deleted)","reading":"518a56b3 rc0 17 candidate value lines; 328b01f8 rc1 13 'value is in'; d8b7baf9 rc1 13; database.txt 499374/499379 bytes","matches_record":true},
+  {"check":"harness-resolved message","command":"ailang messages list --inbox mission-stapledon --json; grep no-secret-value","reading":"message for publish:evidence-pack:no-secret-value-guard status read; signature in log only at 113 retro (line 676) and 119 entry (902) plus STATUS 119; never a queue row","matches_record":true},
+  {"check":"mechanics","command":"wc/grep/diff vs origin/main","reading":"charter 606->606; 3 STATUS stamps (119,118,117); ITERATION 116: 0 in charter, 1 in status archive, moved line byte-identical to origin/main line 96; archive 751->753; ITERATION 115: 1; goal line 'latest recorded iteration is 119'; 20 live log entries; heading set equals origin/main plus 119 only; index row 119; row 7aw carries iteration-119 note","matches_record":true},
+  {"check":"harness share","command":"headline tag count 100-119","reading":"HARNESS 111, 114 = 2/20; 113 is MEASUREMENT; others ADMIN/PRODUCT/REFUTATION; 12th record-only count (99-102,104,106,112,115-118,119) = 12","matches_record":true},
+  {"check":"hygiene","command":"grep over added diff lines","reading":"no closing keywords, emails, secret-shaped strings or credential variable names","matches_record":true},
+  {"check":"main checkout","command":"git status --porcelain | wc -l; branch","reading":"65, feat/captain-command","matches_record":true}
+ ],
+ "blocking_findings": [],
+ "non_blocking_findings": [
+  "Load figure 7.40 at pick is point-in-time; I read 6.76 later, consistent, not checkable after the fact.",
+  "Disposition: record-only is correct. D-168 is OPEN with B active (#435 still OPEN, rig not quiet), 7av/L4 parked on D-172/D-173, the two new inputs (clean nightly, harness-resolved ticket with no queue row) unpark nothing. Minor: the note that the 113 ticket had no queue row is a reasonable retro, though 'one friction, no skill edit' is a judgement call.",
+  "Directive check ran without watermark files (absent), so '0 directives' is over all comments, a stronger reading than 'since last seen'; the record states this.",
+  "Placeholders EVAL_PLACEHOLDER, EVAL_TOKENS_PLACEHOLDER, SCAN_PLACEHOLDER remain, as expected; controller must fill them."
+ ]
+}
