@@ -1,14 +1,14 @@
 # Mission dashboard — Stapledon
 
-Updated 2026-11-26, iteration 120. A record-only fire (nothing to build without a ruling), about 6.5 hours after the last one. One thing came in, and it is not work the loop can take: another test run (the fourth) was clean on the credentials fix. The Studio was very busy at this fire (load about 40). **The credentials exposed in iteration 113 still need rotating:** the secret check still finds 13 of the exposed values in this fire's environment on the Studio (either not rotated yet, or the rig's environment cache not refreshed after rotating), and the private `[SECURITY] … rotate` message is still unread. Metered $0.
+Updated 2026-11-26, iteration 121. A record-only fire (nothing to build without a ruling), about 6.8 hours after the last one. Nothing came in: no ruling, no blocked work unblocked, and no test run since the last fire (the next is tonight). The Studio was moderately busy (load about 7). **The credentials exposed in iteration 113 still need rotating:** the secret check still finds 13 of the exposed values in this fire's environment on the Studio (either not rotated yet, or the rig's environment cache not refreshed after rotating), and the private `[SECURITY] … rotate` message is still unread. Metered $0.
 R1: clauses 1–3 are MET. Clause 4 is UNMET: AC12 (frames during the live transit must stay under 16.7 ms, judged on the slowest 1 % of frames, the p99) has one counted miss on a valid run, 17.338 ms (iteration 107); row 7av waits on D-172. Clause 5 is ongoing. This iteration did not move the goal.
-What was checked, in plain words: whether you had ruled on anything (no), whether the blocked work had unblocked (no: #435 and the package PR are still open, and the packages they wait on are unchanged), and whether the latest test run left any credentials on disk (no: the fourth run in a row with nothing written). The two older folders that still hold the settings dump are still there. They are on the Studio: `rm $TMPDIR/rig-check/{328b01f8,d8b7baf9}*.profile/database.txt`, or let them age out. Either way the values in them stay live until rotated.
+What was checked, in plain words: whether you had ruled on anything (no), whether the blocked work had unblocked (no: #435 and the package PR are still open, and the packages they wait on are unchanged), and whether the two older folders that still hold the settings dump are still there (yes; the newest test run's folder is still clean). They are on the Studio: `rm $TMPDIR/rig-check/{328b01f8,d8b7baf9}*.profile/database.txt`, or let them age out. Either way the values in them stay live until rotated.
 Why the loop keeps firing when nothing changes: the driver's skip for unchanged fires cannot work for this mission yet (row 7ax, ticketed to the fleet loop; no reply yet).
 Last design: `design_docs/implemented/r1/rig-profile-secret-hygiene.md` (iteration 114).
 Latest release: no release tag. Game and runtime pins are unchanged (AILANG v0.56.1, Godot 4.7.2). AILANG v0.62.x is on the rig; a bump is attended work.
-Current: main is `891c3bc0` (iteration 119's record). Fast tier green.
+Current: main is `bd310fb1` (iteration 120's record). Fast tier green.
 Visible: nothing new, so no dev build is needed.
-Nightly: #392 still red on the 2 attended targets, `ui-theme-check` (7as) and `basis-gate` (7at); the latest run (6,980 s) printed `ok` for both new checks.
+Nightly: #392 still red on the 2 attended targets, `ui-theme-check` (7as) and `basis-gate` (7at); no run since the last fire (the latest, 6,980 s, printed `ok` for both new checks).
 Lanes: no lane degraded. Controller Opus 5.5; judge Sonnet 5.5 (Agent tool). No designer, planner or executor ran (D-168 B).
 Next: record-only fires under D-168 B unless you rule.
 Still waiting: D-172 (default record-only on 7av: no publish, no O3).
@@ -31,5 +31,5 @@ Action for Mark (not a ledger decision):
 - GPU scheduling.
 - D-FLEET-47.
 Cadence: armed six-hour driver.
-Canonical checkout untouched (attended `feat/captain-command`). This record was written in a clone at `../stapledons-godot-iter120`.
-Full history: stapledon-mission-log.md, entry 120.
+Canonical checkout untouched (attended `feat/captain-command`). This record was written in a clone at `../stapledons-godot-iter121`.
+Full history: stapledon-mission-log.md, entry 121.

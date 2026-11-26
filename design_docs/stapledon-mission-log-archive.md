@@ -4097,3 +4097,49 @@ DECISIONS FOR MARK: D-128 (position of 7m-d; default A applied again) and D-129 
   - Queue: no new row. Ledger: no new row; D-166 and D-168 OPEN with defaults applied; 161 rows valid.
   - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
 - **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (the fine-tune and Ollama hold it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`).
+
+## 101 — 2026-11-19 — Record-only fire, the third running (D-168 B): no pick. Main's nightly has two new reds (`ai-key-check`, `display-audit-comms`); both re-measured green in a fresh clone of `dbdd20a0`, so they are environmental, not regressions [ADMIN]
+
+- **Progress**: R1 clauses 1–3 MET; clause 4 UNMET (7m AC1 re-run under D-147, quiet rig only); clause 5 ongoing. Goal unmoved. Tagged ADMIN: only records were written, plus a triage comment on #392.
+- **Pick:** none. D-168 B applies (default C finished with 7aq in iteration 98, and D-168 is still OPEN). Every blocker was re-measured at pick:
+  - L11: #435 is `OPEN`, last updated 2026-11-12T19:05Z. `ailang pkg info sunholo/observe` gives v0.1.0, and `~/.ailang/cache/registry/sunholo/observe/` holds only `0.1.0`.
+  - 7m AC1: PARKED-ON-LANE. `quiet2.sh`, extracted verbatim from `design_docs/planned/r1/m4-7md-docked-p99-attribution.md` (lines 79–97), at 01:29:48Z: **NO**, GPU `Device Utilization %` 100/100/100, 1-min load 3.15, HID idle 37,258 s, remote-procs 0, launchd control 1, vnc 0. Only the GPU clause failed. The GPU holder is now Ollama again: `qwen3.8:27b-mxfp8` (48 GB, `100% GPU`, mlx runner) plus `embeddinggemma`. The fine-tune from iteration 100 is no longer listed.
+  - 7as and 7at (the attended nightly reds) stand; see the nightly triage below.
+- **Nightly triage (the one change since iteration 100):** the nightly `rig/full` on main `dbdd20a0` (00:26 CET, #392) failed with **4** targets: `ui-theme-check`, `ai-key-check`, `display-audit-comms`, `basis-gate`. The previous two nightlies (`e528c72c`, `9081260f`) had 2: `ui-theme-check` (7as) and `basis-gate` (7at). The only code change in `9081260f..dbdd20a0` is 7aq (`tests/test_free_nav_stop.gd`, `tests/test_loading_jump.gd`, `mk/script-gates.mk`, `tools/session_minor_guard_controls.sh`, `tools/test_replay.py`); none of them is under `ai/`, `mk/ai.mk`, `mk/earth-link.mk` or `tests/display_audit.gd`. Both new reds were re-run in a fresh clone of `dbdd20a0` (`/tmp/stap-iter101/repo`) with the pinned `runtime/bin/ailang` (v0.56.1, the version the nightly's replay line reports):
+  - `ai-key-check`: the nightly log line 7008 reads `FAIL expected 4 GETs (good and bad key per provider), got [… ('GET', '/api/v1/key'), ('GET', '/'), ('GET', '/api/v1/key')]`. The extra request is a bare `GET /` on the loopback server's random port. Re-run: **3 of 3 pass** (`8 outcomes …, 4 GETs with the right auth header …`), each under `perl alarm 600`. Verdict: environmental (one unattributed stray connection to a localhost port), not a code regression. Note that the check counts every GET its loopback receives, so any stray localhost client can turn it red; that is a robustness point for the AI-panel owner, not a loop row (D-168 B).
+  - `display-audit-comms`: the nightly log line 7917 reads `gmake: *** [mk/earth-link.mk:20: display-audit-comms] Terminated: 15`, immediately after `script-gate: playthrough ok: playthrough: 142462 passed, 0 failures`. The target was killed by a SIGTERM; it did not fail. Re-run: **rc 0** in 239 s, `display-audit: samples=797 checks=261159 mismatches=0 missing=0 new=0 known=922 stale=0 failures=0` (the `FAIL known-ruling invalid acceptance` lines are `display-audit-controls`' own negative drills). The sender of the SIGTERM was not traced.
+  - Instrument note: a first `ai-key-check` triple used PATH's `ailang`, which is **v0.60.6** (not the pin), and is not counted. The recorded runs used `runtime/bin/ailang` from the main checkout (v0.56.1).
+  - The triage verdict was posted on #392. Issue #392 stays open on 7as and 7at.
+- **Preflight / observation:**
+  - Gate 0: armed (`mission-stapledon.disabled` absent), `sunholo-voight-kampff`, billing CLEAN. #450: 0 allowlisted directives of 9 comments (watermark file absent, so every comment was read).
+  - Self-notices rc 2 (watermark channel unavailable), the fourth fire running. Instrument floor, not a verdict; row 7au, no `harness-resolved` reply in the inbox.
+  - Inbox: nothing addressed to this mission. The unread stapledon items are the loop's own notices; the one `stapledons_godot` message (2026-11-02, celestial validator memory) is already resolved upstream (CLAUDE.md, #2057).
+  - Skill: all 14 files at the resolved symlink target (ailang main checkout) are byte-identical to ailang `origin/dev`; driver pin `d2f2ec238`, drift 0.
+  - Main and CI: main at `dbdd20a0`, fast tier success on it (1 check run). Open loop-account PRs: #435, #380, #373, all attended.
+  - Iteration 100: COMPLETED (slot-verdicts log, 2026-11-18T19:27:14Z, 1,511 s). No record clone was left behind. This record was written from a fresh clone of `origin/main` at `/tmp/stap-iter101/repo`.
+- **Reality check:** see the blocker readings and the nightly triage above. The new reds were the one premise worth checking: a regression from the loop's own 7aq would have outranked D-168 B. The re-measure refuted that.
+- **Design / Plan / Build / Evaluation:** none (record-only fire).
+- **Routing evidence**
+
+  base=dbdd20a0 (Gate 1). Controller `claude:claude-opus-5-5` (tok: not reported). Driver `MISSION_ROUTING_NOTE`: the planner and executor codex lanes (`gpt-6.2-sol`) were unusable (probe rc 1); the planner was handed to `pi:ollama/kimi-k3:cloud` and the executor to `claude:claude-haiku-5-5`. Designer resolved `claude:claude-opus-5-5`, evaluator `sonnet` (Agent tool).
+
+  No role was spawned. The operator's standing request asks for Agent-tool spawns of every role and makes the evaluator mandatory for any work that lands. This fire landed no work: the only artifacts are this record and a triage comment, both re-measurements by the controller. There was nothing for a judge to judge, and a judge spawned on an empty diff would be a vacuous review. This is not a spawn failure: the evaluator lane (`sonnet`, `agent-tool`) was available and unused, and no designer, planner or executor ran because D-168 B is record-only. Fable was not used.
+
+  Metered: **$0 of $5**. Quota: Anthropic subscription (controller only).
+- **CI:** no code PR. The record PR waits for the fast tier before merging.
+- **Ruled out:**
+  - Treating `ai-key-check` and `display-audit-comms` as regressions from 7aq: 7aq touches neither area, and both pass at `dbdd20a0` on the pin.
+  - Building a hygiene row (for example making `ai-key-check` ignore stray non-API GETs): D-168 B forbids self-sourced hygiene spend while the row is OPEN, and `mk/ai.mk` is the attended AI-panel owner's file.
+  - Waiting on the GPU in-turn: Ollama's `qwen3.8:27b` holds it with about 50 minutes of keep-alive left, and a counted 7m AC1 run needs the predicate before every run.
+  - Fixing `basis-gate` or `ui-theme-check`: attended files (7as, 7at).
+  - Writing the idle fingerprint: Gate 5 forbids it while an item is PARKED-ON-LANE (7m AC1) and while the fire is degraded (6a rc 2).
+- **Retro:**
+  1. The nightly can now go red from the host, not just from code: a SIGTERM from outside the make tree, and one stray localhost GET, made 2 of 4 reds on `dbdd20a0`. Re-running each new red on its own in a fresh clone (about 5 minutes here) separates host noise from regressions before anyone reverts. That is the cheap first move whenever a new target appears in #392.
+  2. PATH's `ailang` on the Studio is v0.60.6, so any re-measure that does not pass `AILANG=runtime/bin/ailang` (or put the pin first on PATH) measures the wrong compiler. CLAUDE.md already says this; this fire caught itself doing it and discarded those runs.
+  3. Three record-only fires in a row. The idle fingerprint stays blocked by the lane park and the 6a floor (iteration 100's retro 1), so each idle fire still costs a full record PR.
+- **Record:**
+  - Charter: STATUS 101 added, STATUS 98 rotated to the end of the archive (charter 596 → 596, archive 715 → 717, `ITERATION 98:` 0 in the charter and 1 in the archive, control `ITERATION 97:` 1 in the archive). Goal line 100 → 101.
+  - Queue: no new row. Ledger: no new row; D-166 and D-168 OPEN with defaults applied.
+  - This log entry, the dashboard and the index (regenerated through a temporary registry pointed at this clone).
+  - #392: one triage comment (the two new reds are environmental).
+- **Next:** record-only fires until #435 merges, the rig is quiet (1-min load < 5, GPU < 15 % ×3, console idle), or Mark answers D-168. Then 7m AC1 under D-147, or L11. For Mark: D-166 and D-168 (defaults applied), GPU scheduling (Ollama holds it at every pick), and the two attended nightly reds (7as `ui-theme-check`, 7at `basis-gate`). If `ai-key-check` or `display-audit-comms` goes red again on a later nightly, re-run it on its own first.
