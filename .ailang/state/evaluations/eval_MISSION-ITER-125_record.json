@@ -1,0 +1,28 @@
+{
+ "sprint_id":"MISSION-ITER-125","round":1,"date":"2026-11-27","evaluator":"claude-sonnet (Agent tool)",
+ "score":96,"pass":true,
+ "rubric":{"disposition":29,"facts":38,"mechanics":20,"clarity":9},
+ "blocking":[],
+ "non_blocking":[
+  "D-168's ledger row is OPEN with 'Default if unanswered: C from the next fire' (A for 7ap/7aq, then B). The record and the loop's logs call this 'D-168 B (default applied)'; this is the established convention since ~iteration 105 and is consistent with D-176's default B, but the charter row itself does not say B. Plain-language dashboards could say 'D-168 default (idle)'.",
+  "Secret scan reports scanned=6 (the glob matched 6 mission files, not only the 5 changed); still rc 0, clean, hits 0, control ok.",
+  "Live wake on a new nightly comment is correctly recorded as not measured; it cannot be verified until tonight's nightly.",
+  "No closing-keyword pattern in any added line (grep returned nothing); file contents are safe regardless.",
+  "Dashboard line 'Tonight's nightly report is the first that should wake a fire' is a forecast, flagged as such; acceptable."],
+ "measurements":[
+  {"claim":"7b67c35b4 ancestor of origin/dev and of pin (2e583399d)","command":"git merge-base --is-ancestor in ailang and pin","observed":"both true; pin HEAD 2e583399d","verdict":"VERIFIED"},
+  {"claim":"unread reply inbox_1795800606060_e800acfb, sha, signature","command":"ailang messages list --unread --inbox mission-stapledon --json","observed":"1 unread, harness-resolved, sha 7b67c35b..., created 2026-11-27T17:30:06Z","verdict":"VERIFIED"},
+  {"claim":"idle-fingerprint.sh reads nightly-rig issues and 'The nightly ' comments, lines 154-181","command":"sed -n 150,185p pin/tools/launchd/lib/idle-fingerprint.sh","observed":"block at ~153-181 reads open nightly-rig issues, startswith(\"The nightly \")","verdict":"VERIFIED"},
+  {"claim":"#392 OPEN, nightly-rig, 40 comments, last 2026-11-27T06:08:00Z","command":"gh issue view 392 --json","observed":"exactly that","verdict":"VERIFIED"},
+  {"claim":"#474 18 comments, #450 28, no allowlisted directive","command":"gh issue view --json comments","observed":"18 and 28, all by sunholo-voight-kampff, 0 by MarkEdmondson1234","verdict":"VERIFIED"},
+  {"claim":"#435 OPEN 2026-11-12T19:05:51Z; ailang-packages#206 OPEN; #144 OPEN draft","command":"gh issue/pr view","observed":"#435 OPEN 2026-11-12T19:05:51Z; #206 OPEN 2026-11-21T11:14:33Z; #144 OPEN isDraft true","verdict":"VERIFIED"},
+  {"claim":"fast tier success on 657a356c","command":"gh api commits/657a356c/check-runs","observed":"1 run, success","verdict":"VERIFIED"},
+  {"claim":"orphan pid 84274 running, ~14h17m","command":"ps -p 84274","observed":"ppid 1, etime 14:21:05 at 19:32Z (consistent with 14h17 at 19:28Z); not killed","verdict":"VERIFIED"},
+  {"claim":"skill drift: one line in gate-5-retro.md, 27 commits behind","command":"git -C ailang diff origin/dev -- .claude/skills/mission-control; rev-list --count HEAD..origin/dev","observed":"1 file, 1 line; 27 commits","verdict":"VERIFIED"},
+  {"claim":"charter 3 STATUS stamps 125,124,123; 122 rotated byte-identical; counts","command":"grep -c, wc -l, cmp","observed":"3 stamps; ITERATION 122: 0 charter/1 archive; 610->610, 763->765; moved line identical to origin/main","verdict":"VERIFIED"},
+  {"claim":"STATUS 125 heading canonical","command":"grep -E regex","observed":"matches","verdict":"VERIFIED"},
+  {"claim":"ledger valid 169 rows; charter diff touches only STATUS, 7az, goal line","command":"mission_decisions.sh --check; git diff origin/main","observed":"valid: 169 rows; diff hunks are exactly STATUS block, goal line, 7az tag (rest of 7az text unchanged)","verdict":"VERIFIED"},
+  {"claim":"index row 125 only; dashboard <=40 lines","command":"git diff; wc -l","observed":"+1 row 125 only; dashboard 38 lines","verdict":"VERIFIED"},
+  {"claim":"secret scan clean","command":"mission_evidence_secret_scan.sh design_docs/stapledon-mission*.md","observed":"rc=0 verdict=clean values=18 scanned=6 hits=0 control=ok","verdict":"VERIFIED"},
+  {"claim":"D-176 default B consistent with not building 7ba/7ay(b)","command":"grep D-176 row","observed":"Default if unanswered: B (D-168 B stands); OPEN","verdict":"VERIFIED (see D-168 note)"}],
+ "summary":"Record-only iteration is correct: no allowlisted directive, D-176 default B stands, nothing built, row 7az resolved only after first-party check of the pinned driver (ancestry, script lines, #392 state). Every re-measured claim matched; rotation, counts, ledger, index, heading and secret scan all pass. Only minor non-blocking notes (D-168 row default text says C, loop convention calls it B). Score 96, PASS."}
