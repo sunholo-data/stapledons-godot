@@ -1,0 +1,154 @@
+{
+ "sprint_id": "MISSION-ITER-124",
+ "date": "2026-11-27",
+ "evaluator": "sonnet (Agent tool)",
+ "round": 2,
+ "rubric": {
+  "disposition": 29,
+  "facts": 39,
+  "mechanics": 20,
+  "clarity": 9
+ },
+ "score": 97,
+ "pass": true,
+ "blocking": [],
+ "non_blocking": [
+  "D-176 asserts as fact that the 600 s hang on d2b2d125 pushed the run past 7,200 s and killed free-nav-stop-test; this is carried from iteration 123's 7ay text and was not re-measured this round.",
+  "The mission index has no D-176 mention (not required; dashboard, log and charter do)."
+ ],
+ "measurements": [
+  {
+   "check": "ledger count",
+   "command": "mission_decisions.sh --check",
+   "reading": "valid: 169 rows",
+   "matches_record": true
+  },
+  {
+   "check": "D-176 completeness",
+   "command": "sed -n 314p charter",
+   "reading": "one-sentence question, 2 options with consequences, recommendation A, default B; sits between D-175 and the decision-ledger:end marker; ID unused before (no D-176 in origin/main)",
+   "matches_record": true
+  },
+  {
+   "check": "facts vs rows 7ba/7ay",
+   "command": "compare pid 84274, 05:11Z, script_gate line 28, test line 84, 600 s hang",
+   "reading": "consistent with rows 7ba/7ay and the shown source line 84",
+   "matches_record": true
+  },
+  {
+   "check": "STATUS 123 unaltered",
+   "command": "md5 of ITERATION 123 line, HEAD vs worktree; diff HEAD stamp lines",
+   "reading": "identical md5; only the 124 stamp line changed",
+   "matches_record": true
+  },
+  {
+   "check": "log Evaluation paragraph",
+   "command": "read ## 124 Evaluation",
+   "reading": "94/100 PASS, 0 blocking, rubric 28/38/19/9, runs 12:44:48Z/12:44:54Z/12:45:02Z with loads and start 3,026 ms, 18 of 18 tally (15+3), all as in my round 1",
+   "matches_record": true
+  },
+  {
+   "check": "line counts",
+   "command": "wc -l charter",
+   "reading": "610; log says 608 to 610",
+   "matches_record": true
+  },
+  {
+   "check": "secret scan",
+   "command": "mission_evidence_secret_scan.sh six files",
+   "reading": "verdict=clean values=18 scanned=6 hits=0 control=ok",
+   "matches_record": true
+  }
+ ],
+ "summary": "Round 2: D-176 is a complete, correctly placed new ledger row (169 rows valid); STATUS 123 untouched; the filled Evaluation paragraph reports round 1 accurately without overstatement; secret scan clean. No blocking findings.",
+ "round_1": {
+  "sprint_id": "MISSION-ITER-124",
+  "date": "2026-11-27",
+  "evaluator": "sonnet (Agent tool)",
+  "round": 1,
+  "rubric": {
+   "disposition": 28,
+   "facts": 38,
+   "mechanics": 19,
+   "clarity": 9
+  },
+  "score": 94,
+  "pass": true,
+  "blocking": [],
+  "non_blocking": [
+   "Row 7ba/log say the orphan was found '7 h 22 min after the night hit its bound' but 05:11:16Z is the test's START; the bound/Terminated was at about 05:16:41Z, so the gap at 12:33Z is about 7 h 17 min (elapsed since test start is 7 h 22 min).",
+   "'What is left is time' is an elimination, not a measurement: the failure window (21:29Z-05:57Z) also coincides with nightly load 30-50 and the orphan; the record hedges it ('not reproduced in this window') but the For-Mark question (3) leans on it. Memory-kill exclusion has no positive control for the predicate (the record admits this).",
+   "Orphan mechanism is a read of script_gate.sh line 28 and rig_check.sh lines 33-40; both match the code (setpgrp(0,0) child, supervisor has no TERM/INT/HUP handler, bounded TERMs make's group only) and the ps pgid==pid. It was not reproduced with a drill, and why the test never reached quit() is not explained; record labels it 'read', which is fair.",
+   "Probe agent's runs are the controller's reading of on-disk logs, not independently re-run by the judge as a separate class; my own Agent-tool shell runs also passed, so this does not change the conclusion."
+  ],
+  "measurements": [
+   {
+    "check": "real test run 1 (judge shell, Agent tool)",
+    "command": "perl alarm 180 godot --headless --path . --script tests/test_ship_star_identification.gd",
+    "reading": "12:44:48Z load 3.75; rc=0, 60 passed, 0 failures",
+    "matches_record": true
+   },
+   {
+    "check": "real test run 2",
+    "command": "same",
+    "reading": "12:44:54Z load 3.85; rc=0, 60 passed, 0 failures",
+    "matches_record": true
+   },
+   {
+    "check": "throwaway diag copy run 1",
+    "command": "same with tests/zz_scratch_iter124_ssi_diag.gd",
+    "reading": "12:45:02Z load 5.22; rc=0, start=true start_ms=3026, new_game=true 19 ms, 3 DIAG lines",
+    "matches_record": true
+   },
+   {
+    "check": "controller logs back up the 15 of 15",
+    "command": "grep /tmp/iter124_ssi/*.log",
+    "reading": "ctl_run 3, ctl_diag 3, nopath 2, par 3, agent_diag 3, agent_real 1 = 15; 0 SCRIPT ERROR; start_ms 2046-2344 sequential, 2052/2055 nopath, 6257-6393 parallel, 2925-3640 agent",
+    "matches_record": true
+   },
+   {
+    "check": "orphan 84274",
+    "command": "ps -o pid,ppid,pgid,lstart,etime,pcpu,command -p 84274; lsof -a -p 84274 -d cwd",
+    "reading": "ppid 1, pgid 84274, started 06:11:16 CET (05:11:16Z), etime 7:33:29 at 12:44Z, 26.2% CPU, cwd /var/folders/.../rig-check/468ceb97...",
+    "matches_record": true
+   },
+   {
+    "check": "script_gate/rig_check mechanism",
+    "command": "sed script_gate.sh 20-40; rig_check.sh 25-45",
+    "reading": "line 28 perl: child setpgrp(0,0); supervisor has no signal handlers; bounded() TERMs -pid of make group only",
+    "matches_record": true
+   },
+   {
+    "check": "ledger",
+    "command": "mission_decisions.sh --check",
+    "reading": "valid: 168 rows",
+    "matches_record": true
+   },
+   {
+    "check": "STATUS stamps and rotation",
+    "command": "grep '^## STATUS'; compare 121 line to archive",
+    "reading": "3 stamps (124,123,122) plus the rule heading; 121 absent from charter, 1 in archive, byte-identical line; charter 608->609 vs origin 608; archive 761->763",
+    "matches_record": true
+   },
+   {
+    "check": "log/index",
+    "command": "grep '^## ' counts; index grep",
+    "reading": "20 entries in log, 103/104 present in archive, index has row 124; log 938, archive 4276",
+    "matches_record": true
+   },
+   {
+    "check": "GitHub facts",
+    "command": "gh issue view 474/450/392; gh pr view 435, ap#206, #144",
+    "reading": "#474 16 comments; #450 28; #392 40, newest 2026-11-27T06:08:00Z; #435, #206, #144 all OPEN",
+    "matches_record": true
+   },
+   {
+    "check": "secret scan",
+    "command": "mission_evidence_secret_scan.sh on 6 files",
+    "reading": "verdict=clean values=18 scanned=6 hits=0 control=ok",
+    "matches_record": true
+   }
+  ],
+  "summary": "Record is accurate and appropriately hedged. My own shell (Agent tool) passed 2 of 2 real runs and 1 of 1 diag copy, matching the controller's 15 of 15 and supporting refutation of a controller-vs-judge launch split. Row 7ba's orphan exists as described and the mechanism read matches the scripts. Record-only under D-168 B with no fix built is the right disposition; the For-Mark asks are plain and specific. Only minor wording (7h22 vs 7h17) and the inferred-by-elimination time window are noted."
+ }
+}
