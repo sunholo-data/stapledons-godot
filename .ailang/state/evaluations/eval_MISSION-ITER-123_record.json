@@ -1,0 +1,161 @@
+{
+  "sprint_id": "MISSION-ITER-123",
+  "evaluator": "sonnet (Agent tool)",
+  "round": 2,
+  "date": "2026-11-27",
+  "score": 93,
+  "pass": true,
+  "rubric": {
+    "disposition": 28,
+    "facts": 37,
+    "mechanics": 20,
+    "clarity": 8
+  },
+  "measurements": [
+    {
+      "check": "stale claims grep",
+      "command": "grep -Ei 'not reproduced|environment-only|did not reproduce|passes outside' on charter, log, dashboard",
+      "reading": "no live claim remains; the only hits are correction notes (log lines on 'corrected after the judge') and an unrelated old row (VM frame-pool); STATUS 123, row 7ay, log ## 123 now say intermittent, reproduces outside the nightly, v0.64.1 weakened, wall_s sums are per-target only",
+      "matches_record": true
+    },
+    {
+      "check": "real test, judge data point 3",
+      "command": "godot --headless --script tests/test_ship_star_identification.gd, runtime/bin first, 150 s deadline",
+      "reading": "FAILED again: SCRIPT ERROR 'system' on Dictionary, hang until deadline (EXPIRED, killed); load 4.6 1-min at the end. Judge tally now 0 of 3 pass; controller reports 3 of 3 pass.",
+      "matches_record": "partly: record says judge 2 of 2 failed; now 3 of 3"
+    },
+    {
+      "check": "controller probes (SimBridge standalone 4/4, scratch last_error copy 2/2)",
+      "command": "not re-run (controller scratch artefacts)",
+      "reading": "not independently verified; consistent in kind with the intermittent picture",
+      "matches_record": "unverified"
+    },
+    {
+      "check": "mechanics",
+      "command": "grep/diff on charter, archive, log, index, dashboard; mission_decisions --check",
+      "reading": "canonical STATUS 123 (1); 3 STATUS stamps; ITERATION 120: 0 in charter, 1 in archive, byte-identical to origin/main; 20 live log entries; heading set = origin/main + ## 123 only; index row 123; dashboard 35 lines; ledger valid, 168 rows; only the six record files modified",
+      "matches_record": true
+    },
+    {
+      "check": "secret scan",
+      "command": "mission_evidence_secret_scan.sh on 6 changed files + this eval JSON",
+      "reading": "all verdict=clean hits=0 control=ok",
+      "matches_record": true
+    }
+  ],
+  "blocking": [],
+  "non_blocking": [
+    "STATUS 123 and row 7ay say 'it is not tied to the nightly's environment or to load'. The evidence (3 controller passes, 2 judge failures at load 23-36 and about 8; now a third judge failure at about 5) shows a failure and a pass at overlapping loads, not that load plays no part. Prefer 'not shown to depend on'. Small samples.",
+    "Pattern worth recording: all failing outside-nightly runs are the judge's (default shell, the plain command) and all passing runs are the controller's (3 of 3, plus probes 4 of 4 and 2 of 2). The controller's environment, or how it launches the run, may differ in a way the record has not isolated (a different PATH/env, a warm vs cold sim, or a concurrently running process). 7ay (a) should diff the two launch conditions before repeating the probe until failure, or it may never fail.",
+    "The tally 'failed 2 of 2 judge runs' is now 3 of 3; update on the next touch.",
+    "The controller's 4/4 and 2/2 probes were not re-run by the judge and stay unverified."
+  ],
+  "summary": "The revision fixes round 1's blocker: the record now says the failure is intermittent, reproduces outside the nightly, weakens the v0.64.1 candidate, and rewords the wall_s claim; nothing still says 'not reproduced' or 'environment-only'. Mechanics and the secret scan are clean. A third judge run failed again, which strengthens the correction but also shows a systematic split (judge always fails, controller always passes) that 7ay (a) should diagnose by comparing launch conditions rather than repeating until a failure. Disposition (record-only, measurement row, harness ticket) stands. PASS, no blocking findings.",
+  "round_1": {
+    "date": "2026-11-27",
+    "score": 82,
+    "pass": true,
+    "rubric": {
+      "disposition": 27,
+      "facts": 28,
+      "mechanics": 19,
+      "clarity": 8
+    },
+    "measurements": [
+      {
+        "check": "directives #474/#450",
+        "command": "mission_directives.sh --issue N (no --mark)",
+        "reading": "0 directives; 15 and 28 comments; both watermark files absent",
+        "matches_record": true
+      },
+      {
+        "check": "ledger",
+        "command": "mission_decisions.sh --check/--open; git log -1 origin/main -- charter",
+        "reading": "valid 168 rows; OPEN D-166, D-168..D-175; newest charter commit cf1be837; origin/main 468ceb97",
+        "matches_record": true
+      },
+      {
+        "check": "blockers",
+        "command": "gh pr view 435/206/144; ailang pkg info",
+        "reading": "#435 OPEN upd 2026-11-12T19:05:51Z; #206 OPEN unmerged upd 2026-11-21T11:14:33Z; #144 draft OPEN; observe 0.1.0, social_dynamics 0.4.0, crew_core 0.6.0 (latest)",
+        "matches_record": true
+      },
+      {
+        "check": "main CI",
+        "command": "check-runs on 468ceb97",
+        "reading": "total_count 1, fast tier success",
+        "matches_record": true
+      },
+      {
+        "check": "nightly #392",
+        "command": "gh issue view 392; rig-check logs",
+        "reading": "39 comments; d2b2d125 comment 2026-11-26T23:30:54Z 4 red (ui-theme-check, ship-demo-live-test, ship-star-identification-test, free-nav-stop-test); 468ceb97 comment 2026-11-27T05:16:41Z 7 red (adds sim, ai-live-guard-static, ship-demo-consolidation-test); totals wall_s 7121.725 and 6890.367; basis-gate in 891c3bc0's log (2 hits), 0 in the other two; 891c3bc0 passed ship-live-demo 9, ship-star-identification 60 (5 s), free-nav-stop 58 (217 s)",
+        "matches_record": true
+      },
+      {
+        "check": "failing lines quoted",
+        "command": "grep the two logs",
+        "reading": "ship-live-sim FAIL (load failure) on d2b2d125; FAIL isolated normal navigation, ERROR actual body fields, SCRIPT ERROR 'system' on Dictionary, 600 s timeout, FAIL navigation opens, ai-live-guard-static timeout after 120 s all present; ship-demo-consolidation-test Terminated: 15 on 468ceb97",
+        "matches_record": true
+      },
+      {
+        "check": "not code",
+        "command": "git diff --stat 891c3bc0 d2b2d125; d2b2d125 468ceb97",
+        "reading": "8 and 7 files, all charter/log/archive/index/dashboard/eval JSON",
+        "matches_record": true
+      },
+      {
+        "check": "passes outside the nightly",
+        "command": "godot --headless --script tests/test_ship_star_identification.gd, runtime/bin first on PATH, AILANG_BIN set, deadline 180 s then 90 s",
+        "reading": "FAILED TWICE in my runs: ERROR 'actual body fields available for foreground test' at line 82, then SCRIPT ERROR at line 84 ('system' on Dictionary), no summary line, process hung until my deadline (EXPIRED, killed). Load 23-36 on run 1, about 8 at the end of run 2. The record's single 60-passed run did not reproduce.",
+        "matches_record": false
+      },
+      {
+        "check": "amplifier (lines 82-84)",
+        "command": "read test_ship_star_identification.gd",
+        "reading": "line 82 check(start and new_game) only logs on failure; line 84 iterates planet_sim.world.system.bodies with an empty world, a SCRIPT ERROR before quit(); confirmed by my own re-run hanging",
+        "matches_record": true
+      },
+      {
+        "check": "7az idle fingerprint",
+        "command": "read idle-fingerprint.sh 135-160; grep idle snapshot",
+        "reading": "red = failing/timed_out/cancelled check-runs on the tip only; snapshots 23:19:39 and 05:47:45 both head=beb17c4 red=0, inbox 1 -> 0",
+        "matches_record": true
+      },
+      {
+        "check": "go/bin ailang",
+        "command": "ls -la; --version; grep PATH= tools/rig_check.sh",
+        "reading": "v0.64.1 built 2026-11-26_17:42:05Z, file mtime Nov 26 18:42 local; rig_check.sh line 97 puts runtime/bin first",
+        "matches_record": true
+      },
+      {
+        "check": "credentials dumps",
+        "command": "ls profiles; evidence_secret_guard.sh (rc and counts only)",
+        "reading": "d8b7baf9 profile has no database.txt; 328b01f8 rc=1, 13 'value is in'; d2b2d125 rc=0, 0; 468ceb97 rc=0, 0",
+        "matches_record": true
+      },
+      {
+        "check": "record mechanics",
+        "command": "grep/diff on charter, archive, log, index, dashboard",
+        "reading": "canonical STATUS 123; exactly 3 STATUS stamps (123,122,121); ITERATION 120: 0 in charter, 1 in archive, byte-identical to origin/main; 20 live log entries; heading set equals origin/main plus ## 123; index row 123; dashboard 35 lines; ledger 168 rows",
+        "matches_record": true
+      },
+      {
+        "check": "secret scan",
+        "command": "mission_evidence_secret_scan.sh on 6 changed files",
+        "reading": "each verdict=clean hits=0 control=ok (pipe rc masked by tail; verdict line read)",
+        "matches_record": true
+      }
+    ],
+    "blocking": [
+      "The record says the failure 'did not reproduce outside the nightly' and builds on it (no measured fix, 'Load alone does not explain it', 'the next measurement has to run inside the nightly's own clone'). In my two independent runs of the same command in the same clone at 468ceb97, test_ship_star_identification.gd failed exactly as in the nightly (start/new_game returns false at line 82, SCRIPT ERROR at line 84, hang until the deadline), at load 23-36 and again at about 8. The one 60-passed run is a single sample that may have been a lucky one. The failure reproduces on demand now, so the 'passes outside the nightly' and 'cannot be reproduced' sentences are wrong or at least unsafe; the next fire can measure it directly with no nightly clone. The 'not a code regression' conclusion still stands (diffs are record-only)."
+    ],
+    "non_blocking": [
+      "The STATUS line and the log cite `totals wall_s=7121.725` / `6890.367` beside 'over the 7,200 s bound'. Both are under 7,200; the rig's own clock (which includes startup/teardown) is what said 'ran over'. 6,890 reads as contradicting the claim. Say the rig measured over, and that the totals row is the per-target sum.",
+      "The record's 'Ruled out: reverting / fixing forward' rests on the non-reproduction; with the failure reproducible, the line-84 guard and a start-failure diagnosis become measurable fix-forward work (still under D-168 B as a hygiene row, but the reason given is stale).",
+      "The ~/go/bin/ailang v0.64.1 candidate is correctly labelled unproven; my run used runtime/bin v0.56.1 and still failed, which weakens it as the cause.",
+      "The secret-scan wrapper pipe masks the script's rc unless read with the verdict line; fine here (verdict=clean), noted for the record."
+    ],
+    "summary": "Disposition is right: record-only under D-168 B, nothing to revert (record-only diffs between the three nightlies), measurement-first row 7ay, the idle-skip blindness ticketed as 7az rather than fixed in the harness, and the For Mark ask is plain and specific (what changed on the Studio on 2026-11-26; rotate credentials). Almost every number re-measured exactly: directives, ledger, blockers, CI, both nightly red lists, basis-gate absence, the 891c3bc0 passes, the failing lines, the line-84 amplifier, the fingerprint and snapshots, the go/bin binary, the dump guard counts, record mechanics, and the secret scan. The one miss is the headline claim that the failure does not reproduce outside the nightly: it reproduced twice for me, so the record's 'not reproduced' framing and its next-step design are wrong, and the 'over the 7,200 s bound' wording is loosely backed by wall_s values that are under 7,200. Not enough to fail the iteration (the safe disposition and the no-code-regression attribution hold), but the next fire should take 7ay with a direct reproduction."
+  }
+}
