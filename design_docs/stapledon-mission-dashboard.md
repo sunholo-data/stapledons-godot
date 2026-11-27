@@ -14,6 +14,7 @@ Still waiting: D-172 (default record-only on 7av: no publish, no O3).
 Blocked: L11 waits on attended #435 (open since 2026-11-12), which needs `sunholo/observe` 0.2.0 (latest is v0.1.0).
 Package: ailang-packages#206 (social_dynamics 0.4.1) is OPEN, unmerged and unpublished.
 Human gates, all OPEN:
+- **D-176 (new)**: may the loop build the two small nightly fixes (7ba and 7ay b) ahead of D-168 B? Recommendation A (yes); default B (stay record-only).
 - D-175: keep loop evidence in the public bucket behind the guard (A, default), or move it to the private dev-builds bucket (B)?
 - D-174: its default A ran in iteration 114 (7aw landed).
 - D-173: approve the rule that a timing run counts when the CPU used outside it stays low (OQ1 with OQ3), the baseline source (OQ2), OQ4–OQ5; or choose B, C or D.
@@ -25,7 +26,7 @@ Human gates, all OPEN:
 - D-168: C applied; in its B half (record-only fires).
 Action for Mark (not a ledger decision):
 - **Kill the orphaned test** when convenient: `kill 84274` (row 7ba).
-- **Two small fixes ahead of D-168 B?** 7ba (the gate passes the watchdog's stop signal on to its test) and 7ay (b) (a failed sim start fails at once instead of hanging for 600 s). Both are headless and a few lines. Together they stop one bad start from taking down the rest of a night.
+- **Two small fixes ahead of D-168 B? (D-176)** 7ba (the gate passes the watchdog's stop signal on to its test) and 7ay (b) (a failed sim start fails at once instead of hanging for 600 s). Both are headless and a few lines. Together they stop one bad start from taking down the rest of a night.
 - **The nightly (7ay):** the failures appear only overnight. Does anything run on the Studio at night but not by day (local-model evals, backups, indexing)?
 - **Rotate the exposed credentials** (names in the private `[SECURITY]` message) and refresh the rig's environment cache. One old dump is left (`328b01f8`).
 - Close draft ailang-packages#144; its cause, ailang#1827, is fixed.
