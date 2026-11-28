@@ -12,6 +12,7 @@ confidently and wrongly is worse than none.
 
 | # | date | what happened |
 |---|---|---|
+| 127 | 2026-11-28 | Record-only fire under D-168 B: no pick. Main's nightly on `42b68752` went red again with no code change: cut at 7,200 s, with `crew-perf` new (2× ... |
 | 126 | 2026-11-28 | Record-only fire under D-168 B: no pick. Main's nightly on `db394a2d` went red with no code change and no hang; its new control red is a timing fla... |
 | 125 | 2026-11-27 | Record-only fire under D-168 B: no pick. The fleet resolved row 7az (the idle skip now wakes on a red nightly report), checked in the pinned driver... |
 | 124 | 2026-11-27 | Record-only fire under D-168 B: no pick. Row 7ay (a) measured: 15 of 15 runs of the failing sim-start test passed in both the controller's and an A... |

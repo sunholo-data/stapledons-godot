@@ -1,0 +1,18 @@
+{"iteration":127,"judge":"sonnet-5.5 agent-tool","round":1,"score":89,"pass":true,
+"breakdown":{"disposition":28,"facts":31,"mechanics":25,"clarity":5},
+"blocking":[],
+"notes":[
+"Disposition right: D-168 B record-only, reds fall under existing rows 7as/7bb/7bc and D-177 already asks the question; nothing urgent (no new orphan, no code change, no hang).",
+"Minor count error: 'the seven nights on disk read 1.43-2.07 s' for crew-perf; only six earlier logs exist (518a56b3, d00b9dc0, 891c3bc0, d2b2d125, 468ceb97, db394a2d: 1.54, 1.43, 1.55, 2.07, 1.54, 1.59). Seven only if tonight is counted, and tonight is 4.08.",
+"Mild overclaim: load-sampler's failure line has an empty reason, so which of its assertions failed is unknown; attributing it to the 5 s first-sleep wait is an inference, stated as fact ('Both cases wait ... under a fixed bound').",
+"Understated by-day evidence: the record says 6 of 6 by-day runs of each case passed; the judge got sampler-cleanup rc=1 in 1 of 3 by-day runs (40 s wall, same grep header.txt error), at load ~2.3-3.4. This supports 7bb's family diagnosis and shows the stall is not only overnight; worth adding to the row.",
+"Charter, log and index hold literal placeholders by design (not penalised). Log entry is long; plain language is mostly good but the stamp and log are dense with SHAs and rule detail for Mark."],
+"remeasured":[
+"Run 03:18:26Z-05:18:26Z (header start_ms/end_ms = 7199.96 s), rc 143; log ends on gmake Makefile:1385 planet-meter-test Terminated: 15; 4 red as stated (ui-theme-check crew-perf rig-check-control planet-meter-test); issue #392 newest comment 05:18:35Z, 42 comments.",
+"crew-perf: 'crewSkip: days 3652 holds 1 in 4.08 s' vs budget 4.0; profile line wall 5.718 s, CPU 3.496 s. By day make crew-perf (pinned runtime first, load ~2.7): crewSkip 1.56 s, crewSkipUnheld 12.38 s.",
+"Control cases: load-sampler (empty reason, gmake) and sampler-cleanup (grep header.txt missing, /usr/bin/make) failed; read shell: load-sampler waits 100x0.05 s, sampler-cleanup's until loop 100x0.01 s (1 s). By day sampler-cleanup: rc0 1 s, rc1 40 s, rc0 27 s.",
+"rig-check-control wall/CPU per night: 518a56b3 104.4/40.4; d00b9dc0 114.2/46.5; 891c3bc0 154.7/49.1; d2b2d125 227.9/48.8; 468ceb97 276.7/55.4; db394a2d 184.4/44.7; 42b68752 321.1/47.4.",
+"Stalled rule (level 1, CPU 0.3-4, wall > 5 CPU + 5): tonight 652 lines, 17 stalled, 451 s excess; db394a2d 653 lines, 23 stalled, 574 s (matches). Targets in 891c3bc0 absent tonight: 35, 1376.7 s there, including planet-meter-test, basis-gate, playthrough-*, sim-bootstrap-test. Mean load 3.96 over 240 samples.",
+"Mechanics: charter 613 lines both sides; 3 STATUS 2026- stamps (127,126,125); STATUS 124 line (3058 bytes) 0 times in charter, 1 in archive, byte-identical; stamp regex matches; log heading regex matches; ledger valid 170 rows; index +1 row; dashboard 37 lines; secret scan rc 0, verdict clean.",
+"PR #435, ailang-packages#206 and #144 OPEN; comments #474 20, #450 28, #392 42."],
+"timestamp":"2026-11-28T10:32:00Z"}
