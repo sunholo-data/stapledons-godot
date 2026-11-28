@@ -1,0 +1,31 @@
+{
+  "iteration": 126,
+  "judge": "sonnet-5.5 agent-tool",
+  "round": 1,
+  "score": 89,
+  "pass": true,
+  "breakdown": {"disposition": 28, "facts": 33, "mechanics": 19, "clarity": 9},
+  "blocking": [],
+  "notes": [
+    "468ceb97 recomputes to 19 stalled lines / 540 s excess with the stated definition (cpu 0.3-4, level 1, wall > 5*cpu+5); the record says 18 / 534. Other seven nights match exactly (5/109-112, 12/357, 23/574). Immaterial; fix the figures or state the rounding.",
+    "7bc says the same world-hosts-check command takes 2-3 s 'at other times' and 2.26-2.69 s at 02:25Z. In my re-time, run 1 took 24.0 s real at the same 2.8 s user, run 2 took 2.48 s. So the stall also occurs by day (load 5.9-8.3), which weakens the 'overnight only' wording and the Mark question about a night-only job; the record should say the stall is intermittent and not yet shown to be overnight-only. The record does hedge that the cause is unknown.",
+    "'About 1 in 25' for 7bb is fair as an order of magnitude: the controller's counts total 4/100; my 107 runs of the real harness gave 2 failures (1 in 53, one on /usr/bin/make with empty reason, one on gmake with a non-empty reason). Combined 6/~187, about 1 in 30. Suggest 'between 1 in 25 and 1 in 50'.",
+    "7bb mechanism (children serialised, attribution right) is supported by the kept fixtures and by the awk assertion in tools/test_suite_profile.sh lines 74-79; I did not independently inspect a kept failing fixture's timestamps beyond reading the case.",
+    "D-177 has A/B/C, a recommendation (A) and a default (B); recommendation to raise a bound while an unknown stall continues is stated as a stopgap and the stall stays open: acceptable.",
+    "Evaluation and EVALTOK placeholders left as instructed."
+  ],
+  "remeasured": [
+    "git diff: charter 610 -> 613 lines; 3 STATUS stamps (126,125,124); heading regex matches; ITERATION 123 line byte-identical to origin/main, 0 in charter, 1 in archive",
+    "mission_decisions.sh --check: valid, 170 rows; D-177 present once with A/B/C, recommendation, default",
+    "secret scan over 5 changed record files (the sixth, the evaluation JSON, did not exist yet): verdict clean, hits 0, rc 0",
+    "log heading '## 126 - date - title' matches; index +1 row (126) only; dashboard 37 lines",
+    "gh: #474 19 comments, #450 28, #392 41; PR #435, ailang-packages#206 and #144 all OPEN; pid 84274 alive, etime 21h, not touched",
+    "profile header: start_ms 1795815156993, end_ms 1795822356949 (7199.956 s), rc=143, make 4.4.1",
+    "profile.tsv per night (lines/stalled/excess s): 328b01f8 766/5/111, 59754995 766/5/111, d00b9dc0 766/5/111, 518a56b3 766/5/109, 891c3bc0 766/5/112, d2b2d125 644/12/357, 468ceb97 636/19/540, db394a2d 653/23/574",
+    "world-hosts-check line 2: 2.4 s/cpu 2.75 -> 39.7 s/cpu 2.92; lore-test last: 2.5/2.34 -> 51.4/3.07; tools-test line 1: 2.6 -> 33.2; sim (top target col 6) 1624 -> 2029 s; mean load 9.12 vs 4.03 (matches 9.1 / 4.0)",
+    "targets missing tonight vs 891c3bc0 by top-target column 6: 39, 1,739.5 s (matches 39 / 1,740 s)",
+    "re-time of world-hosts-check command: 24.0 s real (user 2.79) then 2.48 s (user 2.89)",
+    "sh tools/test_suite_profile.sh top-target-j2 x107 over ~200 s: 105 pass, 2 FAIL (one empty reason, one gmake chatter)"
+  ],
+  "timestamp": "2026-11-28T02:40:17Z"
+}
